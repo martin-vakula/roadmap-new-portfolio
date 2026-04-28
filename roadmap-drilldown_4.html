@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roadmap Drilldown — XDR Platform Vision</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f5f7;
+    --bg3: #ebebef;
+    --surface: #ffffff;
+    --border: rgba(0,0,0,0.1);
+    --border-strong: rgba(0,0,0,0.18);
+    --text: #1d1d1f;
+    --text2: #424245;
+    --text3: #6e6e73;
+    --accent: #0071e3;
+    --accent-light: #e8f0fb;
+
+    /* Level colors (matching the hierarchy schema) */
+    --strategic: #1a7f37;     --strategic-bg: #e7f5ec;
+    --program: #14b8a6;       --program-bg: #d8f3ef;
+    --objective: #2563eb;     --objective-bg: #dbe8fc;
+    --solution: #d97706;      --solution-bg: #fdedd3;
+    --delivery: #9333ea;      --delivery-bg: #ece1fb;
+    --story: #ec4899;         --story-bg: #fce7f3;
+
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.05);
+  }
+
+  [data-theme="dark"] {
+    --bg: #000000;
+    --bg2: #1c1c1e;
+    --bg3: #2c2c2e;
+    --surface: #1c1c1e;
+    --border: rgba(255,255,255,0.1);
+    --border-strong: rgba(255,255,255,0.18);
+    --text: #f5f5f7;
+    --text2: #d1d1d6;
+    --text3: #8e8e93;
+    --accent: #2997ff;
+    --accent-light: #0a1f3d;
+
+    --strategic-bg: #0d2818;
+    --program-bg: #0a3a35;
+    --objective-bg: #0f1f47;
+    --solution-bg: #2e1d05;
+    --delivery-bg: #1f0f3a;
+    --story-bg: #3a0f24;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Inter", BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .app {
+    display: grid;
+    grid-template-rows: 56px auto 1fr 280px;
+    height: 100vh;
+  }
+
+  /* TOP BAR */
+  nav {
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid var(--border);
+    padding: 0 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  [data-theme="dark"] nav { background: rgba(0,0,0,0.85); }
+  .nav-title { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .nav-spacer { flex: 1; }
+  .nav-btn {
+    background: var(--bg2); border: none; color: var(--text2);
+    font-size: 13px; padding: 6px 14px; border-radius: 16px;
+    cursor: pointer; font-family: inherit; font-weight: 500;
+    transition: background 0.2s;
+  }
+  .nav-btn:hover { background: var(--bg3); }
+
+  /* BREADCRUMB / LEVEL BAR */
+  .levelbar {
+    background: var(--surface);
+    border-bottom: 0.5px solid var(--border);
+    padding: 14px 24px;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .levelbar-label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--text3); margin-right: 8px;
+  }
+  .crumb {
+    font-size: 13px; padding: 6px 12px; border-radius: 16px;
+    background: var(--bg2); color: var(--text2); cursor: pointer;
+    border: 0.5px solid transparent; transition: all 0.15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .crumb:hover { background: var(--bg3); }
+  .crumb.active {
+    background: var(--accent-light); color: var(--accent); font-weight: 500;
+    border-color: rgba(0,113,227,0.2);
+  }
+  .crumb-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+  .crumb-sep { color: var(--text3); font-size: 11px; }
+
+  .horizon-control {
+    margin-left: auto; display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--text3);
+  }
+  .horizon-control input {
+    background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: 6px; padding: 4px 8px; font-size: 12px;
+    color: var(--text); font-family: inherit; width: 90px;
+  }
+
+  /* CANVAS */
+  .canvas {
+    overflow: auto;
+    padding: 24px;
+    background: var(--bg2);
+  }
+  .canvas-inner {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    min-height: 100%;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* TIMELINE HEADER */
+  .timeline-header {
+    display: grid;
+    margin-bottom: 8px;
+    font-size: 11px; color: var(--text3); font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    padding-bottom: 8px;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .tl-label-col { padding: 0 8px; }
+  .tl-bucket {
+    text-align: center; padding: 4px 2px;
+    border-left: 0.5px solid var(--border);
+  }
+
+  /* TIMELINE ROW */
+  .tl-row {
+    display: grid;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 0.5px solid var(--border);
+    min-height: 44px;
+  }
+  .tl-row:last-child { border-bottom: none; }
+
+  /* CONTEXT BANNER (above timeline) */
+  .context-banner {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    background: var(--accent-light);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+  }
+  .context-banner-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+    text-transform: uppercase; color: var(--accent);
+  }
+  .context-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px; border-radius: 12px;
+    background: var(--surface); border: 0.5px solid var(--border);
+    color: var(--text2); font-size: 12px;
+  }
+  .context-arrow { color: var(--text3); font-size: 11px; }
+
+  /* GHOST (parent context) row in timeline */
+  .tl-row.ghost {
+    background: var(--bg2);
+    opacity: 0.9;
+    border-bottom: 0.5px dashed var(--border);
+    min-height: 36px;
+  }
+  .tl-row.ghost .tl-label {
+    font-weight: 400;
+    color: var(--text3);
+    font-size: 12px;
+  }
+  .tl-row.ghost .bar {
+    cursor: pointer;
+    opacity: 0.7;
+    height: 18px;
+    top: 7px;
+    border-style: dashed !important;
+  }
+  .tl-row.ghost .bar:hover {
+    opacity: 1;
+    transform: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+  .tl-row.ghost .bar::after { display: none; }
+  .ghost-tag {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em;
+    background: var(--bg3); color: var(--text3);
+    padding: 1px 6px; border-radius: 8px; font-weight: 600;
+    margin-right: 6px;
+  }
+
+  /* divider between context rows and active level rows */
+  .tl-divider-row {
+    grid-column: 1 / -1;
+    height: 1px;
+    background: var(--border-strong);
+    opacity: 0.4;
+    margin: 4px 0;
+  }
+  .tl-section-label {
+    grid-column: 1 / -1;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 8px 12px 4px;
+  }
+
+  .tl-label {
+    padding: 0 12px; display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 500; min-width: 0;
+  }
+  .tl-label-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tl-label-meta {
+    font-size: 11px; color: var(--text3); font-weight: 400; margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .tl-track {
+    position: relative; height: 32px;
+    background:
+      repeating-linear-gradient(
+        to right,
+        transparent 0,
+        transparent calc((100% / var(--bucket-count)) - 0.5px),
+        var(--border) calc((100% / var(--bucket-count)) - 0.5px),
+        var(--border) calc(100% / var(--bucket-count))
+      );
+  }
+
+  .bar {
+    position: absolute; top: 4px; height: 24px;
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center;
+    padding: 0 10px;
+    font-size: 12px; font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    border: 0.5px solid transparent;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .bar:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    z-index: 5;
+  }
+  .bar.has-children::after {
+    content: "›";
+    margin-left: auto;
+    font-size: 14px;
+    opacity: 0.6;
+    padding-left: 6px;
+  }
+  .bar.selected {
+    box-shadow: 0 0 0 2px var(--accent);
+    z-index: 4;
+  }
+
+  /* Level-specific bars */
+  .bar.strategic { background: var(--strategic-bg); border-color: var(--strategic); color: var(--strategic); }
+  .bar.program { background: var(--program-bg); border-color: var(--program); color: var(--program); }
+  .bar.objective { background: var(--objective-bg); border-color: var(--objective); color: var(--objective); }
+  .bar.solution { background: var(--solution-bg); border-color: var(--solution); color: var(--solution); }
+  .bar.delivery { background: var(--delivery-bg); border-color: var(--delivery); color: var(--delivery); }
+  .bar.story { background: var(--story-bg); border-color: var(--story); color: var(--story); }
+
+  [data-theme="dark"] .bar.strategic { color: #4ade80; }
+  [data-theme="dark"] .bar.program { color: #5eead4; }
+  [data-theme="dark"] .bar.objective { color: #93c5fd; }
+  [data-theme="dark"] .bar.solution { color: #fbbf24; }
+  [data-theme="dark"] .bar.delivery { color: #c4b5fd; }
+  [data-theme="dark"] .bar.story { color: #f9a8d4; }
+
+  /* Empty state when nothing at this level */
+  .empty {
+    padding: 60px 20px; text-align: center; color: var(--text3);
+  }
+  .empty h3 { font-size: 16px; color: var(--text); margin-bottom: 8px; font-weight: 500; }
+  .empty p { font-size: 13px; max-width: 480px; margin: 0 auto; }
+
+  /* AI ANALYTICS PANEL */
+  .ai-panel {
+    background: var(--surface);
+    border-top: 0.5px solid var(--border);
+    padding: 18px 24px;
+    overflow-y: auto;
+  }
+  .ai-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .ai-title {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--accent);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .ai-title::before {
+    content: ""; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+  }
+  .ai-subtitle { font-size: 12px; color: var(--text3); }
+
+  .ai-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .ai-card {
+    background: var(--bg2);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+  }
+  .ai-card-label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text3); font-weight: 600; margin-bottom: 6px;
+  }
+  .ai-card-value {
+    font-size: 22px; font-weight: 600; letter-spacing: -0.02em;
+    color: var(--text); line-height: 1.1; margin-bottom: 4px;
+  }
+  .ai-card-detail {
+    font-size: 12px; color: var(--text2); line-height: 1.5;
+  }
+
+  .insights {
+    margin-top: 14px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .insight {
+    display: flex; gap: 10px; padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13px; line-height: 1.5;
+    background: var(--bg2);
+  }
+  .insight-icon {
+    flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600;
+    margin-top: 1px;
+  }
+  .insight.risk    { background: #fff2f2; }
+  .insight.warn    { background: #fffbe6; }
+  .insight.info    { background: #e8f0fb; }
+  .insight.ok      { background: #ebf9ee; }
+  [data-theme="dark"] .insight.risk { background: #2a1010; }
+  [data-theme="dark"] .insight.warn { background: #2a2200; }
+  [data-theme="dark"] .insight.info { background: #0a1f3d; }
+  [data-theme="dark"] .insight.ok   { background: #0a2a15; }
+
+  .insight.risk .insight-icon { background: #c0392b; color: white; }
+  .insight.warn .insight-icon { background: #b07d0c; color: white; }
+  .insight.info .insight-icon { background: var(--accent); color: white; }
+  .insight.ok   .insight-icon { background: #1a7f37; color: white; }
+
+  .insight-text { flex: 1; }
+  .insight-text strong { font-weight: 600; }
+
+  /* SCROLLBARS */
+  .canvas::-webkit-scrollbar, .ai-panel::-webkit-scrollbar { width: 8px; height: 8px; }
+  .canvas::-webkit-scrollbar-thumb, .ai-panel::-webkit-scrollbar-thumb {
+    background: var(--border-strong); border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- TOP BAR -->
+  <nav>
+    <span class="nav-title">🗺️ Roadmap Drilldown — XDR Platform Vision</span>
+    <span style="font-size: 12px; color: var(--text3);">MVP · mock data</span>
+    <div class="nav-spacer"></div>
+    <button class="nav-btn" onclick="document.getElementById('csvFileInput').click()" title="Import Epics + Stories CSV (only adds to Delivery Units / Stories levels)">📥 Import Epics+Stories CSV</button>
+    <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="handleCsvImport(event)">
+    <button class="nav-btn" onclick="resetView()">↺ Reset view</button>
+    <button class="nav-btn" onclick="toggleTheme()" id="themeBtn">🌙 Dark</button>
+  </nav>
+
+  <!-- LEVEL / BREADCRUMB BAR -->
+  <div class="levelbar">
+    <span class="levelbar-label">View level:</span>
+    <div id="breadcrumb" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;"></div>
+    <div class="horizon-control">
+      <span>Horizon:</span>
+      <input type="text" id="horizonStart" value="2026-Q1">
+      <span>→</span>
+      <input type="text" id="horizonEnd" value="2028-Q4">
+      <button class="nav-btn" style="padding: 4px 10px; font-size: 11px;" onclick="applyHorizon()">Apply</button>
+    </div>
+  </div>
+
+  <!-- CANVAS -->
+  <div class="canvas">
+    <div class="canvas-inner" id="canvasInner"></div>
+  </div>
+
+  <!-- AI ANALYTICS PANEL -->
+  <div class="ai-panel" id="aiPanel"></div>
+
+</div>
+
+<script>
+// ============================================================
+// MOCK DATA — XDR Platform Vision
+// ============================================================
+// Hierarchy: Strategic Theme → Programs → Objectives → Solutions → Delivery Units
+// Each item has: id, name, parentId, owner, start, end, plus level-specific fields.
+
+const MOCK_DATA = {
+  strategic: [
+    { id: 'st1', name: 'XDR Platform Vision', owner: 'CPO', start: '2026-Q1', end: '2028-Q4',
+      description: 'Unified detection-and-response platform across endpoint, perimeter, identity and cloud.' }
+  ],
+  program: [
+    { id: 'pr1', parentId: 'st1', name: 'Perimeter Integration', owner: 'M. Kollár', start: '2026-Q1', end: '2027-Q2' },
+    { id: 'pr2', parentId: 'st1', name: 'Detection & Response Core', owner: 'TBD', start: '2026-Q2', end: '2028-Q2' },
+    { id: 'pr3', parentId: 'st1', name: 'Cloud Workload Protection', owner: 'J. Novák', start: '2026-Q3', end: '2028-Q1' }
+  ],
+  objective: [
+    { id: 'ob1', parentId: 'pr1', name: 'PaloAlto integration GA',     owner: 'M. Kollár',  start: '2026-Q1', end: '2026-Q3', confidence: 'High' },
+    { id: 'ob2', parentId: 'pr1', name: 'FortiGate integration GA',    owner: 'M. Kollár',  start: '2026-Q2', end: '2026-Q4', confidence: 'High' },
+    { id: 'ob3', parentId: 'pr1', name: 'Stormshield + Checkpoint',    owner: 'TBD',         start: '2026-Q4', end: '2027-Q2', confidence: 'Low' },
+    { id: 'ob4', parentId: 'pr2', name: 'EIC EOL transition',          owner: 'P. Horváth', start: '2026-Q2', end: '2027-Q1', confidence: 'High' },
+    { id: 'ob5', parentId: 'pr2', name: 'ITDR detection coverage',     owner: 'L. Krempa',  start: '2026-Q3', end: '2027-Q3', confidence: 'Medium' },
+    { id: 'ob6', parentId: 'pr2', name: 'Monetization model',          owner: 'TBD',         start: '2027-Q1', end: '2027-Q4', confidence: 'Low' },
+    { id: 'ob7', parentId: 'pr3', name: 'CSPM v1 GA',                  owner: 'J. Novák',   start: '2026-Q3', end: '2027-Q2', confidence: 'Medium' },
+    { id: 'ob8', parentId: 'pr3', name: 'CWP 2.0 platform readiness',  owner: 'J. Novák',   start: '2026-Q4', end: '2027-Q4', confidence: 'Medium' }
+  ],
+  solution: [
+    // PaloAlto integration (ob1)
+    { id: 'so1', parentId: 'ob1', name: 'Syslog ingestion to Kafka',   owner: 'Team Cerberus', start: '2026-Q1', end: '2026-Q2', confidence: 'High' },
+    { id: 'so2', parentId: 'ob1', name: 'Detection rule mapping',      owner: 'Team Cerberus', start: '2026-Q2', end: '2026-Q3', confidence: 'High' },
+    { id: 'so3', parentId: 'ob1', name: 'Web console UI',              owner: 'Team Stratus',  start: '2026-Q2', end: '2026-Q3', confidence: 'High' },
+    // FortiGate integration (ob2)
+    { id: 'so4', parentId: 'ob2', name: 'Connector & schema',          owner: 'Team Cerberus', start: '2026-Q2', end: '2026-Q3', confidence: 'High' },
+    { id: 'so5', parentId: 'ob2', name: 'Rule pack & calibration',     owner: 'Team Cerberus', start: '2026-Q3', end: '2026-Q4', confidence: 'Medium' },
+    // EIC EOL (ob4)
+    { id: 'so6', parentId: 'ob4', name: 'Connector chain',             owner: 'Team Ragnarok', start: '2026-Q2', end: '2026-Q3', confidence: 'High' },
+    { id: 'so7', parentId: 'ob4', name: 'Initial test rollout',        owner: 'Team Odin',     start: '2026-Q3', end: '2026-Q4', confidence: 'High' },
+    { id: 'so8', parentId: 'ob4', name: 'Heavy load testing',          owner: 'Team Valhalla', start: '2026-Q4', end: '2027-Q1', confidence: 'Medium' },
+    // ITDR (ob5)
+    { id: 'so9', parentId: 'ob5', name: 'AD inventory + Kerberos',     owner: 'Team Cerberus', start: '2026-Q3', end: '2027-Q1', confidence: 'Medium' },
+    { id: 'so10', parentId: 'ob5', name: 'Service account analytics',  owner: 'Team Stratus',  start: '2026-Q4', end: '2027-Q2', confidence: 'Medium' },
+    // CSPM (ob7)
+    { id: 'so11', parentId: 'ob7', name: 'AWS misconfig scanner',      owner: 'Team Dragons',  start: '2026-Q3', end: '2027-Q1', confidence: 'High' },
+    { id: 'so12', parentId: 'ob7', name: 'Azure + GCP coverage',       owner: 'Team Dragons',  start: '2027-Q1', end: '2027-Q2', confidence: 'Low' },
+    // CWP 2.0 (ob8)
+    { id: 'so13', parentId: 'ob8', name: 'VM agentless scanning',      owner: 'Team CWP',      start: '2026-Q4', end: '2027-Q2', confidence: 'Medium' },
+    { id: 'so14', parentId: 'ob8', name: 'Container runtime defense',  owner: 'Team CWP',      start: '2027-Q2', end: '2027-Q4', confidence: 'Low' }
+  ],
+  delivery: [
+    // Each Delivery Unit (Epic) is delivered within a single PI = single quarter.
+    // Syslog ingestion to Kafka (so1)
+    { id: 'du1',  parentId: 'so1', name: 'Kafka cluster provisioning',   team: 'Team Cerberus', fte: 1.5, start: '2026-Q1', end: '2026-Q1' },
+    { id: 'du2',  parentId: 'so1', name: 'Syslog parser library',         team: 'Team Cerberus', fte: 2.0, start: '2026-Q2', end: '2026-Q2' },
+    { id: 'du3',  parentId: 'so1', name: 'Backpressure & retry logic',    team: 'Team Cerberus', fte: 1.0, start: '2026-Q2', end: '2026-Q2' },
+    // Detection rule mapping (so2)
+    { id: 'du4',  parentId: 'so2', name: 'Rule taxonomy alignment',       team: 'Team Cerberus', fte: 1.5, start: '2026-Q2', end: '2026-Q2' },
+    { id: 'du5',  parentId: 'so2', name: 'False-positive calibration',    team: 'Team Cerberus', fte: 2.0, start: '2026-Q3', end: '2026-Q3' },
+    // Web console UI (so3)
+    { id: 'du6',  parentId: 'so3', name: 'Console widgets & filters',     team: 'Team Stratus',  fte: 3.0, start: '2026-Q2', end: '2026-Q2' },
+    { id: 'du7',  parentId: 'so3', name: 'API contract finalization',     team: 'Team Stratus',  fte: 1.5, start: '2026-Q3', end: '2026-Q3' },
+    // FortiGate connector (so4)
+    { id: 'du8',  parentId: 'so4', name: 'Connector adapter',             team: 'Team Cerberus', fte: 2.0, start: '2026-Q2', end: '2026-Q2' },
+    { id: 'du9',  parentId: 'so4', name: 'Config management UI',          team: 'Team Stratus',  fte: 1.5, start: '2026-Q3', end: '2026-Q3' },
+    // EIC connector chain (so6)
+    { id: 'du10', parentId: 'so6', name: 'EIC API wrapper',               team: 'Team Ragnarok', fte: 2.5, start: '2026-Q2', end: '2026-Q2' },
+    { id: 'du11', parentId: 'so6', name: 'Migration tooling',             team: 'Team Ragnarok', fte: 2.0, start: '2026-Q3', end: '2026-Q3' },
+    // CSPM AWS scanner (so11)
+    { id: 'du12', parentId: 'so11', name: 'IAM policy analyzer',          team: 'Team Dragons',  fte: 2.5, start: '2026-Q3', end: '2026-Q3' },
+    { id: 'du13', parentId: 'so11', name: 'S3/EC2 misconfig rules',       team: 'Team Dragons',  fte: 2.0, start: '2026-Q4', end: '2026-Q4' }
+  ],
+  // Stories live one level below Delivery Units. Each story = single sprint.
+  // PI85 = 2026-Q1, PI86 = 2026-Q2, PI87 = 2026-Q3, PI88 = 2026-Q4, ...
+  story: [
+    // du1: Kafka cluster provisioning (PI85 / 2026-Q1)
+    { id: 'st1',  parentId: 'du1', name: 'Provision Kafka brokers in DC1',  key: 'XDR-1024', assignee: 'A. Novák',     status: 'Done',         points: 5, sprint: 'PI85.1' },
+    { id: 'st2',  parentId: 'du1', name: 'Configure ZooKeeper ensemble',     key: 'XDR-1025', assignee: 'A. Novák',     status: 'In Progress',  points: 3, sprint: 'PI85.2' },
+    { id: 'st3',  parentId: 'du1', name: 'Replication & failover setup',     key: 'XDR-1026', assignee: 'P. Kollár',    status: 'To Do',        points: 5, sprint: 'PI85.3' },
+    { id: 'st4',  parentId: 'du1', name: 'Cluster monitoring dashboard',     key: 'XDR-1027', assignee: 'P. Kollár',    status: 'To Do',        points: 3, sprint: 'PI85.4' },
+    { id: 'st5',  parentId: 'du1', name: 'Security hardening & TLS',         key: 'XDR-1028', assignee: 'M. Kováč',     status: 'To Do',        points: 5, sprint: 'PI85.5' },
+    { id: 'st6',  parentId: 'du1', name: 'Production cutover',               key: 'XDR-1029', assignee: 'A. Novák',     status: 'To Do',        points: 2, sprint: 'PI85.6' },
+    // du2: Syslog parser library (PI86 / 2026-Q2)
+    { id: 'st7',  parentId: 'du2', name: 'Define syslog grammar',            key: 'XDR-1101', assignee: 'M. Kováč',     status: 'To Do',        points: 3, sprint: 'PI86.1' },
+    { id: 'st8',  parentId: 'du2', name: 'Implement RFC5424 parser',         key: 'XDR-1102', assignee: 'M. Kováč',     status: 'To Do',        points: 8, sprint: 'PI86.2' },
+    { id: 'st9',  parentId: 'du2', name: 'Implement RFC3164 parser',         key: 'XDR-1103', assignee: 'J. Lieskovský',status: 'To Do',        points: 5, sprint: 'PI86.3' },
+    { id: 'st10', parentId: 'du2', name: 'Add error handling',               key: 'XDR-1104', assignee: 'J. Lieskovský',status: 'To Do',        points: 3, sprint: 'PI86.4' },
+    // du6: Console widgets & filters (PI86 / 2026-Q2)
+    { id: 'st11', parentId: 'du6', name: 'Filter component spec',            key: 'XDR-1201', assignee: 'L. Krempa',    status: 'To Do',        points: 3, sprint: 'PI86.1' },
+    { id: 'st12', parentId: 'du6', name: 'Build filter UI components',       key: 'XDR-1202', assignee: 'L. Krempa',    status: 'To Do',        points: 8, sprint: 'PI86.2' },
+    { id: 'st13', parentId: 'du6', name: 'Wire to backend search API',       key: 'XDR-1203', assignee: 'T. Vavrek',    status: 'To Do',        points: 5, sprint: 'PI86.3' },
+    { id: 'st14', parentId: 'du6', name: 'E2E tests & accessibility audit',  key: 'XDR-1204', assignee: 'L. Krempa',    status: 'To Do',        points: 5, sprint: 'PI86.5' },
+    // du10: EIC API wrapper (PI86 / 2026-Q2)
+    { id: 'st15', parentId: 'du10', name: 'Reverse-engineer EIC API',        key: 'XDR-1301', assignee: 'P. Horváth',   status: 'In Progress',  points: 5, sprint: 'PI86.1' },
+    { id: 'st16', parentId: 'du10', name: 'Build wrapper layer',             key: 'XDR-1302', assignee: 'P. Horváth',   status: 'To Do',        points: 8, sprint: 'PI86.3' },
+    { id: 'st17', parentId: 'du10', name: 'Auth & token management',         key: 'XDR-1303', assignee: 'K. Šimko',     status: 'To Do',        points: 5, sprint: 'PI86.4' },
+    { id: 'st18', parentId: 'du10', name: 'Integration test suite',          key: 'XDR-1304', assignee: 'K. Šimko',     status: 'To Do',        points: 3, sprint: 'PI86.6' }
+  ]
+};
+
+const LEVELS = ['strategic', 'program', 'objective', 'solution', 'delivery', 'story'];
+const LEVEL_LABELS = {
+  strategic: 'Strategic Theme',
+  program:   'Programs',
+  objective: 'Objectives',
+  solution:  'Solutions',
+  delivery:  'Delivery Units',
+  story:     'Stories'
+};
+const LEVEL_DOT_COLORS = {
+  strategic: '#1a7f37',
+  program:   '#14b8a6',
+  objective: '#2563eb',
+  solution:  '#d97706',
+  delivery:  '#9333ea',
+  story:     '#ec4899'
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  // The currently displayed level (which level's items are shown as bars).
+  activeLevel: 'strategic',
+  // The "path" of selected ancestors. Drilling adds to this; clicking up pops it.
+  // Each entry: { level, id, name }
+  trail: [],
+  // The visible time horizon
+  horizonStart: '2026-Q1',
+  horizonEnd:   '2028-Q4',
+  // Currently-selected bar (for highlighting in analytics)
+  selectedId: null
+};
+
+// ============================================================
+// QUARTER MATH
+// ============================================================
+function parseQuarter(q) {
+  // "2026-Q1" -> {year: 2026, q: 1}
+  const m = q.match(/^(\d{4})-Q([1-4])$/);
+  if (!m) return null;
+  return { year: parseInt(m[1], 10), q: parseInt(m[2], 10) };
+}
+function quarterToIndex(q) {
+  const p = parseQuarter(q);
+  return p ? p.year * 4 + (p.q - 1) : 0;
+}
+function quarterLabel(q) {
+  const p = parseQuarter(q);
+  return p ? `Q${p.q}'${String(p.year).slice(2)}` : q;
+}
+function buildQuarterRange(start, end) {
+  const s = quarterToIndex(start);
+  const e = quarterToIndex(end);
+  const range = [];
+  for (let i = s; i <= e; i++) {
+    const year = Math.floor(i / 4);
+    const q = (i % 4) + 1;
+    range.push(`${year}-Q${q}`);
+  }
+  return range;
+}
+function clampToHorizon(start, end) {
+  const hs = quarterToIndex(state.horizonStart);
+  const he = quarterToIndex(state.horizonEnd);
+  let s = Math.max(quarterToIndex(start), hs);
+  let e = Math.min(quarterToIndex(end), he);
+  if (e < s) return null; // out of range
+  return { startIdx: s, endIdx: e };
+}
+
+// ============================================================
+// SPRINT MATH (for DU and Story levels)
+// ============================================================
+// Convention: 1 PI = 3 months ≈ 6 sprints (2-week cadence). PI85 starts 2026-Q1.
+// Sprint label format: "PI85.1" through "PI85.6", then "PI86.1"... etc.
+// PI number anchor: PI85 = 2026-Q1. Each PI spans one quarter.
+const PI_ANCHOR = { piNumber: 85, quarter: '2026-Q1' };
+const SPRINTS_PER_PI = 6;
+
+function parseSprint(s) {
+  // "PI85.3" -> { pi: 85, sprint: 3 }
+  const m = (s || '').match(/^PI(\d+)\.(\d+)$/);
+  if (!m) return null;
+  return { pi: parseInt(m[1], 10), sprint: parseInt(m[2], 10) };
+}
+function sprintToIndex(s) {
+  const p = parseSprint(s);
+  if (!p) return null;
+  return (p.pi - PI_ANCHOR.piNumber) * SPRINTS_PER_PI + (p.sprint - 1);
+}
+function sprintLabel(s) {
+  return s; // already short enough
+}
+function sprintToQuarter(s) {
+  // Map a sprint to its containing quarter, so we can clip to the visible horizon.
+  const p = parseSprint(s);
+  if (!p) return null;
+  const piOffset = p.pi - PI_ANCHOR.piNumber;
+  const anchor = parseQuarter(PI_ANCHOR.quarter);
+  const qIdx = anchor.year * 4 + (anchor.q - 1) + piOffset;
+  const year = Math.floor(qIdx / 4);
+  const q = (qIdx % 4) + 1;
+  return `${year}-Q${q}`;
+}
+function quarterFirstSprint(q) {
+  // First sprint that falls inside this quarter
+  const anchor = parseQuarter(PI_ANCHOR.quarter);
+  const targetQ = parseQuarter(q);
+  const piOffset = (targetQ.year - anchor.year) * 4 + (targetQ.q - anchor.q);
+  return `PI${PI_ANCHOR.piNumber + piOffset}.1`;
+}
+function buildSprintRange(startQ, endQ) {
+  // Build all sprints between two quarters (inclusive).
+  const startIdx = sprintToIndex(quarterFirstSprint(startQ));
+  // End quarter's last sprint
+  const endQuarterIdx = quarterToIndex(endQ);
+  const anchorQIdx = quarterToIndex(PI_ANCHOR.quarter);
+  const piOfEnd = PI_ANCHOR.piNumber + (endQuarterIdx - anchorQIdx);
+  const endIdx = sprintToIndex(`PI${piOfEnd}.${SPRINTS_PER_PI}`);
+  const out = [];
+  for (let i = startIdx; i <= endIdx; i++) {
+    const piOffset = Math.floor(i / SPRINTS_PER_PI);
+    const sprintNum = (i % SPRINTS_PER_PI) + 1;
+    out.push(`PI${PI_ANCHOR.piNumber + piOffset}.${sprintNum}`);
+  }
+  return out;
+}
+
+// Decide which time mode to use based on active level
+function useSprintMode() {
+  return state.activeLevel === 'delivery' || state.activeLevel === 'story';
+}
+
+// ============================================================
+// GETTERS
+// ============================================================
+function getItemsAtLevel(level) {
+  // Return items at this level, filtered by trail (so we only show descendants of selected ancestor).
+  const all = MOCK_DATA[level] || [];
+  if (state.trail.length === 0) return all;
+
+  // The trail tells us which ancestors are pinned.
+  // For an item to be visible, walk up its parent chain — at the trail's level, parent must match trail entry.
+  return all.filter(item => {
+    let cursor = item;
+    let cursorLevel = level;
+    while (cursorLevel !== 'strategic') {
+      const parentLevel = LEVELS[LEVELS.indexOf(cursorLevel) - 1];
+      const parent = MOCK_DATA[parentLevel].find(p => p.id === cursor.parentId);
+      if (!parent) return false;
+      // Check trail: if there's a trail entry at parent's level, parent.id must match.
+      const trailAtLevel = state.trail.find(t => t.level === parentLevel);
+      if (trailAtLevel && trailAtLevel.id !== parent.id) return false;
+      cursor = parent;
+      cursorLevel = parentLevel;
+    }
+    return true;
+  });
+}
+
+function hasChildren(item, level) {
+  const childLevel = LEVELS[LEVELS.indexOf(level) + 1];
+  if (!childLevel) return false;
+  return (MOCK_DATA[childLevel] || []).some(c => c.parentId === item.id);
+}
+
+// ============================================================
+// RENDERING — BREADCRUMB
+// ============================================================
+function renderBreadcrumb() {
+  const el = document.getElementById('breadcrumb');
+  const html = LEVELS.map((lvl, idx) => {
+    const trailEntry = state.trail.find(t => t.level === lvl);
+    const isActive = state.activeLevel === lvl;
+    const sep = idx > 0 ? '<span class="crumb-sep">›</span>' : '';
+
+    let label;
+    if (trailEntry) {
+      // We've drilled past this level — show the chosen item name
+      label = `${LEVEL_LABELS[lvl]}: ${trailEntry.name}`;
+    } else {
+      label = LEVEL_LABELS[lvl];
+    }
+
+    return `${sep}<div class="crumb ${isActive ? 'active' : ''}" onclick="goToLevel('${lvl}')">
+      <span class="crumb-dot" style="background:${LEVEL_DOT_COLORS[lvl]}"></span>${label}
+    </div>`;
+  }).join('');
+  el.innerHTML = html;
+}
+
+// ============================================================
+// RENDERING — TIMELINE
+// ============================================================
+// We support two time modes:
+//  - quarter mode (default for higher levels): bucket = quarter, item.start/end are quarters.
+//  - sprint mode (delivery + story levels): buckets are sprints inside the visible quarters.
+//    Stories use item.sprint (single sprint). Delivery Units (Epics) still use start/end quarters
+//    but also a primary sprint when imported from CSV.
+
+function getBuckets() {
+  const quarters = buildQuarterRange(state.horizonStart, state.horizonEnd);
+  if (useSprintMode()) {
+    return buildSprintRange(state.horizonStart, state.horizonEnd);
+  }
+  return quarters;
+}
+
+// Convert an item's range to {leftPct, widthPct} in the current bucket system
+function itemPosition(item, totalBuckets) {
+  if (useSprintMode()) {
+    // Story: single sprint
+    if (item.sprint) {
+      const idx = sprintToIndex(item.sprint);
+      const horizonFirstSprint = sprintToIndex(quarterFirstSprint(state.horizonStart));
+      const offset = idx - horizonFirstSprint;
+      if (offset < 0 || offset >= totalBuckets) return null;
+      return { leftPct: (offset / totalBuckets) * 100, widthPct: (1 / totalBuckets) * 100 };
+    }
+    // Epic / DU with quarter-based start/end — convert to sprint span
+    if (item.start && item.end) {
+      const startSprint = sprintToIndex(quarterFirstSprint(item.start));
+      const endQuarterIdx = quarterToIndex(item.end);
+      const anchorQIdx = quarterToIndex(PI_ANCHOR.quarter);
+      const piOfEnd = PI_ANCHOR.piNumber + (endQuarterIdx - anchorQIdx);
+      const endSprint = sprintToIndex(`PI${piOfEnd}.${SPRINTS_PER_PI}`);
+      const horizonFirstSprint = sprintToIndex(quarterFirstSprint(state.horizonStart));
+      const offset = Math.max(0, startSprint - horizonFirstSprint);
+      const span = Math.min(totalBuckets - offset, endSprint - startSprint + 1);
+      if (span <= 0) return null;
+      return { leftPct: (offset / totalBuckets) * 100, widthPct: (span / totalBuckets) * 100 };
+    }
+    return null;
+  }
+  // Quarter mode
+  const range = clampToHorizon(item.start, item.end);
+  if (!range) return null;
+  const horizonStartIdx = quarterToIndex(state.horizonStart);
+  const horizonEndIdx = quarterToIndex(state.horizonEnd);
+  const totalSpan = horizonEndIdx - horizonStartIdx + 1;
+  const offsetStart = range.startIdx - horizonStartIdx;
+  const span = range.endIdx - range.startIdx + 1;
+  return { leftPct: (offsetStart / totalSpan) * 100, widthPct: (span / totalSpan) * 100 };
+}
+
+function bucketLabel(b) {
+  if (useSprintMode()) return b; // already short
+  return quarterLabel(b);
+}
+
+function renderTimeline() {
+  const items = getItemsAtLevel(state.activeLevel);
+  const buckets = getBuckets();
+  const canvas = document.getElementById('canvasInner');
+
+  if (items.length === 0) {
+    canvas.innerHTML = `
+      <div class="empty">
+        <h3>No items at this level</h3>
+        <p>This combination of trail and active level produces no data. Try adjusting the breadcrumb or horizon.</p>
+        ${state.activeLevel === 'story' ? '<p style="margin-top:8px;">Tip: Stories live under Delivery Units. Drill into a Delivery Unit to see its Stories — or import a JIRA CSV to populate this level.</p>' : ''}
+      </div>`;
+    return;
+  }
+
+  const labelColWidth = 240;
+  const trackTpl = `${labelColWidth}px repeat(${buckets.length}, 1fr)`;
+
+  // ---- 1. Context banner (parent chain summary) ----
+  let html = '';
+  if (state.trail.length > 0) {
+    const chips = state.trail.map(t => `
+      <span class="context-chip">
+        <span class="crumb-dot" style="background:${LEVEL_DOT_COLORS[t.level]};"></span>
+        <span style="color:var(--text3); font-size:11px;">${LEVEL_LABELS[t.level].replace(/s$/, '')}:</span>
+        <strong style="font-weight:500; color:var(--text);">${t.name}</strong>
+      </span>
+    `).join('<span class="context-arrow">›</span>');
+
+    html += `
+      <div class="context-banner">
+        <span class="context-banner-label">Showing ${LEVEL_LABELS[state.activeLevel]} that fulfill</span>
+        ${chips}
+      </div>
+    `;
+  }
+
+  // Time mode hint
+  if (useSprintMode()) {
+    html += `<div style="font-size:11px; color:var(--text3); margin-bottom:8px;">⏱ Sprint timeline · 1 PI = ${SPRINTS_PER_PI} sprints · anchor ${PI_ANCHOR.quarter} = PI${PI_ANCHOR.piNumber}</div>`;
+  }
+
+  // ---- 2. Timeline header ----
+  html += `
+    <div class="timeline-header" style="grid-template-columns: ${trackTpl};">
+      <div class="tl-label-col">${LEVEL_LABELS[state.activeLevel]}</div>
+      ${buckets.map(b => `<div class="tl-bucket">${bucketLabel(b)}</div>`).join('')}
+    </div>
+  `;
+
+  // ---- 3. Ghost rows for parent chain (context) ----
+  if (state.trail.length > 0) {
+    html += `<div class="tl-section-label">Parent context</div>`;
+    state.trail.forEach(trailEntry => {
+      const parentItem = (MOCK_DATA[trailEntry.level] || []).find(i => i.id === trailEntry.id);
+      if (!parentItem) return;
+      const pos = itemPosition(parentItem, buckets.length);
+      if (!pos) return;
+
+      const meta = parentItem.team || parentItem.owner || '';
+      html += `
+        <div class="tl-row ghost" style="grid-template-columns: ${trackTpl};">
+          <div class="tl-label">
+            <span class="ghost-tag">${LEVEL_LABELS[trailEntry.level].replace(/s$/, '')}</span>
+            <span class="crumb-dot" style="background:${LEVEL_DOT_COLORS[trailEntry.level]}; flex-shrink:0; opacity:0.7;"></span>
+            <span class="tl-label-text" title="${parentItem.name}">${parentItem.name}</span>
+            <span class="tl-label-meta">${meta}</span>
+          </div>
+          <div class="tl-track" style="grid-column: 2 / -1; --bucket-count: ${buckets.length};">
+            <div class="bar ${trailEntry.level}"
+                 style="left: ${pos.leftPct}%; width: ${pos.widthPct}%;"
+                 onclick="goToLevel('${trailEntry.level}')"
+                 title="Click to jump back to ${LEVEL_LABELS[trailEntry.level]} view">
+              ${parentItem.name}
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    html += `<div class="tl-section-label">${LEVEL_LABELS[state.activeLevel]} (current view)</div>`;
+  }
+
+  // ---- 4. Active level rows ----
+  items.forEach(item => {
+    const pos = itemPosition(item, buckets.length);
+    if (!pos) return;
+
+    const childCount = (MOCK_DATA[LEVELS[LEVELS.indexOf(state.activeLevel)+1]] || []).filter(c => c.parentId === item.id).length;
+    const hasKids = hasChildren(item, state.activeLevel);
+
+    // Build label metadata depending on level
+    let meta = '';
+    if (state.activeLevel === 'story') {
+      const parts = [];
+      if (item.key) parts.push(item.key);
+      if (item.points) parts.push(`${item.points} SP`);
+      if (item.assignee) parts.push(item.assignee);
+      if (item.status) parts.push(item.status);
+      meta = parts.join(' · ');
+    } else {
+      meta = item.team || item.owner || '';
+      if (item.imported) meta = `📥 ${meta}`;
+    }
+
+    html += `
+      <div class="tl-row" style="grid-template-columns: ${trackTpl};">
+        <div class="tl-label">
+          <span class="crumb-dot" style="background:${LEVEL_DOT_COLORS[state.activeLevel]}; flex-shrink:0;"></span>
+          <span class="tl-label-text">${item.name}</span>
+          <span class="tl-label-meta">${meta}</span>
+        </div>
+        <div class="tl-track" style="grid-column: 2 / -1; --bucket-count: ${buckets.length};">
+          <div class="bar ${state.activeLevel} ${hasKids ? 'has-children' : ''} ${state.selectedId === item.id ? 'selected' : ''}"
+               style="left: ${pos.leftPct}%; width: ${pos.widthPct}%;"
+               onclick="onBarClick('${item.id}')"
+               title="${item.name}${hasKids ? ' · click to drill in' : ''}">
+            ${item.name}${hasKids ? ` · ${childCount}` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  canvas.innerHTML = html;
+}
+
+// ============================================================
+// RENDERING — AI ANALYTICS PANEL
+// ============================================================
+function renderAnalytics() {
+  const items = getItemsAtLevel(state.activeLevel);
+  const panel = document.getElementById('aiPanel');
+  const lvl = state.activeLevel;
+
+  // Compute metrics
+  const total = items.length;
+  const owned = items.filter(i => i.owner && i.owner !== 'TBD').length;
+  const ownedPct = total ? Math.round((owned / total) * 100) : 0;
+  const lowConf = items.filter(i => i.confidence === 'Low').length;
+  const totalFTE = items.reduce((s, i) => s + (i.fte || 0), 0);
+
+  // For team load: only meaningful at delivery level
+  const teamLoad = {};
+  if (lvl === 'delivery') {
+    items.forEach(i => {
+      const t = i.team || 'Unknown';
+      teamLoad[t] = (teamLoad[t] || 0) + (i.fte || 0);
+    });
+  }
+  const overloadedTeam = Object.entries(teamLoad).sort((a,b) => b[1]-a[1])[0];
+
+  // Build cards
+  let cardsHtml = '';
+  cardsHtml += statCard('Items at this level', total, `Across ${state.trail.length === 0 ? 'whole roadmap' : 'selected trail'}`);
+
+  if (lvl !== 'delivery' && lvl !== 'strategic') {
+    cardsHtml += statCard('Confidence (Low)', lowConf, total ? `${Math.round(lowConf/total*100)}% of items` : '—');
+  }
+
+  if (lvl !== 'delivery') {
+    cardsHtml += statCard('Owned', `${ownedPct}%`, `${owned} of ${total} have a named owner`);
+  }
+
+  if (lvl === 'delivery') {
+    cardsHtml += statCard('Total FTE', totalFTE.toFixed(1), `${Object.keys(teamLoad).length} team(s) involved`);
+    if (overloadedTeam) {
+      cardsHtml += statCard('Heaviest team', overloadedTeam[0], `${overloadedTeam[1].toFixed(1)} FTE allocated`);
+    }
+  }
+
+  // Build insights (rule-based for MVP — easy to swap for real LLM call later)
+  const insights = generateInsights(items, lvl, teamLoad);
+  let insightsHtml = '';
+  if (insights.length > 0) {
+    insightsHtml = '<div class="insights">' + insights.map(i => `
+      <div class="insight ${i.severity}">
+        <div class="insight-icon">${{risk:'!',warn:'?',info:'i',ok:'✓'}[i.severity]}</div>
+        <div class="insight-text">${i.text}</div>
+      </div>
+    `).join('') + '</div>';
+  }
+
+  panel.innerHTML = `
+    <div class="ai-header">
+      <div>
+        <div class="ai-title">AI analytics — ${LEVEL_LABELS[lvl]} view</div>
+        <div class="ai-subtitle">${state.trail.length > 0 ? `Filtered by: ${state.trail.map(t=>t.name).join(' › ')}` : 'Whole roadmap'}</div>
+      </div>
+    </div>
+    <div class="ai-grid">${cardsHtml}</div>
+    ${insightsHtml}
+  `;
+}
+
+function statCard(label, value, detail) {
+  return `<div class="ai-card">
+    <div class="ai-card-label">${label}</div>
+    <div class="ai-card-value">${value}</div>
+    <div class="ai-card-detail">${detail || ''}</div>
+  </div>`;
+}
+
+function generateInsights(items, level, teamLoad) {
+  const out = [];
+
+  // No data
+  if (items.length === 0) {
+    out.push({ severity: 'info', text: 'No items at this level for the current trail. Try drilling differently.' });
+    return out;
+  }
+
+  // Ownership gap
+  const tbd = items.filter(i => !i.owner || i.owner === 'TBD');
+  if (tbd.length > 0) {
+    out.push({
+      severity: 'risk',
+      text: `<strong>${tbd.length} item${tbd.length>1?'s':''} without owner</strong>: ${tbd.slice(0,3).map(i=>i.name).join(', ')}${tbd.length>3?'…':''}. Ownership gap = blocker for PI Planning.`
+    });
+  }
+
+  // Confidence cluster
+  const low = items.filter(i => i.confidence === 'Low');
+  if (low.length >= 2) {
+    out.push({
+      severity: 'warn',
+      text: `<strong>${low.length} Low-confidence items</strong> at this level. Suggests planning fog: ${low.slice(0,3).map(i=>i.name).join(', ')}${low.length>3?'…':''}.`
+    });
+  }
+
+  // Team overload (delivery level)
+  if (level === 'delivery') {
+    const overloaded = Object.entries(teamLoad).filter(([t, fte]) => fte >= 5);
+    overloaded.forEach(([team, fte]) => {
+      out.push({
+        severity: 'risk',
+        text: `<strong>${team}</strong> carries <strong>${fte.toFixed(1)} FTE</strong> in this view — capacity check needed before commitment.`
+      });
+    });
+  }
+
+  // Long-running solutions/objectives (likely not finishing in horizon)
+  const longRunning = items.filter(i => {
+    const span = quarterToIndex(i.end) - quarterToIndex(i.start);
+    return span >= 5;
+  });
+  if (longRunning.length > 0 && level !== 'strategic') {
+    out.push({
+      severity: 'info',
+      text: `<strong>${longRunning.length} multi-year item${longRunning.length>1?'s':''}</strong>: ${longRunning.slice(0,2).map(i=>i.name).join(', ')}. Consider breaking into shorter increments.`
+    });
+  }
+
+  // Concentration (one parent has too many children)
+  if (level !== 'strategic') {
+    const parentCounts = {};
+    items.forEach(i => {
+      parentCounts[i.parentId] = (parentCounts[i.parentId] || 0) + 1;
+    });
+    const heavy = Object.entries(parentCounts).filter(([_, n]) => n >= 4);
+    if (heavy.length > 0) {
+      const parentLevel = LEVELS[LEVELS.indexOf(level) - 1];
+      heavy.forEach(([pid, n]) => {
+        const parent = MOCK_DATA[parentLevel].find(p => p.id === pid);
+        if (parent) {
+          out.push({
+            severity: 'warn',
+            text: `<strong>${parent.name}</strong> spawns ${n} items at ${LEVEL_LABELS[level]} level — concentrated complexity worth tracking.`
+          });
+        }
+      });
+    }
+  }
+
+  // Positive signal if all good
+  if (out.length === 0) {
+    out.push({ severity: 'ok', text: `All ${items.length} items at this level have owners and acceptable confidence. No flags raised.` });
+  }
+
+  return out;
+}
+
+// ============================================================
+// INTERACTIONS
+// ============================================================
+function onBarClick(itemId) {
+  const item = (MOCK_DATA[state.activeLevel] || []).find(i => i.id === itemId);
+  if (!item) return;
+
+  // If item has children, drill in
+  if (hasChildren(item, state.activeLevel)) {
+    // Add this level to trail
+    state.trail = state.trail.filter(t => LEVELS.indexOf(t.level) < LEVELS.indexOf(state.activeLevel));
+    state.trail.push({ level: state.activeLevel, id: item.id, name: item.name });
+    state.activeLevel = LEVELS[LEVELS.indexOf(state.activeLevel) + 1];
+    state.selectedId = null;
+
+    // Auto-shrink horizon to item's range when drilling deeper
+    const newStart = item.start;
+    const newEnd = item.end;
+    state.horizonStart = newStart;
+    state.horizonEnd = newEnd;
+    document.getElementById('horizonStart').value = newStart;
+    document.getElementById('horizonEnd').value = newEnd;
+
+    renderAll();
+  } else {
+    // Leaf — just toggle selection
+    state.selectedId = (state.selectedId === itemId) ? null : itemId;
+    renderTimeline();
+  }
+}
+
+function goToLevel(level) {
+  // Clicking a breadcrumb: jump to that level. Trail is preserved up to that level.
+  state.activeLevel = level;
+  state.trail = state.trail.filter(t => LEVELS.indexOf(t.level) < LEVELS.indexOf(level));
+  state.selectedId = null;
+
+  // Reset horizon to default for top level
+  if (level === 'strategic') {
+    state.horizonStart = '2026-Q1';
+    state.horizonEnd = '2028-Q4';
+    document.getElementById('horizonStart').value = '2026-Q1';
+    document.getElementById('horizonEnd').value = '2028-Q4';
+  }
+
+  renderAll();
+}
+
+function applyHorizon() {
+  const s = document.getElementById('horizonStart').value;
+  const e = document.getElementById('horizonEnd').value;
+  if (!parseQuarter(s) || !parseQuarter(e)) {
+    alert('Use format YYYY-QN, e.g. 2026-Q3');
+    return;
+  }
+  if (quarterToIndex(s) > quarterToIndex(e)) {
+    alert('Start must be before end.');
+    return;
+  }
+  state.horizonStart = s;
+  state.horizonEnd = e;
+  renderAll();
+}
+
+function resetView() {
+  state.activeLevel = 'strategic';
+  state.trail = [];
+  state.selectedId = null;
+  state.horizonStart = '2026-Q1';
+  state.horizonEnd = '2028-Q4';
+  document.getElementById('horizonStart').value = '2026-Q1';
+  document.getElementById('horizonEnd').value = '2028-Q4';
+  renderAll();
+}
+
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
+  document.getElementById('themeBtn').textContent = isDark ? '🌙 Dark' : '☀️ Light';
+}
+
+// ============================================================
+// CSV IMPORT (Epics + Stories — only affects delivery and story levels)
+// ============================================================
+function parseCSV(text) {
+  // Minimal CSV parser handling quoted fields and commas inside quotes.
+  const rows = [];
+  const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+  for (const line of lines) {
+    const cells = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"' && line[i+1] === '"') { cur += '"'; i++; continue; }
+      if (ch === '"') { inQ = !inQ; continue; }
+      if (ch === ',' && !inQ) { cells.push(cur); cur = ''; continue; }
+      cur += ch;
+    }
+    cells.push(cur);
+    rows.push(cells.map(c => c.trim()));
+  }
+  if (rows.length < 2) return { headers: [], rows: [] };
+  return { headers: rows[0].map(h => h.toLowerCase()), rows: rows.slice(1) };
+}
+
+function findCol(headers, candidates) {
+  // Find the first matching column index (case-insensitive, candidates are lowercased)
+  for (const c of candidates) {
+    const idx = headers.indexOf(c);
+    if (idx !== -1) return idx;
+  }
+  return -1;
+}
+
+function handleCsvImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const { headers, rows } = parseCSV(e.target.result);
+      if (headers.length === 0) {
+        alert('CSV looks empty.');
+        return;
+      }
+
+      // Try to map common JIRA-style columns. Be forgiving on naming.
+      const idx = {
+        type:    findCol(headers, ['issue type', 'type', 'issuetype']),
+        key:     findCol(headers, ['issue key', 'key', 'issuekey']),
+        summary: findCol(headers, ['summary', 'name', 'title']),
+        parent:  findCol(headers, ['parent epic', 'epic link', 'parent', 'parent key']),
+        assignee:findCol(headers, ['assignee', 'owner', 'assigned to']),
+        status:  findCol(headers, ['status']),
+        points:  findCol(headers, ['story points', 'points', 'sp']),
+        sprint:  findCol(headers, ['sprint', 'iteration']),
+        start:   findCol(headers, ['start date', 'start']),
+        end:     findCol(headers, ['end date', 'end', 'due date'])
+      };
+
+      if (idx.type === -1 || idx.summary === -1) {
+        alert('CSV must include at least: Issue Type and Summary columns.\n\nFound columns: ' + headers.join(', '));
+        return;
+      }
+
+      // Build new Epic (delivery) and Story rows
+      const newEpics = [];
+      const newStories = [];
+      let epicCount = 0, storyCount = 0, skipped = 0;
+
+      // First pass: build Epics, keyed by JIRA key for parent lookup
+      const epicByKey = {};
+      rows.forEach(r => {
+        const type = (r[idx.type] || '').toLowerCase();
+        if (type !== 'epic') return;
+        const key = idx.key !== -1 ? r[idx.key] : `EPIC-${++epicCount}`;
+        const sprint = idx.sprint !== -1 ? r[idx.sprint] : '';
+        const startQ = sprint ? sprintToQuarter(sprint) : '2026-Q1';
+        const endQ = startQ; // default to single quarter unless start/end given
+        const id = `csv_du_${key.replace(/[^a-z0-9]/gi, '_')}`;
+        const epic = {
+          id,
+          parentId: null, // user can re-link later; for now epics import as orphans
+          name: r[idx.summary] || '(no summary)',
+          team: idx.assignee !== -1 ? (r[idx.assignee] || 'Unknown') : 'Unknown',
+          fte: 0, // unknown from CSV
+          start: startQ,
+          end: endQ,
+          jiraKey: key,
+          status: idx.status !== -1 ? r[idx.status] : '',
+          imported: true
+        };
+        newEpics.push(epic);
+        epicByKey[key] = id;
+        epicCount++;
+      });
+
+      // Second pass: build Stories, link to Epics by parent key
+      rows.forEach(r => {
+        const type = (r[idx.type] || '').toLowerCase();
+        if (type !== 'story') return;
+        const parentKey = idx.parent !== -1 ? r[idx.parent] : '';
+        const parentId = epicByKey[parentKey];
+        if (!parentId) { skipped++; return; }
+        const id = `csv_st_${(r[idx.key] || `S${storyCount}`).replace(/[^a-z0-9]/gi, '_')}`;
+        newStories.push({
+          id,
+          parentId,
+          name: r[idx.summary] || '(no summary)',
+          key: idx.key !== -1 ? r[idx.key] : '',
+          assignee: idx.assignee !== -1 ? r[idx.assignee] : '',
+          status: idx.status !== -1 ? r[idx.status] : '',
+          points: idx.points !== -1 ? parseInt(r[idx.points], 10) || 0 : 0,
+          sprint: idx.sprint !== -1 ? r[idx.sprint] : '',
+          imported: true
+        });
+        storyCount++;
+      });
+
+      // Append to MOCK_DATA — keep existing seed data
+      MOCK_DATA.delivery = MOCK_DATA.delivery.concat(newEpics);
+      MOCK_DATA.story = MOCK_DATA.story.concat(newStories);
+
+      // Clear the file input so re-importing same file works
+      document.getElementById('csvFileInput').value = '';
+
+      alert(
+        `✓ Import complete\n\n` +
+        `Epics imported as Delivery Units: ${newEpics.length}\n` +
+        `Stories linked under Epics: ${newStories.length}\n` +
+        (skipped > 0 ? `Stories skipped (no matching Epic): ${skipped}\n` : '') +
+        `\nNote: imported Epics are orphans (no Solution parent yet). To link them, drill to a Solution and we'll add a re-parent UI in v2. For now, jump directly to Delivery Units level via the breadcrumb to see them.`
+      );
+
+      // Auto-jump to Delivery Units level so user sees the imported data
+      goToLevel('delivery');
+    } catch (err) {
+      alert('CSV parse failed: ' + err.message);
+      console.error(err);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function renderAll() {
+  renderBreadcrumb();
+  renderTimeline();
+  renderAnalytics();
+}
+renderAll();
+</script>
+</body>
+</html>
