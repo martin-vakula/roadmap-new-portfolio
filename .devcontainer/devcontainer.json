@@ -1,0 +1,20 @@
+{
+  "name": "Roadmap Portfolio",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:18",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Dev Server",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "postCreateCommand": "npm install --save-dev serve",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ritwickdey.LiveServer",
+        "ms-vscode.live-server"
+      ]
+    }
+  }
+}
