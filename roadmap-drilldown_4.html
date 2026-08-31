@@ -394,6 +394,117 @@
   .canvas::-webkit-scrollbar-thumb, .ai-panel::-webkit-scrollbar-thumb {
     background: var(--border-strong); border-radius: 4px;
   }
+
+  /* ROW ACTIONS (edit/delete icons + dependency badge) */
+  .row-actions { display: flex; align-items: center; gap: 2px; margin-left: 8px; flex-shrink: 0; }
+  .row-icon-btn {
+    background: none; border: none; cursor: pointer; font-size: 12px;
+    color: var(--text3); padding: 3px 5px; border-radius: 5px; line-height: 1;
+    font-family: inherit;
+  }
+  .row-icon-btn:hover { background: var(--bg3); color: var(--text); }
+  .dep-badge {
+    font-size: 10px; color: var(--text3); background: var(--bg3);
+    padding: 1px 6px; border-radius: 8px; margin-left: 6px; flex-shrink: 0;
+  }
+  .add-item-btn {
+    font-size: 11px; padding: 3px 10px; border-radius: 12px;
+    background: var(--accent-light); color: var(--accent); border: none;
+    cursor: pointer; font-family: inherit; font-weight: 500; margin-left: 8px;
+  }
+  .add-item-btn:hover { filter: brightness(0.95); }
+
+  /* ACTOR INPUT */
+  .actor-control { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text3); }
+  .actor-control input {
+    background: var(--bg2); border: 0.5px solid var(--border); border-radius: 6px;
+    padding: 4px 8px; font-size: 12px; color: var(--text); font-family: inherit; width: 110px;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+    display: flex; align-items: center; justify-content: center; z-index: 100;
+  }
+  .modal-overlay[hidden] { display: none; }
+  .modal-box {
+    background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+    width: 480px; max-width: calc(100vw - 40px); max-height: calc(100vh - 60px);
+    overflow-y: auto; padding: 20px 22px;
+  }
+  .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .modal-subtitle { font-size: 12px; color: var(--text3); margin-bottom: 16px; }
+  .modal-field { margin-bottom: 12px; }
+  .modal-field label {
+    display: block; font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--text3); margin-bottom: 5px;
+  }
+  .modal-field input[type=text], .modal-field input[type=number],
+  .modal-field select, .modal-field textarea {
+    width: 100%; background: var(--bg2); border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius-sm); padding: 7px 10px; font-size: 13px;
+    color: var(--text); font-family: inherit;
+  }
+  .modal-field textarea { resize: vertical; min-height: 50px; }
+  .modal-row { display: flex; gap: 10px; }
+  .modal-row .modal-field { flex: 1; }
+  .modal-deps {
+    display: flex; flex-direction: column; gap: 4px; max-height: 120px;
+    overflow-y: auto; border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+    padding: 8px; background: var(--bg2);
+  }
+  .modal-deps label {
+    display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 400;
+    text-transform: none; letter-spacing: 0; color: var(--text2); margin: 0;
+  }
+  .modal-deps-empty { font-size: 12px; color: var(--text3); }
+  .modal-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; gap: 8px; }
+  .modal-btn {
+    font-size: 13px; padding: 7px 16px; border-radius: 16px; cursor: pointer;
+    font-family: inherit; font-weight: 500; border: none;
+  }
+  .modal-btn.primary { background: var(--accent); color: white; }
+  .modal-btn.secondary { background: var(--bg2); color: var(--text2); }
+  .modal-btn.danger { background: #fdecea; color: #c0392b; }
+  [data-theme="dark"] .modal-btn.danger { background: #2a1010; color: #ff6b5b; }
+
+  /* PANEL TABS */
+  .panel-tabs { display: flex; gap: 4px; }
+  .panel-tab {
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+    padding: 5px 12px; border-radius: 12px; cursor: pointer; border: none;
+    background: none; color: var(--text3); font-family: inherit;
+  }
+  .panel-tab.active { background: var(--accent-light); color: var(--accent); }
+  .panel-tab .log-count {
+    background: var(--bg3); color: var(--text2); border-radius: 8px;
+    padding: 0 5px; font-size: 10px; margin-left: 4px;
+  }
+
+  /* ACTIVITY LOG */
+  .log-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .log-toolbar input {
+    flex: 1; background: var(--bg2); border: 0.5px solid var(--border); border-radius: 6px;
+    padding: 5px 10px; font-size: 12px; color: var(--text); font-family: inherit;
+  }
+  .log-list { display: flex; flex-direction: column; gap: 6px; }
+  .log-row {
+    display: flex; align-items: baseline; gap: 8px; padding: 8px 12px;
+    background: var(--bg2); border-radius: var(--radius-sm); font-size: 12px;
+  }
+  .log-action-tag {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+    padding: 1px 7px; border-radius: 8px; flex-shrink: 0; color: white;
+  }
+  .log-action-tag.create { background: #1a7f37; }
+  .log-action-tag.update { background: #2563eb; }
+  .log-action-tag.delete { background: #c0392b; }
+  .log-action-tag.import { background: #9333ea; }
+  .log-action-tag.reset  { background: #6e6e73; }
+  .log-time { color: var(--text3); flex-shrink: 0; width: 80px; }
+  .log-actor { color: var(--text2); font-weight: 500; flex-shrink: 0; }
+  .log-detail { color: var(--text2); flex: 1; min-width: 0; }
+  .log-empty { padding: 40px 20px; text-align: center; color: var(--text3); font-size: 13px; }
 </style>
 </head>
 <body>
@@ -407,7 +518,12 @@
     <div class="nav-spacer"></div>
     <button class="nav-btn" onclick="document.getElementById('csvFileInput').click()" title="Import Epics + Stories CSV (only adds to Delivery Units / Stories levels)">📥 Import Epics+Stories CSV</button>
     <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="handleCsvImport(event)">
+    <div class="actor-control" title="Attributed as the actor on every change you make — this is a client-side POC stand-in for real login">
+      <span>Acting as:</span>
+      <input type="text" id="actorInput" value="" onchange="setActorName(this.value)">
+    </div>
     <button class="nav-btn" onclick="resetView()">↺ Reset view</button>
+    <button class="nav-btn" onclick="resetData()" title="Discard all edits and reload the original seed data">⚠ Reset data</button>
     <button class="nav-btn" onclick="toggleTheme()" id="themeBtn">🌙 Dark</button>
   </nav>
 
@@ -429,9 +545,14 @@
     <div class="canvas-inner" id="canvasInner"></div>
   </div>
 
-  <!-- AI ANALYTICS PANEL -->
+  <!-- BOTTOM PANEL: AI ANALYTICS / ACTIVITY LOG -->
   <div class="ai-panel" id="aiPanel"></div>
 
+</div>
+
+<!-- EDIT / CREATE MODAL -->
+<div class="modal-overlay" id="modalOverlay" hidden onclick="if(event.target===this) closeModal()">
+  <div class="modal-box" id="modalBox"></div>
 </div>
 
 <script>
@@ -441,7 +562,7 @@
 // Hierarchy: Strategic Theme → Programs → Objectives → Solutions → Delivery Units
 // Each item has: id, name, parentId, owner, start, end, plus level-specific fields.
 
-const MOCK_DATA = {
+const SEED_DATA = {
   strategic: [
     { id: 'st1', name: 'XDR Platform Vision', owner: 'CPO', start: '2026-Q1', end: '2028-Q4',
       description: 'Unified detection-and-response platform across endpoint, perimeter, identity and cloud.' }
@@ -533,6 +654,58 @@ const MOCK_DATA = {
   ]
 };
 
+// ============================================================
+// PERSISTENCE — POC uses localStorage as a stand-in for a backend.
+// SEED_DATA above is the original Jira-import baseline; DATA is the
+// live, editable copy. "Reset to seed data" wipes edits back to SEED_DATA.
+// ============================================================
+const STORAGE_DATA_KEY  = 'roadmap_poc_data_v1';
+const STORAGE_LOG_KEY   = 'roadmap_poc_log_v1';
+const STORAGE_ACTOR_KEY = 'roadmap_poc_actor_v1';
+
+function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
+
+function loadStoredData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_DATA_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+function saveStoredData() {
+  try { localStorage.setItem(STORAGE_DATA_KEY, JSON.stringify(DATA)); } catch (e) { /* storage unavailable — edits stay in-memory only */ }
+}
+
+let DATA = loadStoredData() || deepClone(SEED_DATA);
+
+let ACTIVITY_LOG = [];
+try {
+  const rawLog = localStorage.getItem(STORAGE_LOG_KEY);
+  ACTIVITY_LOG = rawLog ? JSON.parse(rawLog) : [];
+} catch (e) { ACTIVITY_LOG = []; }
+function saveStoredLog() {
+  try { localStorage.setItem(STORAGE_LOG_KEY, JSON.stringify(ACTIVITY_LOG)); } catch (e) {}
+}
+
+let actorName = (() => {
+  try { return localStorage.getItem(STORAGE_ACTOR_KEY) || 'You'; } catch (e) { return 'You'; }
+})();
+
+// Every mutation (create/update/delete/import/reset) goes through here so the
+// Activity Log panel reflects exactly what changed, by whom, and when.
+function logAction(action, level, item, detail) {
+  ACTIVITY_LOG.unshift({
+    ts: new Date().toISOString(),
+    actor: actorName,
+    action,                      // 'create' | 'update' | 'delete' | 'import' | 'reset'
+    level: level || null,
+    itemId: item ? item.id : null,
+    itemName: item ? item.name : (detail && detail.name) || '',
+    detail: detail || {}
+  });
+  if (ACTIVITY_LOG.length > 1000) ACTIVITY_LOG.length = 1000;
+  saveStoredLog();
+}
+
 const LEVELS = ['strategic', 'program', 'objective', 'solution', 'delivery', 'story'];
 const LEVEL_LABELS = {
   strategic: 'Strategic Theme',
@@ -552,6 +725,62 @@ const LEVEL_DOT_COLORS = {
 };
 
 // ============================================================
+// FIELD DEFINITIONS — drives the create/edit modal per level.
+// This is what would become "cascaded by their own requirements" —
+// a portfolio owner could swap this config (and LEVELS/LEVEL_LABELS
+// above) to reshape the whole hierarchy without touching render code.
+// ============================================================
+const FIELD_DEFS = {
+  strategic: [
+    { key: 'name', label: 'Name', type: 'text', required: true },
+    { key: 'owner', label: 'Owner', type: 'text' },
+    { key: 'start', label: 'Start (YYYY-QN)', type: 'text' },
+    { key: 'end', label: 'End (YYYY-QN)', type: 'text' },
+    { key: 'description', label: 'Description', type: 'textarea' }
+  ],
+  program: [
+    { key: 'name', label: 'Name', type: 'text', required: true },
+    { key: 'parentId', label: 'Strategic Theme', type: 'parent' },
+    { key: 'owner', label: 'Owner', type: 'text' },
+    { key: 'start', label: 'Start (YYYY-QN)', type: 'text' },
+    { key: 'end', label: 'End (YYYY-QN)', type: 'text' }
+  ],
+  objective: [
+    { key: 'name', label: 'Name', type: 'text', required: true },
+    { key: 'parentId', label: 'Program', type: 'parent' },
+    { key: 'owner', label: 'Owner', type: 'text' },
+    { key: 'start', label: 'Start (YYYY-QN)', type: 'text' },
+    { key: 'end', label: 'End (YYYY-QN)', type: 'text' },
+    { key: 'confidence', label: 'Confidence', type: 'select', options: ['High','Medium','Low'] }
+  ],
+  solution: [
+    { key: 'name', label: 'Name', type: 'text', required: true },
+    { key: 'parentId', label: 'Objective', type: 'parent' },
+    { key: 'owner', label: 'Owner', type: 'text' },
+    { key: 'start', label: 'Start (YYYY-QN)', type: 'text' },
+    { key: 'end', label: 'End (YYYY-QN)', type: 'text' },
+    { key: 'confidence', label: 'Confidence', type: 'select', options: ['High','Medium','Low'] }
+  ],
+  delivery: [
+    { key: 'name', label: 'Name', type: 'text', required: true },
+    { key: 'parentId', label: 'Solution', type: 'parent' },
+    { key: 'team', label: 'Team', type: 'text' },
+    { key: 'fte', label: 'FTE', type: 'number' },
+    { key: 'start', label: 'Start (YYYY-QN)', type: 'text' },
+    { key: 'end', label: 'End (YYYY-QN)', type: 'text' }
+  ],
+  story: [
+    { key: 'name', label: 'Name', type: 'text', required: true },
+    { key: 'parentId', label: 'Delivery Unit', type: 'parent' },
+    { key: 'key', label: 'Jira key', type: 'text' },
+    { key: 'assignee', label: 'Assignee', type: 'text' },
+    { key: 'status', label: 'Status', type: 'select', options: ['To Do','In Progress','Done'] },
+    { key: 'points', label: 'Story points', type: 'number' },
+    { key: 'sprint', label: 'Sprint (PIxx.n)', type: 'text' }
+  ]
+};
+
+// ============================================================
 // STATE
 // ============================================================
 let state = {
@@ -564,7 +793,11 @@ let state = {
   horizonStart: '2026-Q1',
   horizonEnd:   '2028-Q4',
   // Currently-selected bar (for highlighting in analytics)
-  selectedId: null
+  selectedId: null,
+  // Which tab the bottom panel shows: 'analytics' | 'log'
+  panelTab: 'analytics',
+  // Free-text filter over the Activity Log
+  logFilter: ''
 };
 
 // ============================================================
@@ -672,7 +905,7 @@ function useSprintMode() {
 // ============================================================
 function getItemsAtLevel(level) {
   // Return items at this level, filtered by trail (so we only show descendants of selected ancestor).
-  const all = MOCK_DATA[level] || [];
+  const all = DATA[level] || [];
   if (state.trail.length === 0) return all;
 
   // The trail tells us which ancestors are pinned.
@@ -682,7 +915,7 @@ function getItemsAtLevel(level) {
     let cursorLevel = level;
     while (cursorLevel !== 'strategic') {
       const parentLevel = LEVELS[LEVELS.indexOf(cursorLevel) - 1];
-      const parent = MOCK_DATA[parentLevel].find(p => p.id === cursor.parentId);
+      const parent = DATA[parentLevel].find(p => p.id === cursor.parentId);
       if (!parent) return false;
       // Check trail: if there's a trail entry at parent's level, parent.id must match.
       const trailAtLevel = state.trail.find(t => t.level === parentLevel);
@@ -697,7 +930,7 @@ function getItemsAtLevel(level) {
 function hasChildren(item, level) {
   const childLevel = LEVELS[LEVELS.indexOf(level) + 1];
   if (!childLevel) return false;
-  return (MOCK_DATA[childLevel] || []).some(c => c.parentId === item.id);
+  return (DATA[childLevel] || []).some(c => c.parentId === item.id);
 }
 
 // ============================================================
@@ -827,9 +1060,14 @@ function renderTimeline() {
   }
 
   // ---- 2. Timeline header ----
+  const parentLevelForAdd = LEVELS[LEVELS.indexOf(state.activeLevel) - 1];
+  const trailParentForAdd = state.trail.find(t => t.level === parentLevelForAdd);
   html += `
     <div class="timeline-header" style="grid-template-columns: ${trackTpl};">
-      <div class="tl-label-col">${LEVEL_LABELS[state.activeLevel]}</div>
+      <div class="tl-label-col" style="display:flex; align-items:center;">
+        ${LEVEL_LABELS[state.activeLevel]}
+        <button class="add-item-btn" onclick="openCreateModal('${state.activeLevel}','${trailParentForAdd ? trailParentForAdd.id : ''}')">+ Add</button>
+      </div>
       ${buckets.map(b => `<div class="tl-bucket">${bucketLabel(b)}</div>`).join('')}
     </div>
   `;
@@ -838,7 +1076,7 @@ function renderTimeline() {
   if (state.trail.length > 0) {
     html += `<div class="tl-section-label">Parent context</div>`;
     state.trail.forEach(trailEntry => {
-      const parentItem = (MOCK_DATA[trailEntry.level] || []).find(i => i.id === trailEntry.id);
+      const parentItem = (DATA[trailEntry.level] || []).find(i => i.id === trailEntry.id);
       if (!parentItem) return;
       const pos = itemPosition(parentItem, buckets.length);
       if (!pos) return;
@@ -871,7 +1109,7 @@ function renderTimeline() {
     const pos = itemPosition(item, buckets.length);
     if (!pos) return;
 
-    const childCount = (MOCK_DATA[LEVELS[LEVELS.indexOf(state.activeLevel)+1]] || []).filter(c => c.parentId === item.id).length;
+    const childCount = (DATA[LEVELS[LEVELS.indexOf(state.activeLevel)+1]] || []).filter(c => c.parentId === item.id).length;
     const hasKids = hasChildren(item, state.activeLevel);
 
     // Build label metadata depending on level
@@ -888,12 +1126,19 @@ function renderTimeline() {
       if (item.imported) meta = `📥 ${meta}`;
     }
 
+    const depCount = (item.dependsOn || []).length;
+
     html += `
       <div class="tl-row" style="grid-template-columns: ${trackTpl};">
         <div class="tl-label">
           <span class="crumb-dot" style="background:${LEVEL_DOT_COLORS[state.activeLevel]}; flex-shrink:0;"></span>
           <span class="tl-label-text">${item.name}</span>
           <span class="tl-label-meta">${meta}</span>
+          ${depCount > 0 ? `<span class="dep-badge" title="Depends on ${depCount} item(s)">🔗 ${depCount}</span>` : ''}
+          <span class="row-actions">
+            <button class="row-icon-btn" title="Edit" onclick="event.stopPropagation(); openItemModal('${state.activeLevel}','${item.id}')">✎</button>
+            <button class="row-icon-btn" title="Delete" onclick="event.stopPropagation(); deleteItemPrompt('${state.activeLevel}','${item.id}')">🗑</button>
+          </span>
         </div>
         <div class="tl-track" style="grid-column: 2 / -1; --bucket-count: ${buckets.length};">
           <div class="bar ${state.activeLevel} ${hasKids ? 'has-children' : ''} ${state.selectedId === item.id ? 'selected' : ''}"
@@ -911,9 +1156,28 @@ function renderTimeline() {
 }
 
 // ============================================================
-// RENDERING — AI ANALYTICS PANEL
+// RENDERING — BOTTOM PANEL (AI ANALYTICS / ACTIVITY LOG tabs)
 // ============================================================
-function renderAnalytics() {
+function switchPanelTab(tab) {
+  state.panelTab = tab;
+  renderBottomPanel();
+}
+
+function panelTabsHtml() {
+  return `
+    <div class="panel-tabs">
+      <button class="panel-tab ${state.panelTab === 'analytics' ? 'active' : ''}" onclick="switchPanelTab('analytics')">AI Analytics</button>
+      <button class="panel-tab ${state.panelTab === 'log' ? 'active' : ''}" onclick="switchPanelTab('log')">Activity Log <span class="log-count">${ACTIVITY_LOG.length}</span></button>
+    </div>
+  `;
+}
+
+function renderBottomPanel() {
+  if (state.panelTab === 'log') renderActivityLogTab();
+  else renderAnalyticsTab();
+}
+
+function renderAnalyticsTab() {
   const items = getItemsAtLevel(state.activeLevel);
   const panel = document.getElementById('aiPanel');
   const lvl = state.activeLevel;
@@ -972,9 +1236,96 @@ function renderAnalytics() {
         <div class="ai-title">AI analytics — ${LEVEL_LABELS[lvl]} view</div>
         <div class="ai-subtitle">${state.trail.length > 0 ? `Filtered by: ${state.trail.map(t=>t.name).join(' › ')}` : 'Whole roadmap'}</div>
       </div>
+      ${panelTabsHtml()}
     </div>
     <div class="ai-grid">${cardsHtml}</div>
     ${insightsHtml}
+  `;
+}
+
+// ============================================================
+// RENDERING — ACTIVITY LOG TAB
+// ============================================================
+function setLogFilter(v) {
+  state.logFilter = v;
+  renderActivityLogTab();
+}
+
+function exportActivityLogCsv() {
+  const rows = [['Timestamp','Actor','Action','Level','Item','Detail']];
+  ACTIVITY_LOG.forEach(e => {
+    rows.push([e.ts, e.actor, e.action, e.level || '', e.itemName || '', summarizeLogDetail(e)]);
+  });
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'roadmap-activity-log.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function clearActivityLog() {
+  if (!confirm('Clear the activity log? This cannot be undone.')) return;
+  ACTIVITY_LOG = [];
+  saveStoredLog();
+  renderBottomPanel();
+}
+
+function summarizeLogDetail(entry) {
+  if (entry.action === 'update' && entry.detail && entry.detail.changes) {
+    return entry.detail.changes.map(c => `${c.field}: "${c.from}" → "${c.to}"`).join('; ');
+  }
+  if (entry.action === 'create') return 'Created new item';
+  if (entry.action === 'delete') return entry.detail && entry.detail.cascaded ? `Deleted (+${entry.detail.cascaded} descendant item(s))` : 'Deleted';
+  if (entry.action === 'import') return `Epics: ${entry.detail.epics ?? 0}, Stories: ${entry.detail.stories ?? 0}`;
+  if (entry.action === 'reset') return 'Reverted all data to seed dataset';
+  return '';
+}
+
+function renderActivityLogTab() {
+  const panel = document.getElementById('aiPanel');
+  const filter = state.logFilter.trim().toLowerCase();
+  const entries = ACTIVITY_LOG.filter(e => {
+    if (!filter) return true;
+    return (e.itemName || '').toLowerCase().includes(filter)
+      || (e.actor || '').toLowerCase().includes(filter)
+      || (e.action || '').toLowerCase().includes(filter)
+      || (e.level || '').toLowerCase().includes(filter);
+  });
+
+  let listHtml;
+  if (entries.length === 0) {
+    listHtml = `<div class="log-empty">No activity ${filter ? 'matches this filter' : 'yet'} — every add, edit, delete, and CSV import will show up here, per person, in real time.</div>`;
+  } else {
+    listHtml = '<div class="log-list">' + entries.slice(0, 200).map(e => {
+      const d = new Date(e.ts);
+      const time = isNaN(d) ? e.ts : d.toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+      return `
+        <div class="log-row">
+          <span class="log-time">${time}</span>
+          <span class="log-action-tag ${e.action}">${e.action}</span>
+          <span class="log-actor">${e.actor}</span>
+          <span class="log-detail"><strong>${e.itemName || '(n/a)'}</strong>${e.level ? ` · ${LEVEL_LABELS[e.level] || e.level}` : ''} — ${summarizeLogDetail(e)}</span>
+        </div>
+      `;
+    }).join('') + '</div>';
+  }
+
+  panel.innerHTML = `
+    <div class="ai-header">
+      <div>
+        <div class="ai-title">Activity log</div>
+        <div class="ai-subtitle">Every interactive change, client-side — who did what, and when</div>
+      </div>
+      ${panelTabsHtml()}
+    </div>
+    <div class="log-toolbar">
+      <input type="text" placeholder="Filter by item, actor, level, action…" value="${state.logFilter}" oninput="setLogFilter(this.value)">
+      <button class="nav-btn" style="padding:4px 10px; font-size:11px;" onclick="exportActivityLogCsv()">⇩ Export CSV</button>
+      <button class="nav-btn" style="padding:4px 10px; font-size:11px;" onclick="clearActivityLog()">Clear log</button>
+    </div>
+    ${listHtml}
   `;
 }
 
@@ -1046,7 +1397,7 @@ function generateInsights(items, level, teamLoad) {
     if (heavy.length > 0) {
       const parentLevel = LEVELS[LEVELS.indexOf(level) - 1];
       heavy.forEach(([pid, n]) => {
-        const parent = MOCK_DATA[parentLevel].find(p => p.id === pid);
+        const parent = DATA[parentLevel].find(p => p.id === pid);
         if (parent) {
           out.push({
             severity: 'warn',
@@ -1055,6 +1406,22 @@ function generateInsights(items, level, teamLoad) {
         }
       });
     }
+  }
+
+  // Dependency risk: item starts before a same-level item it depends on has finished
+  if (level !== 'story') {
+    items.forEach(i => {
+      (i.dependsOn || []).forEach(depId => {
+        const dep = (DATA[level] || []).find(d => d.id === depId);
+        if (!dep || !dep.end || !i.start) return;
+        if (quarterToIndex(i.start) < quarterToIndex(dep.end)) {
+          out.push({
+            severity: 'risk',
+            text: `<strong>${i.name}</strong> starts (${i.start}) before its dependency <strong>${dep.name}</strong> finishes (${dep.end}) — sequencing risk.`
+          });
+        }
+      });
+    });
   }
 
   // Positive signal if all good
@@ -1069,7 +1436,7 @@ function generateInsights(items, level, teamLoad) {
 // INTERACTIONS
 // ============================================================
 function onBarClick(itemId) {
-  const item = (MOCK_DATA[state.activeLevel] || []).find(i => i.id === itemId);
+  const item = (DATA[state.activeLevel] || []).find(i => i.id === itemId);
   if (!item) return;
 
   // If item has children, drill in
@@ -1144,6 +1511,222 @@ function toggleTheme() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
   document.getElementById('themeBtn').textContent = isDark ? '🌙 Dark' : '☀️ Light';
+}
+
+function setActorName(v) {
+  actorName = (v || '').trim() || 'You';
+  try { localStorage.setItem(STORAGE_ACTOR_KEY, actorName); } catch (e) {}
+}
+
+function resetData() {
+  if (!confirm('Discard every edit made in this browser and reload the original seed dataset? This cannot be undone.')) return;
+  DATA = deepClone(SEED_DATA);
+  saveStoredData();
+  logAction('reset', null, null, {});
+  state.trail = [];
+  state.selectedId = null;
+  resetView();
+}
+
+// ============================================================
+// CREATE / EDIT / DELETE — the interactive layer on top of the
+// read-only drilldown. All mutations go through DATA (never SEED_DATA),
+// are persisted to localStorage immediately, and are written to the
+// Activity Log so every change is attributable and auditable.
+// ============================================================
+let modalMode = null;   // 'create' | 'edit'
+let modalLevel = null;
+let modalItemId = null;
+
+function findItem(level, id) {
+  return (DATA[level] || []).find(i => i.id === id);
+}
+
+function fieldValueHtml(def, item) {
+  const val = item ? (item[def.key] ?? '') : '';
+  if (def.type === 'textarea') {
+    return `<textarea id="mf_${def.key}">${escapeHtml(String(val))}</textarea>`;
+  }
+  if (def.type === 'select') {
+    return `<select id="mf_${def.key}">
+      <option value="">—</option>
+      ${def.options.map(o => `<option value="${o}" ${val === o ? 'selected' : ''}>${o}</option>`).join('')}
+    </select>`;
+  }
+  if (def.type === 'number') {
+    return `<input type="number" step="0.1" id="mf_${def.key}" value="${val}">`;
+  }
+  if (def.type === 'parent') {
+    const parentLevel = LEVELS[LEVELS.indexOf(modalLevel) - 1];
+    const options = (DATA[parentLevel] || []).map(p =>
+      `<option value="${p.id}" ${item && item.parentId === p.id ? 'selected' : ''}>${escapeHtml(p.name)}</option>`
+    ).join('');
+    return `<select id="mf_${def.key}"><option value="">— none / orphan —</option>${options}</select>`;
+  }
+  return `<input type="text" id="mf_${def.key}" value="${escapeHtml(String(val))}">`;
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function depsFieldHtml(item) {
+  const siblings = (DATA[modalLevel] || []).filter(i => !item || i.id !== item.id);
+  if (siblings.length === 0) {
+    return `<div class="modal-deps-empty">No other ${LEVEL_LABELS[modalLevel]} items to depend on yet.</div>`;
+  }
+  const current = new Set(item && item.dependsOn ? item.dependsOn : []);
+  return `<div class="modal-deps">${siblings.map(s => `
+    <label><input type="checkbox" value="${s.id}" ${current.has(s.id) ? 'checked' : ''} class="mf-dep"> ${escapeHtml(s.name)}</label>
+  `).join('')}</div>`;
+}
+
+function openCreateModal(level, parentIdHint) {
+  modalMode = 'create';
+  modalLevel = level;
+  modalItemId = null;
+  renderModal(null, parentIdHint);
+}
+
+function openItemModal(level, id) {
+  modalMode = 'edit';
+  modalLevel = level;
+  modalItemId = id;
+  renderModal(findItem(level, id));
+}
+
+function renderModal(item, parentIdHint) {
+  const defs = FIELD_DEFS[modalLevel] || [];
+  const fieldsHtml = defs.map(def => `
+    <div class="modal-field">
+      <label>${def.label}${def.required ? ' *' : ''}</label>
+      ${fieldValueHtml(def, item)}
+    </div>
+  `).join('');
+
+  document.getElementById('modalBox').innerHTML = `
+    <div class="modal-title">${modalMode === 'create' ? 'Add' : 'Edit'} ${LEVEL_LABELS[modalLevel].replace(/s$/, '')}</div>
+    <div class="modal-subtitle">${modalMode === 'create' ? 'Creates a new item in this browser\'s local data.' : `ID: ${item.id}`}</div>
+    ${fieldsHtml}
+    <div class="modal-field">
+      <label>Depends on (${LEVEL_LABELS[modalLevel]})</label>
+      ${depsFieldHtml(item)}
+    </div>
+    <div class="modal-actions">
+      <div>
+        ${modalMode === 'edit' ? `<button class="modal-btn danger" onclick="deleteItemPrompt('${modalLevel}','${item.id}')">Delete</button>` : ''}
+      </div>
+      <div>
+        <button class="modal-btn secondary" onclick="closeModal()">Cancel</button>
+        <button class="modal-btn primary" onclick="submitModal()">Save</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalOverlay').hidden = false;
+
+  if (modalMode === 'create') {
+    const defsWithParent = defs.find(d => d.type === 'parent');
+    if (defsWithParent && parentIdHint) {
+      const sel = document.getElementById('mf_parentId');
+      if (sel) sel.value = parentIdHint;
+    }
+  }
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').hidden = true;
+  modalMode = null; modalLevel = null; modalItemId = null;
+}
+
+function submitModal() {
+  const defs = FIELD_DEFS[modalLevel] || [];
+  const values = {};
+  for (const def of defs) {
+    const el = document.getElementById(`mf_${def.key}`);
+    let v = el ? el.value : '';
+    if (def.type === 'number') v = v === '' ? 0 : parseFloat(v);
+    if (def.required && !String(v).trim()) {
+      alert(`${def.label} is required.`);
+      return;
+    }
+    values[def.key] = v;
+  }
+  const dependsOn = Array.from(document.querySelectorAll('.mf-dep:checked')).map(cb => cb.value);
+
+  if (modalMode === 'create') {
+    const id = `${modalLevel}_${Date.now().toString(36)}`;
+    const newItem = Object.assign({ id, dependsOn }, values);
+    if (values.parentId === '') newItem.parentId = null;
+    DATA[modalLevel] = DATA[modalLevel] || [];
+    DATA[modalLevel].push(newItem);
+    saveStoredData();
+    logAction('create', modalLevel, newItem, {});
+  } else {
+    const item = findItem(modalLevel, modalItemId);
+    if (!item) { closeModal(); return; }
+    const changes = [];
+    for (const def of defs) {
+      const from = item[def.key] ?? '';
+      const to = values[def.key];
+      if (String(from) !== String(to)) changes.push({ field: def.label, from, to });
+    }
+    const oldDeps = (item.dependsOn || []).slice().sort().join(',');
+    const newDeps = dependsOn.slice().sort().join(',');
+    if (oldDeps !== newDeps) changes.push({ field: 'Dependencies', from: (item.dependsOn||[]).length, to: dependsOn.length });
+
+    Object.assign(item, values);
+    if (values.parentId === '') item.parentId = null;
+    item.dependsOn = dependsOn;
+
+    saveStoredData();
+    if (changes.length > 0) logAction('update', modalLevel, item, { changes });
+  }
+
+  closeModal();
+  renderAll();
+}
+
+function deleteItemPrompt(level, id) {
+  const item = findItem(level, id);
+  if (!item) return;
+  const descendants = collectDescendants(level, id);
+  const msg = descendants.length > 0
+    ? `Delete "${item.name}" and its ${descendants.length} descendant item(s)? This cannot be undone.`
+    : `Delete "${item.name}"? This cannot be undone.`;
+  if (!confirm(msg)) return;
+
+  // Remove descendants first (deepest first doesn't matter, just filter by id)
+  descendants.forEach(d => {
+    DATA[d.level] = DATA[d.level].filter(i => i.id !== d.id);
+  });
+  DATA[level] = DATA[level].filter(i => i.id !== id);
+
+  // Clean up dangling dependency references across all levels
+  LEVELS.forEach(l => {
+    (DATA[l] || []).forEach(i => {
+      if (i.dependsOn && i.dependsOn.includes(id)) {
+        i.dependsOn = i.dependsOn.filter(depId => depId !== id);
+      }
+    });
+  });
+
+  saveStoredData();
+  logAction('delete', level, item, { cascaded: descendants.length });
+
+  if (state.selectedId === id) state.selectedId = null;
+  closeModal();
+  renderAll();
+}
+
+function collectDescendants(level, id) {
+  const out = [];
+  const childLevel = LEVELS[LEVELS.indexOf(level) + 1];
+  if (!childLevel) return out;
+  (DATA[childLevel] || []).filter(c => c.parentId === id).forEach(c => {
+    out.push({ level: childLevel, id: c.id });
+    out.push(...collectDescendants(childLevel, c.id));
+  });
+  return out;
 }
 
 // ============================================================
@@ -1265,9 +1848,11 @@ function handleCsvImport(event) {
         storyCount++;
       });
 
-      // Append to MOCK_DATA — keep existing seed data
-      MOCK_DATA.delivery = MOCK_DATA.delivery.concat(newEpics);
-      MOCK_DATA.story = MOCK_DATA.story.concat(newStories);
+      // Append to DATA — keep existing seed data
+      DATA.delivery = DATA.delivery.concat(newEpics);
+      DATA.story = DATA.story.concat(newStories);
+      saveStoredData();
+      logAction('import', 'delivery', null, { epics: newEpics.length, stories: newStories.length, skipped, name: file.name });
 
       // Clear the file input so re-importing same file works
       document.getElementById('csvFileInput').value = '';
@@ -1277,7 +1862,7 @@ function handleCsvImport(event) {
         `Epics imported as Delivery Units: ${newEpics.length}\n` +
         `Stories linked under Epics: ${newStories.length}\n` +
         (skipped > 0 ? `Stories skipped (no matching Epic): ${skipped}\n` : '') +
-        `\nNote: imported Epics are orphans (no Solution parent yet). To link them, drill to a Solution and we'll add a re-parent UI in v2. For now, jump directly to Delivery Units level via the breadcrumb to see them.`
+        `\nNote: imported Epics land as orphans (no Solution parent yet). Click ✎ on any of them at the Delivery Units level to set a parent Solution.`
       );
 
       // Auto-jump to Delivery Units level so user sees the imported data
@@ -1296,8 +1881,9 @@ function handleCsvImport(event) {
 function renderAll() {
   renderBreadcrumb();
   renderTimeline();
-  renderAnalytics();
+  renderBottomPanel();
 }
+document.getElementById('actorInput').value = actorName;
 renderAll();
 </script>
 </body>
