@@ -98,8 +98,8 @@
 <body>
 <header>
   <h1>Epic Hierarchy Map</h1>
-  <button id="btnImport">Import JIRA CSV</button>
-  <input type="file" id="file" accept=".csv,text/csv" hidden>
+  <button id="btnImport">Import JIRA export (Word / CSV)</button>
+  <input type="file" id="file" accept=".doc,.docx,.htm,.html,.csv,text/csv" hidden>
   <button id="btnSample">Load sample</button>
   <span class="seg"><button id="mSI" class="on" title="Rows = Solution Increments grouped under Objectives">By Solution Increment</button><button id="mDU" title="Rows = Delivery Units (Jira projects)">By Delivery Unit</button></span>
   <select id="fStatus" title="Status filter"><option value="">All statuses</option><option value="open">Not done</option><option value="done">Done only</option></select>
@@ -122,7 +122,7 @@
   <span><i style="border-color:var(--crit)"></i>critical path</span>
 </div>
 <main>
-  <div id="boardWrap"><div id="empty">Import a JIRA CSV export or click <b>Load sample</b>.</div></div>
+  <div id="boardWrap"><div id="empty">Import a JIRA export (Word .doc / .docx, or CSV) or click <b>Load sample</b>.</div></div>
   <aside>
     <section id="detail"><h3>Selected epic</h3><div class="muted">Click an epic card.</div></section>
     <section><h3>Critical path</h3><div id="critp" class="muted">–</div></section>
@@ -183,7 +183,7 @@ DU_FE-772,Story,Upgrade flow,Open,Anna Kovacova,,,5,EPC_303,,DU_FE-77,,,,,,,,
 `;
 
 /* ---------- state ---------- */
-let base = null, sim = null, selected = null, mode = 'si', savedApplied = 0, rawCSV = '';
+let base = null, sim = null, selected = null, mode = 'si', savedApplied = 0, rawRows = null;
 const collapsed = new Set();
 function $(id) { return document.getElementById(id); }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
@@ -247,7 +247,7 @@ function parseCSV(text) {
 const norm = s => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 function findCols(headers, cands) {
   const out = [];
-  headers.forEach((h, i) => { const n = norm(h); if (cands.some(c => n === c || n.startsWith(c + ' '))) out.push(i); });
+  headers.forEach((h, i) => { const n = norm(h).replace(/^custom field /, ''); if (cands.some(c => n === c || n.startsWith(c + ' '))) out.push(i); });
   return out;
 }
 const KEY_RE = /[A-Z][A-Z0-9_]+-\d+/g;
@@ -269,7 +269,9 @@ const FIELD_DEFS = [
   ['status', 'Status', ['status']], ['assignee', 'Assignee / owner', ['assignee', 'owner']], ['due', 'Due date', ['due date', 'target end', 'end date']],
   ['sp', 'Story points', ['story points', 'story point estimate']], ['parent', 'Epic link / parent', ['epic link', 'parent link', 'parent', 'parent id']],
   ['rag', 'RAG status', ['rag status', 'rag']], ['mgr', 'Objective manager', ['objective manager']], ['gp', 'Global priority', ['global priority']],
-  ['pi', 'PI', ['pi', 'program increment', 'fix version s', 'fix version']], ['project', 'Project (Delivery Unit)', ['project key', 'project']]];
+  ['pi', 'PI', ['pi', 'program increment', 'fix version s', 'fix version']], ['project', 'Project (Delivery Unit)', ['project key', 'project']],
+  ['links', 'Linked issues (text, e.g. from Word)', ['linked issues', 'issue links', 'links']]];
+const PHRASES = { 'solves': ['solves', true], 'is solved by': ['solves', false], 'relates to': ['relates', true], 'blocks': ['blocks', true], 'is blocked by': ['blocks', false], 'depends on': ['depends', true], 'is depended on by': ['depends', false] };
 const LINK_KINDS = [['solves', 'solves'], ['relates', 'relates to'], ['blocks', 'blocks (dependency)'], ['depends', 'depends on (dependency)'], ['ignore', 'ignore']];
 const TYPE_KINDS = [['objective', 'Objective'], ['si', 'Solution Increment'], ['epic', 'Epic'], ['story', 'Story / task']];
 const guessLink = h => { const n = norm(h); return /solve/.test(n) ? 'solves' : /relat/.test(n) ? 'relates' : /depend/.test(n) ? 'depends' : /block/.test(n) ? 'blocks' : 'ignore'; };
@@ -287,11 +289,12 @@ function detect(rows) {   // automatic mapping of CSV columns, link types and is
   H.forEach((h, i) => { const n = norm(h); if (/^(outward|inward) issue link/.test(n)) linkCols[i] = guessLink(h); });
   const types = {};
   if (cols.type >= 0) rows.slice(1).forEach(r => { const t = (r[cols.type] || '').trim(); if (t && !types[t]) types[t] = guessType(t, '', false); });
-  return { cols, sprintPrefix: 'sprint', linkCols, types, prioDesc: true, duMode: 'auto' };
+  const phrases = {}; Object.keys(PHRASES).forEach(k => phrases[k] = PHRASES[k][0]);
+  return { cols, sprintPrefix: 'sprint', linkCols, types, phrases, prioDesc: true, duMode: 'auto' };
 }
 
-function buildModel(csv, S) {
-  const rows = parseCSV(csv);
+function buildModel(src, S) {
+  const rows = typeof src === 'string' ? parseCSV(src) : src;
   if (rows.length < 2) throw new Error('CSV has no data rows');
   const H = rows[0]; S = S || detect(rows);
   const c = S.cols;
@@ -319,10 +322,21 @@ function buildModel(csv, S) {
     nodes[key] = {
       key, type, summary: get(r, 'summary') || key, status: get(r, 'status'), assignee: get(r, 'assignee'),
       due: parseDate(get(r, 'due')), sp: Number(get(r, 'sp')) || 0,
-      sprints: sprintCols.map(i => sprintNum(r[i])).filter(x => x != null), parent,
+      sprints: sprintCols.flatMap(i => (r[i] || '').split(/[,;\n]+/).map(sprintNum)).filter(x => x != null), parent,
       rag: get(r, 'rag'), mgr: get(r, 'mgr'), gp: get(r, 'gp'), pi, piGiven: !!pi,
       du: S.duMode === 'prefix' ? key.replace(/-\d+$/, '') : (prj || key.replace(/-\d+$/, ''))
     };
+    if (c.links >= 0 && r[c.links]) {   // links written as text: "relates to DU_EPP-2077 ... is solved by ESET-138"
+      const names = Object.keys(S.phrases || {}).sort((x, y) => y.length - x.length).map(x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+      const re = new RegExp('(' + names.join('|') + ')|([A-Z][A-Z0-9_]+-\\d+)', 'gi'); let ph = null, mm;
+      while ((mm = re.exec(r[c.links]))) {
+        if (mm[1]) ph = mm[1].toLowerCase();
+        else if (ph && mm[2] !== key) {
+          const kind = S.phrases[ph];
+          if (kind === 'ignore') ignored++; else addLink(key, mm[2], kind, PHRASES[ph][1]);
+        }
+      }
+    }
     Object.keys(S.linkCols).forEach(i => {
       const kind = S.linkCols[i], vals = (r[i] || '').match(KEY_RE);
       if (!vals) return;
@@ -799,6 +813,8 @@ function renderMapping() {
     <div class="row"><span style="width:130px">Sprint columns start with</span><input data-map="sprint" value="${esc(S.sprintPrefix)}" style="width:100px"></div>
     <div class="muted" style="margin-top:6px">Link columns → meaning</div>
     ${Object.keys(S.linkCols).map(i => `<div class="row"><span style="width:150px;font-size:11px">${esc(H[i])}</span><select data-map="link" data-i="${i}">${kopts(LINK_KINDS, S.linkCols[i])}</select></div>`).join('') || '<div class="muted">no "issue link" columns found</div>'}
+    <div class="muted" style="margin-top:6px">Wording inside a "Linked issues" text column → meaning</div>
+    ${Object.keys(S.phrases || {}).map(t => `<div class="row"><span style="width:150px">"${esc(t)}"</span><select data-map="phrase" data-t="${esc(t)}">${kopts(LINK_KINDS, S.phrases[t])}</select></div>`).join('')}
     <div class="muted" style="margin-top:6px">Issue types → level</div>
     ${Object.keys(S.types).map(t => `<div class="row"><span style="width:150px">${esc(t)}</span><select data-map="type" data-t="${esc(t)}">${kopts(TYPE_KINDS, S.types[t])}</select></div>`).join('') || '<div class="muted">no issue type column – levels are guessed from keys</div>'}
     <div class="muted" style="margin-top:6px">Other</div>
@@ -807,38 +823,137 @@ function renderMapping() {
     <div class="row"><button onclick="applyMapping()">Apply mapping (resets scenario)</button></div>`;
 }
 function applyMapping() {
-  if (!rawCSV) return;
+  if (!rawRows) return;
   const S = clone(base.settings), q = sel => [...$('mapping').querySelectorAll(sel)];
   q('[data-map=col]').forEach(el => S.cols[el.dataset.f] = +el.value);
   S.sprintPrefix = $('mapping').querySelector('[data-map=sprint]').value || 'sprint';
   q('[data-map=link]').forEach(el => S.linkCols[el.dataset.i] = el.value);
   q('[data-map=type]').forEach(el => S.types[el.dataset.t] = el.value);
+  q('[data-map=phrase]').forEach(el => S.phrases[el.dataset.t] = el.value);
   S.prioDesc = $('mapping').querySelector('[data-map=prio]').checked;
   S.duMode = $('mapping').querySelector('[data-map=du]').value;
   try {
-    base = buildModel(rawCSV, S); savedApplied = 0;
+    base = buildModel(rawRows, S); savedApplied = 0;
     try { savedApplied = mergeDeps(JSON.parse(localStorage.getItem(depKey) || '[]'), base); } catch (e) {}
     sim = clone(base); selected = null; render(); renderMapping();
   } catch (err) { alert('Mapping problem: ' + err.message); }
 }
 
+/* ---------- Word / HTML export readers (JIRA "Export > Word" is HTML saved as .doc; re-saved files are .docx) ---------- */
+function textOfNode(n) {
+  let out = '';
+  (function w(x) {
+    if (x.nodeType === 3) { out += x.nodeValue; return; }
+    if (x.nodeType !== 1) return;
+    const t = x.tagName.toLowerCase();
+    if (t === 'script' || t === 'style') return;
+    if (t === 'br') { out += '\n'; return; }
+    if (t === 'img') { out += x.getAttribute('alt') || x.getAttribute('title') || ''; return; }   // issue-type icons carry their name in alt
+    x.childNodes.forEach(w);
+    if (t === 'td' || t === 'th') out += '\t'; else if (/^(p|div|li|tr|h\d|ul|ol|table)$/.test(t)) out += '\n';
+  })(n);
+  return out.replace(/[ \r ]+/g, ' ').split('\n').map(s => s.replace(/\t+\s*$/, '').trim()).filter((s, i, a) => s || (i && a[i - 1])).join('\n').trim();
+}
+function structureFromHTML(html) {
+  const d = new DOMParser().parseFromString(html, 'text/html');
+  const tables = [...d.querySelectorAll('table')].filter(t => !t.parentElement.closest('table'))
+    .map(t => [...t.rows].map(r => [...r.cells].map(c => textOfNode(c).replace(/\t/g, ' '))));
+  const lines = textOfNode(d.body).split('\n').map(s => s.trim()).filter(Boolean);
+  return { tables, lines };
+}
+function structureFromDocx(xml) {
+  const d = new DOMParser().parseFromString(xml, 'application/xml'), W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const kids = (n, name) => [...n.childNodes].filter(c => c.localName === name && c.namespaceURI === W);
+  const para = p => { let o = ''; p.querySelectorAll('*').forEach(x => { if (x.localName === 't') o += x.textContent; else if (x.localName === 'tab') o += ' '; else if (x.localName === 'br') o += '\n'; }); return o; };
+  const cellText = c => kids(c, 'p').map(para).join('\n').trim();
+  const body = d.getElementsByTagNameNS(W, 'body')[0], tables = [], lines = [];
+  [...body.childNodes].forEach(n => {
+    if (n.localName === 'p') { const t = para(n).trim(); if (t) lines.push(t); }
+    else if (n.localName === 'tbl') {
+      const rows = kids(n, 'tr').map(tr => kids(tr, 'tc').map(cellText));
+      tables.push(rows.map(r => r.map(c => c.replace(/\n/g, ' '))));
+      rows.forEach(r => { const l = r.map(c => c.replace(/\n/g, ' ')).join('\t').trim(); if (l) lines.push(l); });
+    }
+  });
+  return { tables, lines };
+}
+async function unzipEntry(buf, name) {   // minimal zip reader: finds one entry and inflates it with the browser's DecompressionStream
+  const dv = new DataView(buf), u8 = new Uint8Array(buf), dec = new TextDecoder();
+  let i = u8.length - 22; while (i >= 0 && dv.getUint32(i, true) !== 0x06054b50) i--;
+  if (i < 0) throw new Error('not a valid .docx file');
+  let p = dv.getUint32(i + 16, true);
+  for (let k = dv.getUint16(i + 10, true); k > 0 && dv.getUint32(p, true) === 0x02014b50; k--) {
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true),
+          el = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), lho = dv.getUint32(p + 42, true);
+    const fname = dec.decode(u8.slice(p + 46, p + 46 + nl)); p += 46 + nl + el + cl;
+    if (fname !== name) continue;
+    const start = lho + 30 + dv.getUint16(lho + 26, true) + dv.getUint16(lho + 28, true), data = u8.slice(start, start + csize);
+    if (method === 0) return dec.decode(data);
+    const out = await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
+    return dec.decode(out);
+  }
+  throw new Error(name + ' not found inside the .docx');
+}
+function rowsFromStructure(st) {
+  // A) tabular list: one table with a header row that contains an issue-key column
+  const keyCands = FIELD_DEFS[0][2];
+  let best = null;
+  st.tables.forEach(t => {
+    if (t.length < 2 || t[0].length < 3) return;
+    if (!findCols(t[0], keyCands).length) return;
+    if (!best || t.length > best.length) best = t;
+  });
+  if (best) { const w = best[0].length; return best.map(r => { const x = r.slice(0, w); while (x.length < w) x.push(''); return x; }); }
+  // B) one block per issue: "[KEY] Summary" heading, then "Label: value" lines (best effort)
+  const bracket = st.lines.some(l => /^\[[A-Z][A-Z0-9_]+-\d+\]/.test(l));
+  const startRe = bracket ? /^\[([A-Z][A-Z0-9_]+-\d+)\]\s*[-–:]?\s*(.*)$/ : /^([A-Z][A-Z0-9_]+-\d+)\s*[-–:]?\s+(.+)$/;
+  const blocks = []; const seen = new Set(); let cur = null;
+  st.lines.forEach(l => {
+    const m = startRe.exec(l);
+    if (m && !l.includes('\t') && !seen.has(m[1])) { seen.add(m[1]); cur = { key: m[1], summary: m[2], f: {}, text: [] }; blocks.push(cur); return; }
+    if (!cur) return;
+    const t = l.split('\t');
+    if (t.length > 1 && t[0].trim()) { cur.f[t[0].replace(/:\s*$/, '').trim()] = t.slice(1).join(' ').trim(); cur.text.push(t.join(' ')); }
+    else { const k = /^([A-Za-z][A-Za-z ]{1,30}):\s+(.+)$/.exec(l); if (k) cur.f[k[1].trim()] = k[2].trim(); cur.text.push(l); }
+  });
+  if (!blocks.length) throw new Error('no issue table or issue headings found in this document – is it the JIRA "Word" export of an issue list?');
+  const labels = [...new Set(blocks.flatMap(b => Object.keys(b.f)))].filter(x => !/^(summary|key|issue key)$/i.test(x));
+  const phr = Object.keys(PHRASES).join('|'), linkRe = new RegExp('(' + phr + ')\\s+[A-Z][A-Z0-9_]+-\\d+', 'i');
+  const out = [['Issue key', 'Summary', ...labels, 'Linked issues']];
+  blocks.forEach(b => out.push([b.key, b.summary, ...labels.map(x => b.f[x] || ''), b.text.filter(t => linkRe.test(t) || /^[A-Z][A-Z0-9_]+-\d+\s/.test(t) && false).join(' ')]));
+  return out;
+}
+async function importFile(f) {
+  try {
+    const name = f.name.toLowerCase();
+    if (/\.csv$/.test(name)) { load(await f.text()); return; }
+    const buf = await f.arrayBuffer(), u8 = new Uint8Array(buf);
+    if (u8[0] === 0x50 && u8[1] === 0x4b) { loadRows(rowsFromStructure(structureFromDocx(await unzipEntry(buf, 'word/document.xml')))); return; }
+    if (u8[0] === 0xd0 && u8[1] === 0xcf) throw new Error('this is a binary Word 97-2003 file – open it in Word and Save As .docx, or re-export from JIRA');
+    const text = new TextDecoder('utf-8').decode(buf);
+    if (/^\s*<\?xml/.test(text) && /<rss|<issue/i.test(text.slice(0, 2000))) throw new Error('JIRA XML export is not supported yet – use the Word (or CSV) export');
+    loadRows(rowsFromStructure(structureFromHTML(text)));
+  } catch (err) { alert('Could not read the file: ' + err.message); }
+}
+
 /* ---------- wiring ---------- */
 function clearAll() {
-  base = sim = null; rawCSV = ''; selected = null; collapsed.clear(); savedApplied = 0; $('mapping').textContent = 'Load data first.';
-  $('boardWrap').innerHTML = '<div id="empty">Import a JIRA CSV export or click <b>Load sample</b>.</div>';
+  base = sim = null; rawRows = null; selected = null; collapsed.clear(); savedApplied = 0; $('mapping').textContent = 'Load data first.';
+  $('boardWrap').innerHTML = '<div id="empty">Import a JIRA export (Word .doc / .docx, or CSV) or click <b>Load sample</b>.</div>';
   $('stats').innerHTML = ''; $('viols').textContent = '–'; $('critp').textContent = '–';
   $('detail').innerHTML = '<h3>Selected epic</h3><div class="muted">Click an epic card.</div>';
   $('fObj').innerHTML = '<option value="">All objectives</option>';
 }
-function load(csv) {
+function load(csv) { loadRows(parseCSV(csv)); }
+function loadRows(rows) {
   try {
-    rawCSV = csv; base = buildModel(csv); savedApplied = 0;
+    rawRows = rows; base = buildModel(rows); savedApplied = 0;
     try { savedApplied = mergeDeps(JSON.parse(localStorage.getItem(depKey) || '[]'), base); } catch (e) {}
     sim = clone(base); selected = null; collapsed.clear(); render(); renderMapping();
-  } catch (err) { alert('Could not read CSV: ' + err.message); }
+  } catch (err) { alert('Could not read the file: ' + err.message); }
 }
 $('btnImport').onclick = () => $('file').click();
-$('file').onchange = ev => { const f = ev.target.files[0]; if (f) f.text().then(load); ev.target.value = ''; };
+$('file').onchange = ev => { const f = ev.target.files[0]; if (f) importFile(f); ev.target.value = ''; };
 $('btnSample').onclick = () => load(SAMPLE_CSV);
 $('btnReset').onclick = () => { if (base) { sim = clone(base); render(); } };
 $('btnClear').onclick = clearAll;

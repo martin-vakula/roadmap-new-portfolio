@@ -104,5 +104,7 @@ Many-to-many on both links: an SI can feed several Objectives, an epic can serve
 - **Data mapping panel**: columns, link-type meanings (solves / relates / blocks / depends / ignore), issue-type levels, priority direction and Delivery Unit source are auto-detected and can all be overridden in the app. Click an SI row header to add/remove its Objective and epic links by hand.
 - Simulation: drag epic to another PI, add/remove links, ▲▼ objective priority, auto-resolve. **Reset scenario** = back to imported data; **Clear all** = empty dashboard.
 
-JIRA export (one CSV, all issue types): Issue key, Issue Type, Summary, Status, Assignee, PI, Story Points, Sprint (repeated), Epic Link, RAG Status,
+**Import formats**: JIRA *Export → Word* (`.doc`, which is HTML inside) and re-saved `.docx` are read directly, as is CSV. `sample-jira-export.doc` shows the shape. In the Word export the links come as text in a *Linked Issues* column ("relates to KEY", "is solved by KEY" …); the wording → meaning table in the Data mapping panel is editable. Binary Word 97-2003 and JIRA XML are not supported.
+
+CSV columns (one file, all issue types): Issue key, Issue Type, Summary, Status, Assignee, PI, Story Points, Sprint (repeated), Epic Link, RAG Status,
 Objective Manager, Global Priority, Due date, and Outward/Inward issue link (Solves / Relates / Blocks) columns. Optional `Project` column (else taken from the key prefix).
