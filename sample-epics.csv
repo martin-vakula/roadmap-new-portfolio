@@ -1,0 +1,15 @@
+Issue key,Summary,Status,Priority,Team,Fix Version/s,Outward issue link (Blocks),Outward issue link (Blocks),Inward issue link (Blocks)
+MON-101,Licensing model & SKU catalogue,Done,Highest,Bratislava,SI 2026.4,MON-103,MON-105,
+MON-102,Usage metering service,In Progress,Highest,Brno,SI 2026.4,MON-104,MON-106,
+MON-103,Entitlement service (EPC),In Progress,High,Bratislava,SI 2027.1,MON-107,MON-108,MON-101
+MON-104,Retention cost calculator,To Do,High,Krakow,SI 2027.1,MON-109,,MON-102
+MON-105,Subscription lifecycle API,To Do,High,Brno,SI 2027.1,MON-107,,MON-101
+MON-106,Metering dashboards,To Do,Medium,Krakow,SI 2027.1,,,MON-102
+MON-107,Console: plans & billing UI,To Do,High,Bratislava,SI 2027.2,MON-110,,"MON-103,MON-105"
+MON-108,Third-party perimeter quota enforcement,To Do,Medium,Krakow,SI 2027.1,MON-110,,MON-103
+MON-109,Cost reporting for finance,To Do,Medium,Krakow,SI 2027.2,,,MON-104
+MON-110,Self-service upgrade flow,To Do,High,Bratislava,SI 2027.2,MON-111,,"MON-107,MON-108"
+MON-111,Mobile app: plan status & upsell,To Do,Low,Brno,SI 2027.1,,,MON-110
+MON-112,Privacy policy: data flow for billing,In Progress,Medium,Bratislava,SI 2026.4,MON-107,,
+MON-113,Notification dispatcher: billing events,To Do,Medium,Brno,SI 2027.2,,,MON-105
+MON-114,Partner portal pricing (external dep),To Do,Medium,Krakow,SI 2027.3,,,"MON-107,PLAT-77"

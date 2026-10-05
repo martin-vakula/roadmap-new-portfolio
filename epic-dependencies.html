@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Epic Dependency Map</title>
+<style>
+  :root {
+    --bg:#f6f7f9; --panel:#fff; --ink:#1f2937; --muted:#6b7280; --line:#d9dde3;
+    --ok:#16a34a; --warn:#d97706; --bad:#dc2626; --ext:#9ca3af; --accent:#2563eb;
+    --done:#dcfce7; --prog:#dbeafe; --todo:#f3f4f6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#111418; --panel:#1b2027; --ink:#e5e7eb; --muted:#9aa3b0; --line:#303846;
+            --done:#1b3a2a; --prog:#1e3550; --todo:#262c36; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font:13px/1.35 system-ui,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+  header { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:10px 16px; background:var(--panel); border-bottom:1px solid var(--line); }
+  header h1 { font-size:16px; margin:0 12px 0 0; }
+  button, select, input[type=search] { font:inherit; padding:5px 9px; border:1px solid var(--line); border-radius:6px; background:var(--panel); color:var(--ink); cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  label.chk { display:flex; gap:5px; align-items:center; color:var(--muted); cursor:pointer; }
+  .sp { flex:1; }
+  .stats { display:flex; gap:8px; padding:8px 16px; flex-wrap:wrap; }
+  .pill { padding:3px 10px; border-radius:99px; border:1px solid var(--line); background:var(--panel); }
+  .pill b { font-weight:700; }
+  .bad { color:var(--bad); } .warn { color:var(--warn); } .ok { color:var(--ok); }
+  main { display:flex; gap:12px; padding:0 16px 16px; align-items:flex-start; }
+  #boardWrap { flex:1; min-width:0; overflow:auto; background:var(--panel); border:1px solid var(--line); border-radius:8px; max-height:calc(100vh - 170px); }
+  #board { position:relative; display:grid; min-width:max-content; }
+  #arrows { position:absolute; left:0; top:0; pointer-events:none; overflow:visible; z-index:0; }
+  .colhead { position:sticky; top:0; z-index:3; background:var(--panel); padding:8px 10px; font-weight:700; border-bottom:2px solid var(--line); text-align:center; }
+  .lanehead { position:sticky; left:0; z-index:2; background:var(--panel); padding:10px; font-weight:700; border-right:2px solid var(--line); border-bottom:1px solid var(--line); display:flex; align-items:center; }
+  .corner { position:sticky; left:0; top:0; z-index:4; background:var(--panel); border-bottom:2px solid var(--line); border-right:2px solid var(--line); }
+  .cell { border-bottom:1px solid var(--line); border-right:1px dashed var(--line); padding:8px 25px; display:flex; flex-direction:column; gap:14px; min-height:84px; }
+  .cell.over { background:color-mix(in srgb, var(--accent) 12%, transparent); }
+  .card { position:relative; z-index:1; width:190px; padding:7px 9px; border:1.5px solid var(--line); border-left-width:5px; border-radius:7px; background:var(--todo); cursor:grab; user-select:none; }
+  .card.s-done { background:var(--done); border-left-color:var(--ok); }
+  .card.s-prog { background:var(--prog); border-left-color:var(--accent); }
+  .card.s-todo { border-left-color:var(--ext); }
+  .card.sel { outline:2.5px solid var(--accent); }
+  .card.dim { opacity:.22; }
+  .card.moved { box-shadow:0 0 0 2px var(--warn); }
+  .card .k { font-weight:700; font-size:11px; color:var(--muted); display:flex; justify-content:space-between; gap:4px; }
+  .card .t { font-weight:600; max-height:2.7em; overflow:hidden; }
+  .badge { font-size:10px; padding:0 5px; border-radius:4px; background:var(--bad); color:#fff; }
+  .p1 { color:var(--bad); } .p2 { color:var(--warn); }
+  .extn { position:relative; z-index:1; width:190px; padding:6px 8px; border:1.5px dashed var(--ext); border-radius:7px; color:var(--muted); font-size:11px; background:var(--panel); }
+  .extn.dim { opacity:.22; }
+  path.e { fill:none; stroke-width:2; }
+  path.e.ok { stroke:var(--ok); } path.e.warn { stroke:var(--warn); } path.e.bad { stroke:var(--bad); stroke-width:2.8; }
+  path.e.ext { stroke:var(--ext); stroke-dasharray:5 4; }
+  path.e.dim { opacity:.08; }
+  aside { width:310px; flex:none; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; max-height:calc(100vh - 170px); overflow:auto; }
+  aside h3 { margin:0 0 6px; font-size:13px; }
+  aside section { margin-bottom:14px; }
+  .row { display:flex; gap:6px; align-items:center; margin:4px 0; flex-wrap:wrap; }
+  .row select { max-width:180px; }
+  .viol { padding:6px 8px; border:1px solid var(--line); border-left:4px solid var(--bad); border-radius:6px; margin:5px 0; font-size:12px; }
+  .viol.warn { border-left-color:var(--warn); }
+  .viol button, .link button { font-size:11px; padding:2px 6px; margin:4px 4px 0 0; }
+  .link { display:flex; justify-content:space-between; align-items:center; font-size:12px; }
+  .muted { color:var(--muted); }
+  .legend { display:flex; gap:12px; flex-wrap:wrap; padding:0 16px 8px; color:var(--muted); font-size:12px; }
+  .legend i { display:inline-block; width:22px; height:0; border-top:3px solid; vertical-align:middle; margin-right:4px; }
+  #empty { padding:40px; text-align:center; color:var(--muted); }
+  @media (max-width:900px){ main{flex-direction:column;} aside{width:100%;max-height:none;} }
+</style>
+</head>
+<body>
+<header>
+  <h1>Epic Dependency Map</h1>
+  <button id="btnImport">Import JIRA CSV</button>
+  <input type="file" id="file" accept=".csv,text/csv" hidden>
+  <button id="btnSample">Load sample</button>
+  <select id="fStatus" title="Status filter"><option value="">All statuses</option><option value="open">Not done</option><option value="done">Done only</option></select>
+  <select id="fTeam" title="Team filter"><option value="">All teams</option></select>
+  <input type="search" id="fSearch" placeholder="Search key / summary">
+  <label class="chk"><input type="checkbox" id="cCross"> cross-team links only</label>
+  <label class="chk"><input type="checkbox" id="cLinked"> hide epics without links</label>
+  <span class="sp"></span>
+  <button id="btnReset">Reset scenario</button>
+  <button id="btnExport">Export scenario CSV</button>
+</header>
+<div class="stats" id="stats"></div>
+<div class="legend">
+  <span><i style="border-color:var(--ok)"></i>OK: blocker is in an earlier increment</span>
+  <span><i style="border-color:var(--warn)"></i>Tight: same increment</span>
+  <span><i style="border-color:var(--bad)"></i>Violation: blocker is later than dependent</span>
+  <span><i style="border-color:var(--ext);border-top-style:dashed"></i>External epic (not in export)</span>
+  <span>Click an epic to trace its chain · drag an epic to another column to simulate a change</span>
+</div>
+<main>
+  <div id="boardWrap"><div id="empty">Import a JIRA CSV export or click <b>Load sample</b>.</div></div>
+  <aside>
+    <section id="detail"><h3>Selected epic</h3><div class="muted">Click an epic card.</div></section>
+    <section><h3>Issues to resolve</h3><div id="viols" class="muted">–</div></section>
+  </aside>
+</main>
+
+<script>
+const SAMPLE_CSV = `Issue key,Summary,Status,Priority,Team,Fix Version/s,Outward issue link (Blocks),Outward issue link (Blocks),Inward issue link (Blocks)
+MON-101,Licensing model & SKU catalogue,Done,Highest,Bratislava,SI 2026.4,MON-103,MON-105,
+MON-102,Usage metering service,In Progress,Highest,Brno,SI 2026.4,MON-104,MON-106,
+MON-103,Entitlement service (EPC),In Progress,High,Bratislava,SI 2027.1,MON-107,MON-108,MON-101
+MON-104,Retention cost calculator,To Do,High,Krakow,SI 2027.1,MON-109,,MON-102
+MON-105,Subscription lifecycle API,To Do,High,Brno,SI 2027.1,MON-107,,MON-101
+MON-106,Metering dashboards,To Do,Medium,Krakow,SI 2027.1,,,MON-102
+MON-107,Console: plans & billing UI,To Do,High,Bratislava,SI 2027.2,MON-110,,"MON-103,MON-105"
+MON-108,Third-party perimeter quota enforcement,To Do,Medium,Krakow,SI 2027.1,MON-110,,MON-103
+MON-109,Cost reporting for finance,To Do,Medium,Krakow,SI 2027.2,,,MON-104
+MON-110,Self-service upgrade flow,To Do,High,Bratislava,SI 2027.2,MON-111,,"MON-107,MON-108"
+MON-111,Mobile app: plan status & upsell,To Do,Low,Brno,SI 2027.1,,,MON-110
+MON-112,Privacy policy: data flow for billing,In Progress,Medium,Bratislava,SI 2026.4,MON-107,,
+MON-113,Notification dispatcher: billing events,To Do,Medium,Brno,SI 2027.2,,,MON-105
+MON-114,Partner portal pricing (external dep),To Do,Medium,Krakow,SI 2027.3,,,"MON-107,PLAT-77"
+`;
+
+/* ---------- state ---------- */
+let base = null;   // imported baseline: {epics:{key:{...}}, links:[[from,to]], periods:[...]}
+let sim = null;    // working copy for the scenario
+let selected = null;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const clone = o => JSON.parse(JSON.stringify(o));
+
+/* ---------- CSV ---------- */
+function parseCSV(text) {
+  const rows = []; let row = [], cell = '', q = false;
+  text = text.replace(/^﻿/, '');
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; }
+      else cell += c;
+    } else if (c === '"') q = true;
+    else if (c === ',') { row.push(cell); cell = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++;
+      row.push(cell); cell = '';
+      if (row.some(x => x !== '')) rows.push(row);
+      row = [];
+    } else cell += c;
+  }
+  if (cell !== '' || row.length) { row.push(cell); if (row.some(x => x !== '')) rows.push(row); }
+  return rows;
+}
+const norm = s => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+// every column whose header starts with a candidate (JIRA repeats link columns once per link)
+function findCols(headers, cands) {
+  const out = [];
+  headers.forEach((h, i) => { const n = norm(h); if (cands.some(c => n === c || n.startsWith(c))) out.push(i); });
+  return out;
+}
+const KEY_RE = /[A-Z][A-Z0-9_]+-\d+/g;
+
+function priorityRank(p) {
+  const n = norm(p);
+  if (/^\d+$/.test(n)) return Math.min(5, Math.max(1, +n));
+  if (/highest|blocker|critical|very high/.test(n)) return 1;
+  if (/high|major/.test(n)) return 2;
+  if (/lowest|trivial/.test(n)) return 5;
+  if (/low|minor/.test(n)) return 4;
+  return 3;
+}
+function statusClass(s) {
+  const n = norm(s);
+  if (/done|closed|resolved|complete|released/.test(n)) return 'done';
+  if (/progress|review|test|develop|implement|doing/.test(n)) return 'prog';
+  return 'todo';
+}
+function quarterOf(d) {
+  const t = Date.parse(d); if (isNaN(t)) return '';
+  const dt = new Date(t); return dt.getFullYear() + '-Q' + (Math.floor(dt.getMonth() / 3) + 1);
+}
+
+function buildModel(csv) {
+  const rows = parseCSV(csv);
+  if (rows.length < 2) throw new Error('CSV has no data rows');
+  const H = rows[0];
+  const one = c => { const r = findCols(H, c); return r.length ? r[0] : -1; };
+  const iKey = one(['issue key', 'key']), iSum = one(['summary']), iSt = one(['status']), iPri = one(['priority']),
+        iTeam = one(['team', 'components', 'component s', 'component', 'assignee']),
+        iPer = one(['fix version s', 'fix version', 'solution increment', 'program increment', 'pi', 'sprint']),
+        iDue = one(['due date', 'target end', 'end date']);
+  if (iKey < 0) throw new Error('Column "Issue key" not found');
+  const outCols = findCols(H, ['outward issue link']), inCols = findCols(H, ['inward issue link']);
+  const epics = {}, edges = new Set();
+  // an edge "a>b" means a must finish before b
+  const addEdge = (self, other, col, outward) => {
+    const dependType = /depend/.test(norm(H[col]));
+    const selfFirst = dependType ? !outward : outward;   // "depends on" reverses the direction of "blocks"
+    edges.add(selfFirst ? self + '>' + other : other + '>' + self);
+  };
+  rows.slice(1).forEach(r => {
+    const key = (r[iKey] || '').trim(); if (!key) return;
+    let per = iPer >= 0 ? (r[iPer] || '').split(/[;,]/)[0].trim() : '';
+    if (!per && iDue >= 0) per = quarterOf(r[iDue]);
+    epics[key] = {
+      key, summary: (iSum >= 0 && r[iSum]) || key, status: iSt >= 0 ? r[iSt] : '',
+      pri: iPri >= 0 ? priorityRank(r[iPri]) : 3,
+      team: (iTeam >= 0 && r[iTeam]) || 'Unassigned', period: per || 'Unplanned'
+    };
+    outCols.forEach(c => (r[c] || '').match(KEY_RE)?.forEach(o => addEdge(key, o, c, true)));
+    inCols.forEach(c => (r[c] || '').match(KEY_RE)?.forEach(o => addEdge(key, o, c, false)));
+  });
+  const links = [...edges].map(e => e.split('>')).filter(([a, b]) => a !== b);
+  const periods = [...new Set(Object.values(epics).map(e => e.period))]
+    .sort((a, b) => a === 'Unplanned' ? 1 : b === 'Unplanned' ? -1 : a.localeCompare(b, undefined, { numeric: true }));
+  return { epics, links, periods };
+}
+
+/* ---------- model helpers ---------- */
+function edgeState(m, a, b) {
+  const ea = m.epics[a], eb = m.epics[b];
+  if (!ea || !eb) return 'ext';
+  if (ea.period === 'Unplanned' || eb.period === 'Unplanned') return 'warn';
+  const d = m.periods.indexOf(eb.period) - m.periods.indexOf(ea.period);
+  return d > 0 ? 'ok' : d === 0 ? 'warn' : 'bad';
+}
+function chain(key) {
+  const up = new Set([key]), down = new Set([key]);
+  let grow = true;
+  while (grow) {
+    grow = false;
+    sim.links.forEach(([a, b]) => {
+      if (up.has(b) && !up.has(a)) { up.add(a); grow = true; }
+      if (down.has(a) && !down.has(b)) { down.add(b); grow = true; }
+    });
+  }
+  return { up, down };
+}
+function reaches(from, to) {
+  const seen = new Set([from]); const stack = [from];
+  while (stack.length) {
+    const x = stack.pop(); if (x === to) return true;
+    sim.links.forEach(([a, b]) => { if (a === x && !seen.has(b)) { seen.add(b); stack.push(b); } });
+  }
+  return false;
+}
+const hasLink = (a, b) => sim.links.some(l => l[0] === a && l[1] === b);
+
+function visibleEpics() {
+  const st = $('fStatus').value, tm = $('fTeam').value, q = $('fSearch').value.toLowerCase();
+  const linked = new Set(), cross = new Set();
+  sim.links.forEach(([a, b]) => {
+    linked.add(a); linked.add(b);
+    if (sim.epics[a]?.team !== sim.epics[b]?.team) { cross.add(a); cross.add(b); }
+  });
+  return Object.values(sim.epics).filter(e => {
+    if (st === 'done' && statusClass(e.status) !== 'done') return false;
+    if (st === 'open' && statusClass(e.status) === 'done') return false;
+    if (tm && e.team !== tm) return false;
+    if (q && !(e.key + ' ' + e.summary).toLowerCase().includes(q)) return false;
+    if ($('cLinked').checked && !linked.has(e.key)) return false;
+    if ($('cCross').checked && !cross.has(e.key)) return false;
+    return true;
+  });
+}
+
+/* ---------- rendering ---------- */
+const NS = 'http://www.w3.org/2000/svg';
+const EXT_LANE = 'External (not in export)';
+
+function render() {
+  if (!sim) return;
+  const eps = visibleEpics(), vis = new Set(eps.map(e => e.key));
+  // team filter options
+  const teams = [...new Set(Object.values(sim.epics).map(e => e.team))].sort();
+  const cur = $('fTeam').value;
+  $('fTeam').innerHTML = '<option value="">All teams</option>' +
+    teams.map(t => `<option ${t === cur ? 'selected' : ''}>${esc(t)}</option>`).join('');
+  // externals: link endpoints missing from the export, placed in the column of their visible neighbour
+  const ext = {};
+  sim.links.forEach(([a, b]) => [[a, b], [b, a]].forEach(([x, y]) => {
+    if (!sim.epics[x] && vis.has(y) && !ext[x]) ext[x] = sim.epics[y].period;
+  }));
+  const lanes = [...new Set(eps.map(e => e.team))].sort();
+  if (Object.keys(ext).length) lanes.push(EXT_LANE);
+  const per = sim.periods;
+  const teamOf = k => sim.epics[k] ? sim.epics[k].team : EXT_LANE;
+  const isVisible = k => vis.has(k) || k in ext;
+  const edges = sim.links.filter(([a, b]) => isVisible(a) && isVisible(b) &&
+    (!$('cCross').checked || teamOf(a) !== teamOf(b)));
+  const outCount = {}; sim.links.forEach(([a]) => outCount[a] = (outCount[a] || 0) + 1);
+  const hl = selected && sim.epics[selected] ? chain(selected) : null;
+  const inHl = k => !hl || hl.up.has(k) || hl.down.has(k);
+
+  let html = '<div class="corner"></div>' + per.map(p => `<div class="colhead">${esc(p)}</div>`).join('');
+  lanes.forEach(l => {
+    html += `<div class="lanehead">${esc(l)}</div>`;
+    per.forEach(p => {
+      let inner = '';
+      if (l === EXT_LANE) {
+        inner = Object.keys(ext).filter(k => ext[k] === p).map(k =>
+          `<div class="extn ${inHl(k) ? '' : 'dim'}" data-key="${esc(k)}"><b>${esc(k)}</b><br>external epic</div>`).join('');
+      } else {
+        inner = eps.filter(e => e.team === l && e.period === p)
+          .sort((a, b) => a.pri - b.pri || a.key.localeCompare(b.key, undefined, { numeric: true }))
+          .map(e => {
+            const b0 = base.epics[e.key];
+            const moved = b0 && (b0.period !== e.period || b0.pri !== e.pri);
+            const n = outCount[e.key] || 0;
+            return `<div class="card s-${statusClass(e.status)} ${e.key === selected ? 'sel' : ''} ${moved ? 'moved' : ''} ${inHl(e.key) ? '' : 'dim'}" draggable="true" data-key="${esc(e.key)}" title="${esc(e.key + ' – ' + e.summary + ' (' + e.status + ')')}">
+              <div class="k"><span>${esc(e.key)}</span><span><span class="p${e.pri}">P${e.pri}</span>${n >= 3 ? ` <span class="badge">blocks ${n}</span>` : ''}</span></div>
+              <div class="t">${esc(e.summary)}</div></div>`;
+          }).join('');
+      }
+      html += `<div class="cell" data-per="${esc(p)}">${inner}</div>`;
+    });
+  });
+
+  const board = document.createElement('div');
+  board.id = 'board';
+  board.style.gridTemplateColumns = `130px repeat(${per.length}, 240px)`;
+  board.innerHTML = html;
+  const wrap = $('boardWrap');
+  const sl = wrap.scrollLeft, st = wrap.scrollTop;
+  wrap.innerHTML = ''; wrap.appendChild(board);
+  wrap.scrollLeft = sl; wrap.scrollTop = st;
+  drawArrows(board, edges, inHl, hl);
+  renderStats(); renderViols(); renderDetail();
+}
+
+function drawArrows(board, edges, inHl, hl) {
+  const svg = document.createElementNS(NS, 'svg');
+  svg.id = 'arrows';
+  svg.setAttribute('width', board.scrollWidth); svg.setAttribute('height', board.scrollHeight);
+  const colors = { ok: 'var(--ok)', warn: 'var(--warn)', bad: 'var(--bad)', ext: 'var(--ext)' };
+  svg.innerHTML = '<defs>' + Object.keys(colors).map(s =>
+    `<marker id="ah-${s}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${colors[s]}"/></marker>`).join('') + '</defs>';
+  board.appendChild(svg);
+  const br = board.getBoundingClientRect();
+  const el = k => board.querySelector(`[data-key="${CSS.escape(k)}"]`);
+  edges.forEach(([a, b]) => {
+    const ea = el(a), eb = el(b); if (!ea || !eb) return;
+    const ra = ea.getBoundingClientRect(), rb = eb.getBoundingClientRect();
+    const x1 = ra.right - br.left, y1 = (ra.top + ra.bottom) / 2 - br.top;
+    const x2 = rb.left - br.left, y2 = (rb.top + rb.bottom) / 2 - br.top;
+    const dx = Math.max(40, Math.abs(x2 - x1) / 2);
+    const s = edgeState(sim, a, b);
+    const onPath = !hl || (hl.up.has(a) && hl.up.has(b)) || (hl.down.has(a) && hl.down.has(b));
+    const p = document.createElementNS(NS, 'path');
+    p.setAttribute('d', `M${x1} ${y1} C${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`);
+    p.setAttribute('class', `e ${s} ${onPath ? '' : 'dim'}`);
+    p.setAttribute('marker-end', `url(#ah-${s})`);
+    svg.appendChild(p);
+  });
+}
+
+function renderStats() {
+  const cnt = m => { const c = { ok: 0, warn: 0, bad: 0 };
+    m.links.forEach(([a, b]) => { const s = edgeState(m, a, b); if (s in c) c[s]++; }); return c; };
+  const c = cnt(sim), c0 = cnt(base);
+  const moved = Object.keys(sim.epics).filter(k => base.epics[k].period !== sim.epics[k].period || base.epics[k].pri !== sim.epics[k].pri).length;
+  const d = c.bad - c0.bad;
+  $('stats').innerHTML =
+    `<span class="pill"><b>${Object.keys(sim.epics).length}</b> epics</span>` +
+    `<span class="pill"><b>${sim.links.length}</b> dependencies</span>` +
+    `<span class="pill"><b class="bad">${c.bad}</b> violations${d ? ` (${d > 0 ? '+' : ''}${d} vs baseline)` : ''}</span>` +
+    `<span class="pill"><b class="warn">${c.warn}</b> tight</span>` +
+    `<span class="pill"><b class="ok">${c.ok}</b> OK</span>` +
+    `<span class="pill">scenario changes: <b>${moved}</b></span>`;
+}
+
+function renderViols() {
+  const items = sim.links.map(([a, b]) => [a, b, edgeState(sim, a, b)]).filter(x => x[2] === 'bad' || x[2] === 'warn')
+    .sort((x, y) => (x[2] === 'bad' ? 0 : 1) - (y[2] === 'bad' ? 0 : 1));
+  if (!items.length) { $('viols').innerHTML = '<span class="ok">No conflicts – all blockers land earlier.</span>'; return; }
+  const last = sim.periods.length - 1;
+  $('viols').innerHTML =
+    (items.some(x => x[2] === 'bad') ? '<button onclick="autoResolve()">Auto-resolve: push dependents later</button>' : '') +
+    items.map(([a, b, s]) => {
+      const ea = sim.epics[a], eb = sim.epics[b];
+      if (!ea || !eb) return '';
+      const ia = sim.periods.indexOf(ea.period), ib = sim.periods.indexOf(eb.period);
+      const pushB = sim.periods[Math.min(ia + 1, last)], pullA = sim.periods[Math.max(ib - 1, 0)];
+      return `<div class="viol ${s === 'warn' ? 'warn' : ''}"><b>${esc(a)}</b> (${esc(ea.period)}) blocks <b>${esc(b)}</b> (${esc(eb.period)})<br>
+        <span class="muted">${s === 'bad' ? 'Violation' : 'Tight'}</span><br>
+        <button onclick="setPeriod('${esc(b)}','${esc(pushB)}')">Move ${esc(b)} → ${esc(pushB)}</button>
+        <button onclick="setPeriod('${esc(a)}','${esc(pullA)}')">Move ${esc(a)} → ${esc(pullA)}</button></div>`;
+    }).join('');
+}
+
+function renderDetail() {
+  const e = selected && sim.epics[selected];
+  if (!e) { $('detail').innerHTML = '<h3>Selected epic</h3><div class="muted">Click an epic card.</div>'; return; }
+  const b0 = base.epics[e.key];
+  const preds = sim.links.filter(l => l[1] === e.key).map(l => l[0]);
+  const succs = sim.links.filter(l => l[0] === e.key).map(l => l[1]);
+  const li = (k, a, b) => `<div class="link"><span>${esc(k)} <span class="muted">${esc(sim.epics[k]?.period || 'external')}</span></span>
+    <button title="Remove dependency" onclick="removeLink('${esc(a)}','${esc(b)}')">✕</button></div>`;
+  const others = Object.keys(sim.epics).filter(k => k !== e.key).sort();
+  const opts = others.map(k => `<option>${esc(k)}</option>`).join('');
+  $('detail').innerHTML = `<h3>${esc(e.key)}</h3>
+    <div>${esc(e.summary)}</div>
+    <div class="muted">${esc(e.team)} · ${esc(e.status || 'no status')}</div>
+    <div class="row">Increment
+      <select onchange="setPeriod('${esc(e.key)}', this.value)">${sim.periods.map(p => `<option ${p === e.period ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select>
+      <span class="muted">baseline: ${esc(b0.period)}</span></div>
+    <div class="row">Priority
+      <select onchange="setPri('${esc(e.key)}', +this.value)">${[1,2,3,4,5].map(p => `<option value="${p}" ${p === e.pri ? 'selected' : ''}>P${p}${p === 1 ? ' (highest)' : p === 5 ? ' (lowest)' : ''}</option>`).join('')}</select>
+      <span class="muted">baseline: P${b0.pri}</span></div>
+    <h3 style="margin-top:10px">Blocked by (${preds.length})</h3>${preds.map(k => li(k, k, e.key)).join('') || '<div class="muted">none</div>'}
+    <div class="row"><select id="addPred"><option value="">add blocker…</option>${opts}</select><button onclick="addLink('pred')">+</button></div>
+    <h3 style="margin-top:10px">Blocks (${succs.length})</h3>${succs.map(k => li(k, e.key, k)).join('') || '<div class="muted">none</div>'}
+    <div class="row"><select id="addSucc"><option value="">add dependent…</option>${opts}</select><button onclick="addLink('succ')">+</button></div>`;
+}
+
+/* ---------- scenario actions ---------- */
+function setPeriod(key, p) { if (sim.epics[key]) { sim.epics[key].period = p; render(); } }
+function setPri(key, p) { sim.epics[key].pri = p; render(); }
+function removeLink(a, b) { sim.links = sim.links.filter(l => !(l[0] === a && l[1] === b)); render(); }
+function addLink(kind) {
+  const other = $(kind === 'pred' ? 'addPred' : 'addSucc').value; if (!other) return;
+  const [a, b] = kind === 'pred' ? [other, selected] : [selected, other];
+  if (hasLink(a, b)) return;
+  if (reaches(b, a)) { alert('This dependency would create a cycle (' + b + ' already leads to ' + a + ').'); return; }
+  sim.links.push([a, b]); render();
+}
+function autoResolve() {
+  const last = sim.periods.length - 1;
+  for (let i = 0; i < 60; i++) {
+    let changed = false;
+    sim.links.forEach(([a, b]) => {
+      if (edgeState(sim, a, b) !== 'bad') return;
+      const eb = sim.epics[b];
+      if (statusClass(eb.status) === 'done') return;
+      eb.period = sim.periods[Math.min(sim.periods.indexOf(sim.epics[a].period) + 1, last)];
+      changed = true;
+    });
+    if (!changed) break;
+  }
+  render();
+}
+function resetScenario() { if (base) { sim = clone(base); render(); } }
+function exportCSV() {
+  if (!sim) return;
+  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const lines = [['Issue key', 'Summary', 'Team', 'Status', 'Priority (scenario)', 'Priority (baseline)', 'Increment (scenario)', 'Increment (baseline)', 'Changed', 'Blocks'].map(q).join(',')];
+  Object.values(sim.epics).forEach(e => {
+    const b0 = base.epics[e.key];
+    lines.push([e.key, e.summary, e.team, e.status, 'P' + e.pri, 'P' + b0.pri, e.period, b0.period,
+      (e.period !== b0.period || e.pri !== b0.pri) ? 'yes' : '',
+      sim.links.filter(l => l[0] === e.key).map(l => l[1]).join(' ')].map(q).join(','));
+  });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\n')], { type: 'text/csv' }));
+  a.download = 'epic-scenario.csv'; a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ---------- wiring ---------- */
+function load(csv) {
+  try { base = buildModel(csv); sim = clone(base); selected = null; render(); }
+  catch (err) { alert('Could not read CSV: ' + err.message); }
+}
+$('btnImport').onclick = () => $('file').click();
+$('file').onchange = ev => { const f = ev.target.files[0]; if (f) f.text().then(load); ev.target.value = ''; };
+$('btnSample').onclick = () => load(SAMPLE_CSV);
+$('btnReset').onclick = resetScenario;
+$('btnExport').onclick = exportCSV;
+['fStatus', 'fTeam', 'cCross', 'cLinked'].forEach(id => $(id).onchange = render);
+$('fSearch').oninput = render;
+
+const wrap = $('boardWrap');
+wrap.addEventListener('click', ev => {
+  const c = ev.target.closest('.card');
+  selected = c ? (c.dataset.key === selected ? null : c.dataset.key) : null;
+  render();
+});
+let dragKey = null;
+wrap.addEventListener('dragstart', ev => { const c = ev.target.closest('.card'); if (c) { dragKey = c.dataset.key; ev.dataTransfer.setData('text/plain', dragKey); } });
+wrap.addEventListener('dragover', ev => { const c = ev.target.closest('.cell'); if (c && dragKey) { ev.preventDefault(); wrap.querySelectorAll('.cell.over').forEach(x => x.classList.remove('over')); c.classList.add('over'); } });
+wrap.addEventListener('drop', ev => {
+  const c = ev.target.closest('.cell'); if (!c || !dragKey) return;
+  ev.preventDefault();
+  sim.epics[dragKey].period = c.dataset.per; selected = dragKey; dragKey = null; render();
+});
+wrap.addEventListener('dragend', () => { dragKey = null; wrap.querySelectorAll('.cell.over').forEach(x => x.classList.remove('over')); });
+window.addEventListener('resize', () => { if (sim) render(); });
+</script>
+</body>
+</html>

@@ -18,6 +18,8 @@ The goal is a single visual layer that communicates delivery plans clearly — r
 | File | Description |
 |------|-------------|
 | `roadmap-drilldown_4.html` | Main app — open directly in browser, no install needed |
+| `epic-dependencies.html` | Epic dependency map + what-if simulation (import JIRA CSV export) |
+| `sample-epics.csv` | Sample Monetization epics in JIRA CSV export format |
 
 ---
 
@@ -67,3 +69,18 @@ Expect frequent changes to design, data structure, and interactions.
 ---
 
 *Last updated: May 2026*
+
+---
+
+## 🔗 Epic Dependency Map
+
+Open `epic-dependencies.html`, click **Import JIRA CSV** (or **Load sample**).
+
+**JIRA export** (Filter → Export → CSV, all fields), e.g. `issuetype = Epic AND fixVersion in (...)`.
+Needed columns: Issue key, Summary, Status, Priority, Team/Component, Fix Version (increment), and the
+*Outward/Inward issue link (Blocks / Depends)* columns (repeated per link – all are read).
+
+**Reading it:** columns = increments, rows = teams. Green arrow = blocker earlier, amber = same increment, red = violation.
+Click an epic to trace its chain; drag it to another column or change priority/dependencies in the side panel
+to simulate. *Auto-resolve* pushes dependents later; *Reset scenario* returns to baseline; *Export scenario CSV* saves the what-if.
+Nothing is written back to JIRA.
