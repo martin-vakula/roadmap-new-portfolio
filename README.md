@@ -93,12 +93,15 @@ Nothing is written back to JIRA.
 
 Open `epic-hierarchy.html` → **Import JIRA CSV** (or **Load sample**).
 
-- **Objective banner**: status, RAG, owner/manager, Global Priority, due date, % done (roll-up from stories). ▲▼ reorder objectives to simulate priority.
-- **Rows** = Solution Increments (epic ↔ SOLINC "relates to"), **columns** = PI (3 months each), **cards** = epics with progress from their stories.
-- **Lines**: solid = *Solves* (strong, coloured by PI order), dotted = *Relates to* (weak).
-- Epics inherit the objective from the epic they solve; epics due after their objective are flagged **late vs obj**.
-- Click an epic: trace chain + stories grouped by sprint in the side panel. Drag to another PI to simulate.
-- **Reset scenario** = back to imported data; **Clear all** = empty dashboard for a new upload.
+**Model**: Objective ← *Solves* ← Solution Increment (SI) ← *Relates to* ← Epic (lives in a Delivery Unit = Jira project) → Stories.
+Many-to-many on both links: an SI can feed several Objectives, an epic can serve several SIs (shown under each, joined by a dotted line).
 
-One JIRA CSV with all issue types works. Needed columns: Issue key, Issue Type, Summary, Status, Assignee, PI, Due date, Story Points,
-Sprint (repeated), Epic Link, RAG Status, Objective Manager, Global Priority, and Outward/Inward issue link (Solves / Relates).
+- **By Solution Increment** view: Objective banner (status, RAG, priority, due, forecast end) → SI rows → epic cards in PI columns. **By Delivery Unit** view: rows = Jira projects.
+- **Calendar**: sprints are 2 weeks (sprint 292 = 1 Oct 2026), PI85 = sprints 291–298; editable in the side panel. SI timing is derived from its epics; epic timing from its stories' sprints (or the whole PI if moved / no stories).
+- **Epic dependencies** are not in JIRA yet: add "blocks" links on an epic, *Save in browser* (re-applied on every import) or export/import as CSV. A real `Blocks` link in the JIRA CSV is read too.
+- **Critical path** = longest chain of dependencies with ≤ 1 sprint of slack, compared with the Objective due dates.
+- Flags: epic/SI ends after Objective due, SI without epics, Objective without SI, dependency overlap.
+- Simulation: drag epic to another PI, add/remove links, ▲▼ objective priority, auto-resolve. **Reset scenario** = back to imported data; **Clear all** = empty dashboard.
+
+JIRA export (one CSV, all issue types): Issue key, Issue Type, Summary, Status, Assignee, PI, Story Points, Sprint (repeated), Epic Link, RAG Status,
+Objective Manager, Global Priority, Due date, and Outward/Inward issue link (Solves / Relates / Blocks) columns. Optional `Project` column (else taken from the key prefix).

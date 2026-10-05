@@ -7,32 +7,38 @@
 <style>
   :root {
     --bg:#f6f7f9; --panel:#fff; --ink:#1f2937; --muted:#6b7280; --line:#d9dde3;
-    --ok:#16a34a; --warn:#d97706; --bad:#dc2626; --ext:#9ca3af; --accent:#2563eb; --rel:#7c3aed;
+    --ok:#16a34a; --warn:#d97706; --bad:#dc2626; --ext:#9ca3af; --accent:#2563eb; --rel:#7c3aed; --crit:#111827;
     --done:#dcfce7; --prog:#dbeafe; --todo:#f3f4f6; --hold:#fef3c7; --banner:#eef2ff;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg:#111418; --panel:#1b2027; --ink:#e5e7eb; --muted:#9aa3b0; --line:#303846;
+    :root { --bg:#111418; --panel:#1b2027; --ink:#e5e7eb; --muted:#9aa3b0; --line:#303846; --crit:#f9fafb;
             --done:#1b3a2a; --prog:#1e3550; --todo:#262c36; --hold:#3b3220; --banner:#222a3d; }
   }
   * { box-sizing:border-box; }
   body { margin:0; font:13px/1.35 system-ui,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--ink); }
   header { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:10px 16px; background:var(--panel); border-bottom:1px solid var(--line); }
   header h1 { font-size:16px; margin:0 12px 0 0; }
-  button, select, input[type=search] { font:inherit; padding:5px 9px; border:1px solid var(--line); border-radius:6px; background:var(--panel); color:var(--ink); cursor:pointer; }
+  button, select, input, textarea { font:inherit; padding:5px 9px; border:1px solid var(--line); border-radius:6px; background:var(--panel); color:var(--ink); }
+  button, select { cursor:pointer; }
   button:hover { border-color:var(--accent); }
+  button:disabled { opacity:.4; cursor:default; }
   label.chk { display:flex; gap:5px; align-items:center; color:var(--muted); cursor:pointer; }
+  label.chk input { padding:0; }
+  .seg button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
   .sp { flex:1; }
   .stats { display:flex; gap:8px; padding:8px 16px; flex-wrap:wrap; }
   .pill { padding:3px 10px; border-radius:99px; border:1px solid var(--line); background:var(--panel); }
   .pill b { font-weight:700; }
   .bad { color:var(--bad); } .warn { color:var(--warn); } .ok { color:var(--ok); }
   main { display:flex; gap:12px; padding:0 16px 16px; align-items:flex-start; }
-  #boardWrap { flex:1; min-width:0; overflow:auto; background:var(--panel); border:1px solid var(--line); border-radius:8px; max-height:calc(100vh - 170px); }
+  #boardWrap { flex:1; min-width:0; overflow:auto; background:var(--panel); border:1px solid var(--line); border-radius:8px; max-height:calc(100vh - 190px); }
   #board { position:relative; display:grid; min-width:max-content; }
   #arrows { position:absolute; left:0; top:0; pointer-events:none; overflow:visible; z-index:0; }
-  .colhead { position:sticky; top:0; z-index:3; background:var(--panel); padding:8px 10px; font-weight:700; border-bottom:2px solid var(--line); text-align:center; }
-  .lanehead { position:sticky; left:0; z-index:2; background:var(--panel); padding:8px 10px; border-right:2px solid var(--line); border-bottom:1px solid var(--line); font-size:12px; }
+  .colhead { position:sticky; top:0; z-index:3; background:var(--panel); padding:6px 10px; font-weight:700; border-bottom:2px solid var(--line); text-align:center; }
+  .colhead small { display:block; font-weight:400; color:var(--muted); font-size:11px; }
+  .lanehead { position:sticky; left:0; z-index:2; background:var(--panel); padding:8px 10px; border-right:2px solid var(--line); border-bottom:1px solid var(--line); border-left:5px solid var(--ink); font-size:12px; }
   .lanehead b { display:block; }
+  .lanehead.empty { border-left-style:dashed; }
   .corner { position:sticky; left:0; top:0; z-index:4; background:var(--panel); border-bottom:2px solid var(--line); border-right:2px solid var(--line); }
   .banner { grid-column:1 / -1; position:sticky; left:0; z-index:2; background:var(--banner); border-bottom:1px solid var(--line); border-top:2px solid var(--line); padding:8px 12px; display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
   .banner .ttl { font-weight:700; cursor:pointer; }
@@ -46,27 +52,33 @@
   .card.s-done { background:var(--done); border-left-color:var(--ok); }
   .card.s-prog { background:var(--prog); border-left-color:var(--accent); }
   .card.s-todo { border-left-color:var(--ext); }
+  .card.s-hold { background:var(--hold); border-left-color:var(--warn); }
   .card.sel { outline:2.5px solid var(--accent); }
-  .card.dim { opacity:.22; }
+  .card.dim { opacity:.2; }
   .card.moved { box-shadow:0 0 0 2px var(--warn); }
+  .card.crit { border-color:var(--crit); border-width:2px 2px 2px 5px; }
   .card .k { font-weight:700; font-size:11px; color:var(--muted); display:flex; justify-content:space-between; gap:4px; }
   .card .t { font-weight:600; max-height:2.7em; overflow:hidden; }
   .card .pb { height:6px; border-radius:3px; background:var(--line); margin-top:5px; overflow:hidden; }
   .card .pb i { display:block; height:100%; background:var(--ok); }
   .card .pt { font-size:10.5px; color:var(--muted); margin-top:2px; }
+  .card .du { font-size:10px; font-weight:700; padding:0 4px; border-radius:3px; background:var(--line); color:var(--ink); }
   .badge { font-size:10px; padding:0 5px; border-radius:4px; color:#fff; background:var(--warn); margin-left:3px; }
-  .badge.hold { background:#b45309; } .badge.late { background:var(--bad); }
+  .badge.hold { background:#b45309; } .badge.late { background:var(--bad); } .badge.crit { background:var(--crit); color:var(--bg); }
   .chip { display:inline-block; font-size:10px; padding:0 5px; margin:3px 3px 0 0; border:1px solid var(--line); border-radius:4px; color:var(--muted); }
   path.e { fill:none; }
-  path.e.solves { stroke-width:2.8; }
-  path.e.solves.ok { stroke:var(--ok); } path.e.solves.warn { stroke:var(--warn); } path.e.solves.bad { stroke:var(--bad); }
-  path.e.relates { stroke:var(--rel); stroke-width:1.6; stroke-dasharray:2 5; stroke-linecap:round; }
+  path.e.dep { stroke-width:2.6; }
+  path.e.dep.ok { stroke:var(--ok); } path.e.dep.warn { stroke:var(--warn); } path.e.dep.bad { stroke:var(--bad); }
+  path.e.dep.crit { stroke:var(--crit); stroke-width:4; }
+  path.e.rel { stroke:var(--rel); stroke-width:1.8; stroke-dasharray:2 5; stroke-linecap:round; }
   path.e.dim { opacity:.08; }
-  aside { width:330px; flex:none; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; max-height:calc(100vh - 170px); overflow:auto; }
+  aside { width:340px; flex:none; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; max-height:calc(100vh - 190px); overflow:auto; }
   aside h3 { margin:0 0 6px; font-size:13px; }
   aside section { margin-bottom:14px; }
   .row { display:flex; gap:6px; align-items:center; margin:4px 0; flex-wrap:wrap; }
   .row select { max-width:170px; }
+  .row input { width:110px; }
+  textarea { width:100%; height:64px; font-family:monospace; font-size:12px; }
   .viol { padding:6px 8px; border:1px solid var(--line); border-left:4px solid var(--bad); border-radius:6px; margin:5px 0; font-size:12px; }
   .viol.warn { border-left-color:var(--warn); }
   .viol button, .link button { font-size:11px; padding:2px 6px; margin:4px 4px 0 0; }
@@ -89,10 +101,12 @@
   <button id="btnImport">Import JIRA CSV</button>
   <input type="file" id="file" accept=".csv,text/csv" hidden>
   <button id="btnSample">Load sample</button>
+  <span class="seg"><button id="mSI" class="on" title="Rows = Solution Increments grouped under Objectives">By Solution Increment</button><button id="mDU" title="Rows = Delivery Units (Jira projects)">By Delivery Unit</button></span>
   <select id="fStatus" title="Status filter"><option value="">All statuses</option><option value="open">Not done</option><option value="done">Done only</option></select>
   <select id="fObj" title="Objective filter"><option value="">All objectives</option></select>
   <input type="search" id="fSearch" placeholder="Search key / summary">
-  <label class="chk"><input type="checkbox" id="cRel" checked> show "relates" lines</label>
+  <label class="chk"><input type="checkbox" id="cCrit" checked> critical path</label>
+  <label class="chk"><input type="checkbox" id="cRel" checked> dotted "relates" links</label>
   <span class="sp"></span>
   <button id="btnReset" title="Undo what-if changes, keep the data">Reset scenario</button>
   <button id="btnClear" title="Remove all data and start over">Clear all</button>
@@ -100,53 +114,109 @@
 </header>
 <div class="stats" id="stats"></div>
 <div class="legend">
-  <span><i style="border-color:var(--ok)"></i>Solves (strong) – solver in earlier PI</span>
-  <span><i style="border-color:var(--warn)"></i>Solves – same PI</span>
-  <span><i style="border-color:var(--bad)"></i>Solves – solver in later PI (violation)</span>
-  <span><i style="border-color:var(--rel);border-top-style:dotted"></i>Relates to (weak)</span>
-  <span class="muted">Objective → Solution Increment (row) → Epic (card, PI column) → Stories (side panel). Click an epic to trace it · drag it to another PI to simulate.</span>
+  <span><i style="border-color:var(--ink)"></i>Solid rail = SI <b>solves</b> Objective</span>
+  <span><i style="border-color:var(--rel);border-top-style:dotted"></i>Dotted = same epic <b>relates</b> to several SIs</span>
+  <span><i style="border-color:var(--ok)"></i>Epic <b>blocks</b> epic: OK</span>
+  <span><i style="border-color:var(--warn)"></i>tight (≤ 1 sprint slack)</span>
+  <span><i style="border-color:var(--bad)"></i>violation (overlap)</span>
+  <span><i style="border-color:var(--crit)"></i>critical path</span>
 </div>
 <main>
   <div id="boardWrap"><div id="empty">Import a JIRA CSV export or click <b>Load sample</b>.</div></div>
   <aside>
     <section id="detail"><h3>Selected epic</h3><div class="muted">Click an epic card.</div></section>
+    <section><h3>Critical path</h3><div id="critp" class="muted">–</div></section>
     <section><h3>Issues to resolve</h3><div id="viols" class="muted">–</div></section>
+    <section>
+      <h3>Epic dependencies</h3>
+      <div class="muted">JIRA has none yet – add them on an epic ("blocks"), then save so they survive the next import.</div>
+      <div class="row"><button id="btnSaveDeps">Save in browser</button><button id="btnExpDeps">Export CSV</button><button id="btnImpDeps">Import CSV</button></div>
+      <input type="file" id="depFile" accept=".csv,text/csv" hidden>
+    </section>
+    <section>
+      <h3>Sprint / PI calendar</h3>
+      <div class="muted">Sprint N starts at anchor + (N − anchor) × days. Defaults come from the sprint calculator (sprint 292 = 1 Oct 2026, PI85 = sprints 291–298).</div>
+      <div class="row">Anchor sprint <input id="calN" type="number" style="width:70px"> start <input id="calS" type="date"></div>
+      <div class="row">Days / sprint <input id="calD" type="number" style="width:60px"> Sprints / PI (default) <input id="calL" type="number" style="width:60px"></div>
+      <div class="muted">Known PIs: PI, first sprint, last sprint (others are extrapolated)</div>
+      <textarea id="calP"></textarea>
+      <div class="row"><button id="btnCal">Apply calendar (resets scenario)</button></div>
+    </section>
   </aside>
 </main>
 
 <script>
-const SAMPLE_CSV = `Issue key,Issue Type,Summary,Status,Assignee,PI,Due date,Story Points,Sprint,Sprint,Epic Link,RAG Status,Objective Manager,Global Priority,Outward issue link (Solves),Outward issue link (Solves),Outward issue link (Relates),Outward issue link (Relates)
-ESET-138,Objective,Create XDR monetization model,In Analysis,Igor Hula,H2_2026,2026-11-30,,,,,Attention,Martin Vakula,993,,,,
-SOLINC-3,Solution Increment,Pilot 138 - C&F SI1,In Analysis,Pavol Korvas,,,,,,,,,,,,,
-SOLINC-18,Solution Increment,Pilot 138 - C&F SI2,In Analysis,Pavol Korvas,,,,,,,,,,,,,
-D_UX-2583,Epic,UX XDR monetization model (H2/2026),In Progress,Veronika Slovakova,PI84,2026-12-31,,,,,,,,ESET-138,,SOLINC-3,DU_EPP-2077
-DU_EPP-2157,Epic,XDR Monetization: Retention of Incidents,Open,Martin Antal,PI85,2027-01-06,,,,,,,,ESET-138,,SOLINC-18,
-DU_EPP-2077,Epic,Data retention configuration service Phase 1,In Progress,Martin Stano,PI85,2027-01-06,,,,,,,,DU_EPP-2157,,SOLINC-3,SOLINC-18
-D_EPP-3183,Task,Analyse costs over auditlog mechanism for auditing changes in data retention configuration,Closed,Martin Stano,,,,EPC_292,,DU_EPP-2077,,,,,,,
-D_EPP-3180,Task,Implement synchronization of quotas via GetLinkedLocations,On Hold,EP CERBERUS TEAM,,,5,EPC_292,,DU_EPP-2077,,,,,,,
-D_EPP-3178,Task,Implement Frontend for Data retention service,On Hold,David Kubik,,,5,EPC_292,,DU_EPP-2077,,,,,,,
-D_EPP-3175,Task,Bootstrap data retention management microservice with API and staisy constraints,Closed,Filip Mikula,,,5,EPC_291,,DU_EPP-2077,,,,,,,
-D_EPP-3185,Story,Implement audit logging for Data Retention Management domain (mirroring Incidents pattern),Open,Michal Fabis,,,3,EPC_291,EPC_292,DU_EPP-2077,,,,,,,
-D_EPP-3181,Task,Create eventhubs for emmiting of the data retention quotas for recieving services,Closed,Filip Mikula,,,2,EPC_291,,DU_EPP-2077,,,,,,,
-D_EPP-3179,Story,Implement API from ARCH into Data retention configuration service,In Review,Filip Mikula,,,3,EPC_291,EPC_292,DU_EPP-2077,,,,,,,
-D_EPP-3182,Task,E2E testing of the Data retention configuration service,Open,EP CERBERUS TEAM,,,5,EPC_293,,DU_EPP-2077,,,,,,,
-D_UX-2601,Story,Monetization model wireframes,Closed,Veronika Slovakova,,,3,EPC_290,,D_UX-2583,,,,,,,
-D_UX-2602,Story,Plans and pricing screens,In Progress,Veronika Slovakova,,,5,EPC_291,,D_UX-2583,,,,,,,
-D_UX-2603,Story,Usability test of upsell flow,Open,Veronika Slovakova,,,2,EPC_292,,D_UX-2583,,,,,,,
-DU_EPP-2201,Story,Define incident retention tiers,Open,Martin Antal,,,3,EPC_292,,DU_EPP-2157,,,,,,,
-DU_EPP-2202,Story,Retention cost model per tier,Open,Martin Antal,,,5,EPC_293,,DU_EPP-2157,,,,,,,
+const SAMPLE_CSV = `Issue key,Issue Type,Summary,Status,Assignee,PI,Due date,Story Points,Sprint,Sprint,Epic Link,RAG Status,Objective Manager,Global Priority,Outward issue link (Solves),Outward issue link (Solves),Outward issue link (Relates),Outward issue link (Relates),Outward issue link (Blocks)
+ESET-138,Objective,Create XDR monetization model,In Analysis,Igor Hula,,2026-11-30,,,,,Attention,Martin Vakula,993,,,,,
+ESET-150,Objective,Monetization: partner and billing readiness,In Analysis,Igor Hula,,2027-03-31,,,,,Green,Martin Vakula,870,,,,,
+SOLINC-3,Solution Increment,Pilot 138 - C&F SI1,In Analysis,Pavol Korvas,,,,,,,,,,ESET-138,,,,
+SOLINC-18,Solution Increment,Pilot 138 - C&F SI2,In Analysis,Pavol Korvas,,,,,,,,,,ESET-138,ESET-150,,,
+SOLINC-21,Solution Increment,Partner billing front-end,Open,Pavol Korvas,,,,,,,,,,ESET-150,,,,
+D_UX-2583,Epic,UX XDR monetization model (H2/2026),In Progress,Veronika Slovakova,PI84,2026-09-16,,,,,,,,,,SOLINC-3,,DU_EPP-2157
+DU_EPP-2077,Epic,Data retention configuration service Phase 1,In Progress,Martin Stano,PI85,2027-01-06,,,,,,,,,,SOLINC-3,SOLINC-18,DU_EPP-2157
+DU_EPP-2157,Epic,XDR Monetization: Retention of Incidents,Open,Martin Antal,PI85,2027-01-06,,,,,,,,,,SOLINC-18,,DU_API-410
+DU_API-410,Epic,Billing and entitlement API,Open,Marek Hrabovsky,PI86,2027-03-31,,,,,,,,,,SOLINC-18,SOLINC-21,DU_FE-77
+DU_FE-77,Epic,Console: plans and billing UI,Open,Anna Kovacova,PI86,2027-03-31,,,,,,,,,,SOLINC-21,,
+D_EPP-3183,Task,Analyse costs over auditlog mechanism for auditing changes in data retention configuration,Closed,Martin Stano,,,,EPC_292,,DU_EPP-2077,,,,,,,,
+D_EPP-3180,Task,Implement synchronization of quotas via GetLinkedLocations,On Hold,EP CERBERUS TEAM,,,5,EPC_292,,DU_EPP-2077,,,,,,,,
+D_EPP-3178,Task,Implement Frontend for Data retention service,On Hold,David Kubik,,,5,EPC_292,,DU_EPP-2077,,,,,,,,
+D_EPP-3175,Task,Bootstrap data retention management microservice with API and staisy constraints,Closed,Filip Mikula,,,5,EPC_291,,DU_EPP-2077,,,,,,,,
+D_EPP-3185,Story,Implement audit logging for Data Retention Management domain (mirroring Incidents pattern),Open,Michal Fabis,,,3,EPC_291,EPC_292,DU_EPP-2077,,,,,,,,
+D_EPP-3181,Task,Create eventhubs for emmiting of the data retention quotas for recieving services,Closed,Filip Mikula,,,2,EPC_291,,DU_EPP-2077,,,,,,,,
+D_EPP-3179,Story,Implement API from ARCH into Data retention configuration service,In Review,Filip Mikula,,,3,EPC_291,EPC_292,DU_EPP-2077,,,,,,,,
+D_EPP-3182,Task,E2E testing of the Data retention configuration service,Open,EP CERBERUS TEAM,,,5,EPC_293,,DU_EPP-2077,,,,,,,,
+D_UX-2601,Story,Monetization model wireframes,Closed,Veronika Slovakova,,,3,EPC_289,,D_UX-2583,,,,,,,,
+D_UX-2602,Story,Plans and pricing screens,Closed,Veronika Slovakova,,,5,EPC_290,,D_UX-2583,,,,,,,,
+D_UX-2603,Story,Usability test of upsell flow,In Progress,Veronika Slovakova,,,2,EPC_291,,D_UX-2583,,,,,,,,
+DU_EPP-2201,Story,Define incident retention tiers,Open,Martin Antal,,,3,EPC_295,,DU_EPP-2157,,,,,,,,
+DU_EPP-2202,Story,Retention cost model per tier,Open,Martin Antal,,,5,EPC_296,EPC_297,DU_EPP-2157,,,,,,,,
+DU_EPP-2203,Story,Retention of incidents - API integration,Open,Martin Antal,,,5,EPC_298,,DU_EPP-2157,,,,,,,,
+DU_API-4101,Story,Entitlement data model,Open,Marek Hrabovsky,,,5,EPC_299,,DU_API-410,,,,,,,,
+DU_API-4102,Story,Billing events endpoint,Open,Marek Hrabovsky,,,8,EPC_300,EPC_301,DU_API-410,,,,,,,,
+DU_FE-771,Story,Plans page,Open,Anna Kovacova,,,5,EPC_302,,DU_FE-77,,,,,,,,
+DU_FE-772,Story,Upgrade flow,Open,Anna Kovacova,,,5,EPC_303,,DU_FE-77,,,,,,,,
 `;
 
 /* ---------- state ---------- */
-let base = null;   // imported baseline
-let sim = null;    // working copy (scenario)
-let selected = null;
+let base = null, sim = null, selected = null, mode = 'si', savedApplied = 0;
 const collapsed = new Set();
-
 function $(id) { return document.getElementById(id); }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 const clone = o => JSON.parse(JSON.stringify(o));
 const natural = (a, b) => String(a).localeCompare(String(b), undefined, { numeric: true });
+
+/* ---------- calendar (sprints / PIs) ---------- */
+const DAY = 864e5;
+let CAL = { aN: 292, aS: '2026-10-01', days: 14, len: 6, rows: [{ n: 85, first: 291, last: 298 }] };
+const D = s => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || ''); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : NaN; };
+const fmt = ms => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+const fmtS = ms => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+const sprintStart = n => D(CAL.aS) + (n - CAL.aN) * CAL.days * DAY;
+const sprintEnd = n => sprintStart(n) + (CAL.days - 1) * DAY;
+const sprintNum = s => { const m = /(\d{2,4})\D*$/.exec(s || ''); return m ? +m[1] : null; };
+const piNum = name => { const m = /(?:^|\D)PI\s*_?(\d+)/i.exec(name || ''); return m ? +m[1] : null; };
+function piRange(name) {
+  const n = piNum(name); if (n == null) return null;
+  const rows = [...CAL.rows].sort((a, b) => a.n - b.n);
+  let first, last;
+  const hit = rows.find(r => r.n === n);
+  if (hit) { first = hit.first; last = hit.last; }
+  else {
+    const below = [...rows].reverse().find(r => r.n < n), above = rows.find(r => r.n > n);
+    if (below) { first = below.last + 1 + (n - below.n - 1) * CAL.len; last = first + CAL.len - 1; }
+    else if (above) { last = above.first - 1 - (above.n - n - 1) * CAL.len; first = last - CAL.len + 1; }
+    else return null;
+  }
+  return { first, last, start: sprintStart(first), end: sprintEnd(last) };
+}
+function piOfSprint(sn) {
+  const ns = CAL.rows.map(r => r.n); if (!ns.length) return null;
+  for (let p = Math.min(...ns) - 40; p <= Math.max(...ns) + 40; p++) {
+    const r = p > 0 && piRange('PI' + p); if (r && sn >= r.first && sn <= r.last) return 'PI' + p;
+  }
+  return null;
+}
+const sprintOfDate = ms => CAL.aN + Math.floor((ms - D(CAL.aS)) / (CAL.days * DAY));
 
 /* ---------- CSV ---------- */
 function parseCSV(text) {
@@ -170,7 +240,6 @@ function parseCSV(text) {
   return rows;
 }
 const norm = s => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-// all columns whose header equals or starts with a candidate word-wise (JIRA repeats Sprint / link columns)
 function findCols(headers, cands) {
   const out = [];
   headers.forEach((h, i) => { const n = norm(h); if (cands.some(c => n === c || n.startsWith(c + ' '))) out.push(i); });
@@ -187,7 +256,7 @@ function statusClass(s) {
 }
 function parseDate(d) {
   d = (d || '').trim(); if (!d) return '';
-  const t = Date.parse(/^\d{4}-\d{2}-\d{2}/.test(d) ? d : d.replace(/\//g, ' '));
+  const t = Date.parse(/^\d{4}-\d{2}-\d{2}/.test(d) ? d + 'T00:00:00Z' : d.replace(/\//g, ' ') + ' UTC');
   return isNaN(t) ? '' : new Date(t).toISOString().slice(0, 10);
 }
 function typeOf(typeText, key, hasParent) {
@@ -212,288 +281,388 @@ function buildModel(csv) {
         iSt = one(['status']), iAs = one(['assignee', 'owner']), iDue = one(['due date', 'target end', 'end date']),
         iSp = one(['story points', 'story point estimate']), iPar = one(['epic link', 'parent link', 'parent', 'parent id']),
         iRag = one(['rag status', 'rag']), iMgr = one(['objective manager']), iGp = one(['global priority']),
-        iPi = one(['pi', 'program increment', 'fix version s', 'fix version']);
+        iPi = one(['pi', 'program increment', 'fix version s', 'fix version']), iPrj = one(['project key', 'project']);
   if (iKey < 0) throw new Error('Column "Issue key" not found');
   const sprintCols = findCols(H, ['sprint']);
   const outCols = findCols(H, ['outward issue link']), inCols = findCols(H, ['inward issue link']);
-  const nodes = {}, seen = new Set(); const links = []; let ignored = 0;
+  const nodes = {}, seen = new Set(), links = []; let ignored = 0;
   const addLink = (self, other, col, outward) => {
     const n = norm(H[col]);
-    let t = /solve/.test(n) ? 'solves' : /relat/.test(n) ? 'relates' : null;
+    let t = /solve/.test(n) ? 'solves' : /relat/.test(n) ? 'relates' : /block|depend/.test(n) ? 'blocks' : null;
     if (!t) { ignored++; return; }
     let a = self, b = other;
-    if (t === 'solves' && !outward) { a = other; b = self; }      // inward "is solved by": other solves self
-    const id = t === 'relates' ? [a, b].sort().join('~') + t : a + '>' + b + t;
+    const reversed = t === 'blocks' && /depend/.test(n) ? outward : !outward;   // "depends on" (outward) = other blocks self
+    if (t !== 'relates' && reversed) { a = other; b = self; }
+    t === 'relates' && ([a, b] = [a, b].sort());
+    const id = a + '>' + b + t;
     if (seen.has(id) || a === b) return;
     seen.add(id); links.push({ a, b, t });
   };
   rows.slice(1).forEach(r => {
     const key = (r[iKey] || '').trim(); if (!key) return;
     const parent = iPar >= 0 ? ((r[iPar] || '').match(KEY_RE) || [''])[0] : '';
-    const sprints = sprintCols.map(c => (r[c] || '').trim()).filter(Boolean);
     const type = typeOf(iType >= 0 ? r[iType] : '', key, !!parent);
+    const pi = iPi >= 0 ? (r[iPi] || '').split(/[;,]/)[0].trim() : '';
     nodes[key] = {
       key, type, summary: (iSum >= 0 && r[iSum]) || key, status: iSt >= 0 ? r[iSt] : '',
       assignee: iAs >= 0 ? r[iAs] : '', due: iDue >= 0 ? parseDate(r[iDue]) : '',
       sp: iSp >= 0 && r[iSp] !== '' ? Number(r[iSp]) || 0 : 0,
-      sprint: sprints.length ? sprints[sprints.length - 1] : '', parent,
+      sprints: sprintCols.map(c => sprintNum(r[c])).filter(x => x != null), parent,
       rag: iRag >= 0 ? r[iRag] : '', mgr: iMgr >= 0 ? r[iMgr] : '', gp: iGp >= 0 ? r[iGp] : '',
-      pi: iPi >= 0 ? (r[iPi] || '').split(/[;,]/)[0].trim() : ''
+      pi, piGiven: !!pi, du: (iPrj >= 0 && r[iPrj]) || key.replace(/-\d+$/, '')
     };
     outCols.forEach(c => (r[c] || '').match(KEY_RE)?.forEach(o => addLink(key, o, c, true)));
     inCols.forEach(c => (r[c] || '').match(KEY_RE)?.forEach(o => addLink(key, o, c, false)));
   });
-  // epics without PI -> bucket; stories need a known parent
-  Object.values(nodes).forEach(n => { if (n.type === 'epic' && !n.pi) n.pi = 'No PI'; });
-  const periods = [...new Set(Object.values(nodes).filter(n => n.type === 'epic').map(n => n.pi))]
-    .sort((a, b) => a === 'No PI' ? 1 : b === 'No PI' ? -1 : natural(a, b));
-  const order = Object.values(nodes).filter(n => n.type === 'objective')
+  const m = { nodes, links, order: [], periods: [], ignored };
+  m.order = Object.values(nodes).filter(n => n.type === 'objective')
     .sort((x, y) => (Number(y.gp) || 0) - (Number(x.gp) || 0) || natural(x.key, y.key)).map(n => n.key);
-  return { nodes, links, periods, order, ignored };
+  derivePIs(m); refreshPeriods(m);
+  return m;
+}
+function derivePIs(m) {   // epics without a PI field: take it from their latest sprint, else due date
+  Object.values(m.nodes).filter(n => n.type === 'epic' && !n.piGiven).forEach(e => {
+    const sp = storiesOf(m, e.key).flatMap(s => s.sprints);
+    let pi = sp.length ? piOfSprint(Math.max(...sp)) : null;
+    if (!pi && e.due) pi = piOfSprint(sprintOfDate(D(e.due)));
+    e.pi = pi || 'No PI';
+  });
+}
+function refreshPeriods(m) {
+  const names = new Set(Object.values(m.nodes).filter(n => n.type === 'epic').map(n => n.pi));
+  const nums = [...names].map(piNum).filter(x => x != null);
+  if (nums.length) { for (let p = Math.min(...nums); p <= Math.max(...nums) + 1; p++) names.add('PI' + p); }
+  m.periods = [...names].sort((a, b) => a === 'No PI' ? 1 : b === 'No PI' ? -1 : (piNum(a) ?? 1e9) - (piNum(b) ?? 1e9) || natural(a, b));
 }
 
-/* ---------- derived helpers ---------- */
+/* ---------- model queries ---------- */
 const epicsOf = m => Object.values(m.nodes).filter(n => n.type === 'epic');
 const storiesOf = (m, ek) => Object.values(m.nodes).filter(n => n.type === 'story' && n.parent === ek);
-function objectivesOf(m, ek) {   // objectives this epic solves (directly, else via the epics it solves), in priority order
-  const set = new Set(), seen = new Set([ek]), queue = [ek];
-  while (queue.length) {
-    const x = queue.shift();
-    m.links.forEach(l => {
-      if (l.t !== 'solves' || l.a !== x) return;
-      if (m.nodes[l.b]?.type === 'objective') set.add(l.b);
-      else if (m.nodes[l.b]?.type === 'epic' && !seen.has(l.b)) { seen.add(l.b); queue.push(l.b); }
-    });
-    if (set.size) break;   // nearest objectives win
-  }
-  return m.order.filter(k => set.has(k));
-}
-function sisOf(m, ek) {
-  const out = new Set();
-  m.links.forEach(l => {
-    if (l.t !== 'relates') return;
-    const o = l.a === ek ? l.b : l.b === ek ? l.a : null;
-    if (o && m.nodes[o]?.type === 'si') out.add(o);
-  });
-  return [...out].sort(natural);
+const isType = (m, k, t) => m.nodes[k]?.type === t;
+const other = (l, k) => l.a === k ? l.b : l.b === k ? l.a : null;
+const sisOfObjective = (m, o) => [...new Set(m.links.filter(l => l.t === 'solves').map(l => other(l, o)).filter(x => x && isType(m, x, 'si')))].sort(natural);
+const objectivesOfSi = (m, s) => m.order.filter(o => m.links.some(l => l.t === 'solves' && other(l, o) === s));
+const directEpicsOfObjective = (m, o) => m.links.filter(l => l.t === 'solves').map(l => other(l, o)).filter(x => x && isType(m, x, 'epic'));
+const epicsOfSi = (m, s) => [...new Set(m.links.filter(l => l.t === 'relates').map(l => other(l, s)).filter(x => x && isType(m, x, 'epic')))].sort(natural);
+const sisOfEpic = (m, e) => [...new Set(m.links.filter(l => l.t === 'relates').map(l => other(l, e)).filter(x => x && isType(m, x, 'si')))].sort(natural);
+function objectivesOfEpic(m, e) {
+  const set = new Set();
+  sisOfEpic(m, e).forEach(s => objectivesOfSi(m, s).forEach(o => set.add(o)));
+  m.order.forEach(o => { if (directEpicsOfObjective(m, o).includes(e)) set.add(o); });
+  return m.order.filter(o => set.has(o));
 }
 function progress(m, ek) {
-  const st = storiesOf(m, ek); const done = st.filter(s => statusClass(s.status) === 'done');
+  const st = storiesOf(m, ek), done = st.filter(s => statusClass(s.status) === 'done');
   const sp = st.reduce((a, s) => a + s.sp, 0), spDone = done.reduce((a, s) => a + s.sp, 0);
-  const pct = sp ? spDone / sp : st.length ? done.length / st.length : 0;
-  return { total: st.length, done: done.length, hold: st.filter(s => statusClass(s.status) === 'hold').length, sp, spDone, pct };
+  return { total: st.length, done: done.length, hold: st.filter(s => statusClass(s.status) === 'hold').length, sp, spDone,
+    pct: sp ? spDone / sp : st.length ? done.length / st.length : 0 };
 }
-function lateVsObjective(m, ek) {
-  const e = m.nodes[ek]; if (!e.due) return null;
-  return objectivesOf(m, ek).map(o => m.nodes[o]).find(o => o.due && e.due > o.due) || null;
+function aggregate(m, keys) {
+  let w = 0, d = 0;
+  keys.forEach(k => { const p = progress(m, k); w += p.sp || p.total; d += p.sp ? p.spDone : p.done; });
+  return w ? d / w : 0;
 }
-function edgeState(m, l) {   // only 'solves' between epics has an ordering rule
-  if (l.t !== 'solves') return 'rel';
-  const ea = m.nodes[l.a], eb = m.nodes[l.b];
-  if (ea?.type !== 'epic' || eb?.type !== 'epic') return 'rel';
-  if (ea.pi === 'No PI' || eb.pi === 'No PI') return 'warn';
-  const d = m.periods.indexOf(eb.pi) - m.periods.indexOf(ea.pi);
-  return d > 0 ? 'ok' : d === 0 ? 'warn' : 'bad';
+// planned window of an epic: real sprint span of its stories, or the whole PI when moved / no sprint info
+function winOf(m, e) {
+  const n = m.nodes[e], moved = base && base.nodes[e] && base.nodes[e].pi !== n.pi;
+  const sp = storiesOf(m, e).flatMap(s => s.sprints);
+  if (!moved && sp.length) return { start: sprintStart(Math.min(...sp)), end: sprintEnd(Math.max(...sp)), src: 'sprints' };
+  const r = piRange(n.pi);
+  return r ? { start: r.start, end: r.end, src: 'pi' } : null;
 }
-const epicEdges = m => m.links.filter(l => m.nodes[l.a]?.type === 'epic' && m.nodes[l.b]?.type === 'epic');
-function chain(key) {
-  const set = new Set([key]); const up = new Set([key]), down = new Set([key]);
-  const E = epicEdges(sim); let grow = true;
-  while (grow) {
-    grow = false;
-    E.filter(l => l.t === 'solves').forEach(l => {
-      if (up.has(l.b) && !up.has(l.a)) { up.add(l.a); grow = true; }
-      if (down.has(l.a) && !down.has(l.b)) { down.add(l.b); grow = true; }
-    });
-  }
-  up.forEach(k => set.add(k)); down.forEach(k => set.add(k));
-  E.filter(l => l.t === 'relates').forEach(l => { if (set.has(l.a)) set.add(l.b); if (set.has(l.b)) set.add(l.a); });
-  return set;
+function spanOf(m, keys) {
+  const w = keys.map(k => winOf(m, k)).filter(Boolean); if (!w.length) return null;
+  return { start: Math.min(...w.map(x => x.start)), end: Math.max(...w.map(x => x.end)) };
+}
+function depState(m, l) {   // l: a blocks b
+  const wa = winOf(m, l.a), wb = winOf(m, l.b);
+  if (!wa || !wb) return { s: 'warn', slack: null };
+  if (wa.src === 'pi' && wb.src === 'pi' && m.nodes[l.a].pi === m.nodes[l.b].pi) return { s: 'warn', slack: null };
+  const slack = Math.round((wb.start - wa.end) / DAY) - 1;
+  return { s: slack < 0 ? 'bad' : slack <= CAL.days ? 'warn' : 'ok', slack };
+}
+const depsOf = m => m.links.filter(l => l.t === 'blocks' && isType(m, l.a, 'epic') && isType(m, l.b, 'epic'));
+function lateObjective(m, e) {   // objective due date earlier than the epic's end
+  const w = winOf(m, e); if (!w) return null;
+  return objectivesOfEpic(m, e).map(o => m.nodes[o]).find(o => o.due && w.end > D(o.due)) || null;
 }
 function reaches(from, to) {
   const seen = new Set([from]), st = [from];
   while (st.length) {
     const x = st.pop(); if (x === to) return true;
-    sim.links.forEach(l => { if (l.t === 'solves' && l.a === x && !seen.has(l.b)) { seen.add(l.b); st.push(l.b); } });
+    depsOf(sim).forEach(l => { if (l.a === x && !seen.has(l.b)) { seen.add(l.b); st.push(l.b); } });
   }
   return false;
+}
+// critical path = longest chain of dependencies whose slack is at most one sprint
+function criticalPath(m, keys) {
+  const set = new Set(keys), edges = depsOf(m).filter(l => set.has(l.a) && set.has(l.b));
+  const memo = {}, busy = new Set();
+  const best = k => {
+    if (memo[k]) return memo[k];
+    if (busy.has(k)) return { chain: [k], start: winOf(m, k)?.start ?? 0 };
+    busy.add(k);
+    let res = { chain: [k], start: winOf(m, k)?.start ?? 0 };
+    edges.filter(l => l.b === k && depState(m, l).slack != null && depState(m, l).slack <= CAL.days).forEach(l => {
+      const c = best(l.a); if (c.start < res.start || res.chain.length === 1) res = { chain: [...c.chain, k], start: Math.min(c.start, res.start) };
+    });
+    busy.delete(k); return memo[k] = res;
+  };
+  let top = null;
+  keys.forEach(k => {
+    const c = best(k); if (c.chain.length < 2) return;
+    const dur = (winOf(m, k)?.end ?? 0) - c.start;
+    if (!top || dur > top.dur) top = { ...c, dur, end: winOf(m, k)?.end };
+  });
+  return top;
 }
 
 /* ---------- rendering ---------- */
 const NS = 'http://www.w3.org/2000/svg';
 const RAG = r => { const n = norm(r); return /green|ok|on track/.test(n) ? 'ok' : /red|critical|off track/.test(n) ? 'bad' : n ? 'warn' : ''; };
+const duColor = du => { let h = 0; for (const c of du) h = (h * 31 + c.charCodeAt(0)) % 360; return `hsl(${h} 55% 55% / .35)`; };
 
-function visibleEpics() {
+function epicVisible(e) {
   const st = $('fStatus').value, ob = $('fObj').value, q = $('fSearch').value.toLowerCase();
-  return epicsOf(sim).filter(e => {
-    const sc = statusClass(e.status);
-    if (st === 'done' && sc !== 'done') return false;
-    if (st === 'open' && sc === 'done') return false;
-    if (ob && !objectivesOf(sim, e.key).includes(ob)) return false;
-    if (q && !(e.key + ' ' + e.summary).toLowerCase().includes(q)) return false;
-    return true;
+  const sc = statusClass(e.status);
+  if (st === 'done' && sc !== 'done') return false;
+  if (st === 'open' && sc === 'done') return false;
+  if (ob && !objectivesOfEpic(sim, e.key).includes(ob)) return false;
+  if (q && !(e.key + ' ' + e.summary).toLowerCase().includes(q)) return false;
+  return true;
+}
+
+function buildSections() {
+  const sections = [], epicOk = k => epicVisible(sim.nodes[k]);
+  const ob = $('fObj').value, usedEpics = new Set();
+  if (mode === 'du') {
+    const eps = epicsOf(sim).filter(e => epicVisible(e)), dus = [...new Set(eps.map(e => e.du))].sort(natural);
+    dus.forEach(du => {
+      const list = eps.filter(e => e.du === du).map(e => e.key);
+      sections.push({ id: 'du:' + du, banner: `<span class="ttl" data-toggle="du:${esc(du)}">${collapsed.has('du:' + du) ? '▸' : '▾'} ${esc(du)} <span class="muted">Delivery Unit</span></span>
+        <span class="meta">${list.length} epics · ${Math.round(100 * aggregate(sim, list))}% done</span>`,
+        lanes: [{ head: `<b>${esc(du)}</b><span class="muted">${list.length} epics</span>`, epics: list }] });
+    });
+    return sections;
+  }
+  sim.order.filter(o => !ob || o === ob).forEach(o => {
+    const sis = sisOfObjective(sim, o), lanes = sis.map(s => ({
+      si: s, head: siHead(s, o), epics: epicsOfSi(sim, s).filter(epicOk), empty: !epicsOfSi(sim, s).length }));
+    const direct = directEpicsOfObjective(sim, o).filter(epicOk);
+    if (direct.length) lanes.push({ head: '<b>Direct to objective</b><span class="muted">epics linked by "solves"</span>', epics: direct });
+    const all = [...new Set(lanes.flatMap(l => l.epics))];
+    all.forEach(k => usedEpics.add(k));
+    sections.push({ id: o, obj: o, banner: objBanner(o, all), lanes });
   });
+  if (!ob) {
+    const orphanSis = Object.values(sim.nodes).filter(n => n.type === 'si' && !objectivesOfSi(sim, n.key).length).map(n => n.key).sort(natural);
+    if (orphanSis.length) sections.push({ id: 'noobj', banner: '<span class="ttl">Solution increments without an objective</span>',
+      lanes: orphanSis.map(s => ({ si: s, head: siHead(s, null), epics: epicsOfSi(sim, s).filter(epicOk), empty: !epicsOfSi(sim, s).length })) });
+    const loose = epicsOf(sim).filter(e => epicVisible(e) && !sisOfEpic(sim, e.key).length && !objectivesOfEpic(sim, e.key).length).map(e => e.key);
+    if (loose.length) sections.push({ id: 'loose', banner: '<span class="ttl">Epics not related to any solution increment</span>',
+      lanes: [{ head: '<b>Unlinked</b><span class="muted">no "relates to" SI</span>', epics: loose }] });
+  }
+  return sections;
+}
+function siHead(s, o) {
+  const n = sim.nodes[s], eps = epicsOfSi(sim, s), span = spanOf(sim, eps), objs = objectivesOfSi(sim, s);
+  const late = o && sim.nodes[o].due && span && span.end > D(sim.nodes[o].due);
+  return `<b>${esc(s)}</b><span class="muted">${esc(n.summary)}</span>
+    <div class="muted">${eps.length} epics · ${Math.round(100 * aggregate(sim, eps))}% done${span ? ` · ${fmtS(span.start)} – ${fmt(span.end)}` : ''}</div>
+    ${late ? '<span class="badge late">ends after objective due</span>' : ''}${!eps.length ? '<span class="badge">no epics</span>' : ''}
+    ${objs.length > 1 ? `<div class="muted">solves ${objs.map(esc).join(', ')}</div>` : ''}`;
+}
+function objBanner(g, epicKeys) {
+  const o = sim.nodes[g], span = spanOf(sim, epicKeys), idx = sim.order.indexOf(g);
+  const late = o.due && span && span.end > D(o.due);
+  return `<span class="ttl" data-toggle="${esc(g)}">${collapsed.has(g) ? '▸' : '▾'} ${esc(g)} · ${esc(o.summary)}</span>
+    <span class="meta"><span class="dot ${RAG(o.rag)}"></span>${esc(o.rag || 'no RAG')} · ${esc(o.status)} · Owner ${esc(o.assignee || '–')} · Manager ${esc(o.mgr || '–')} · Global priority <b>${esc(o.gp || '–')}</b> · Due <b>${esc(o.due ? fmt(D(o.due)) : '–')}</b> · ${Math.round(100 * aggregate(sim, epicKeys))}% done · forecast end ${span ? `<b class="${late ? 'bad' : 'ok'}">${fmt(span.end)}</b>` : '–'}${late ? ` <span class="badge late">+${Math.round((span.end - D(o.due)) / DAY)} days</span>` : ''}</span>
+    <span class="mv"><button title="Raise priority (scenario)" onclick="moveObj('${esc(g)}',-1)" ${idx === 0 ? 'disabled' : ''}>▲</button><button title="Lower priority (scenario)" onclick="moveObj('${esc(g)}',1)" ${idx === sim.order.length - 1 ? 'disabled' : ''}>▼</button></span>`;
 }
 
 function render() {
   if (!sim) return;
-  const eps = visibleEpics(), vis = new Set(eps.map(e => e.key));
   const cur = $('fObj').value;
   $('fObj').innerHTML = '<option value="">All objectives</option>' +
     sim.order.map(k => `<option value="${esc(k)}" ${k === cur ? 'selected' : ''}>${esc(k)} – ${esc(sim.nodes[k].summary.slice(0, 40))}</option>`).join('');
-  // group epics: objective -> SI (first) -> cell
-  const groups = [...sim.order, null];
-  const per = sim.periods;
-  const hl = selected && sim.nodes[selected]?.type === 'epic' ? chain(selected) : null;
+  const per = sim.periods, sections = buildSections();
+  const crit = $('cCrit').checked ? criticalPath(sim, epicsOf(sim).filter(epicVisible).map(e => e.key)) : null;
+  const critSet = new Set(crit ? crit.chain : []);
+  const hl = selected && isType(sim, selected, 'epic') ? neighbourhood(selected) : null;
   const inHl = k => !hl || hl.has(k);
-  let html = '<div class="corner"></div>' + per.map(p => `<div class="colhead">${esc(p)}</div>`).join('');
-  const shown = new Set();
-  groups.forEach(g => {
-    const gEps = eps.filter(e => (objectivesOf(sim, e.key)[0] || null) === g);
-    if (!gEps.length) return;
-    gEps.forEach(e => shown.add(e.key));
-    if (g) {
-      const o = sim.nodes[g], all = epicsOf(sim).filter(e => objectivesOf(sim, e.key)[0] === g);
-      let tot = 0, dn = 0; all.forEach(e => { const p = progress(sim, e.key); tot += p.sp || p.total; dn += p.sp ? p.spDone : p.done; });
-      const idx = sim.order.indexOf(g);
-      html += `<div class="banner"><span class="ttl" data-toggle="${esc(g)}">${collapsed.has(g) ? '▸' : '▾'} ${esc(g)} · ${esc(o.summary)}</span>
-        <span class="meta"><span class="dot ${RAG(o.rag)}"></span>${esc(o.rag || 'no RAG')} · ${esc(o.status)} · Owner ${esc(o.assignee || '–')} · Manager ${esc(o.mgr || '–')} · Global priority <b>${esc(o.gp || '–')}</b> · Due ${esc(o.due || '–')} · ${tot ? Math.round(100 * dn / tot) : 0}% done</span>
-        <span class="mv"><button title="Raise priority (scenario)" onclick="moveObj('${esc(g)}',-1)" ${idx === 0 ? 'disabled' : ''}>▲</button><button title="Lower priority (scenario)" onclick="moveObj('${esc(g)}',1)" ${idx === sim.order.length - 1 ? 'disabled' : ''}>▼</button></span></div>`;
-    } else {
-      html += '<div class="banner"><span class="ttl">No objective linked ("solves")</span></div>';
-    }
-    if (g && collapsed.has(g)) { gEps.forEach(e => shown.delete(e.key)); return; }
-    const siKeys = [...new Set(gEps.map(e => sisOf(sim, e.key)[0] || null))].sort((a, b) => a === null ? 1 : b === null ? -1 : natural(a, b));
-    siKeys.forEach(si => {
-      const sn = si && sim.nodes[si];
-      html += `<div class="lanehead"><b>${si ? esc(si) : 'No solution increment'}</b><span class="muted">${sn ? esc(sn.summary) : 'epics without a "relates" SOLINC link'}</span></div>`;
+  let html = '<div class="corner"></div>' + per.map(p => { const r = piRange(p);
+    return `<div class="colhead">${esc(p)}${r ? `<small>${fmtS(r.start)} – ${fmtS(r.end)}</small>` : ''}</div>`; }).join('');
+  const placed = new Set();
+  sections.forEach(sec => {
+    html += `<div class="banner">${sec.banner}</div>`;
+    if (collapsed.has(sec.id)) return;
+    sec.lanes.forEach(l => {
+      html += `<div class="lanehead ${l.empty ? 'empty' : ''}">${l.head}</div>`;
       per.forEach(p => {
-        const cards = gEps.filter(e => (sisOf(sim, e.key)[0] || null) === si && e.pi === p)
-          .sort((a, b) => natural(a.key, b.key)).map(e => cardHtml(e, inHl)).join('');
+        const cards = l.epics.filter(k => sim.nodes[k].pi === p).sort(natural).map(k => {
+          const copy = placed.has(k); placed.add(k); return cardHtml(sim.nodes[k], inHl, critSet, copy, l.si); }).join('');
         html += `<div class="cell" data-per="${esc(p)}">${cards}</div>`;
       });
     });
   });
   const board = document.createElement('div');
   board.id = 'board';
-  board.style.gridTemplateColumns = `200px repeat(${per.length}, 240px)`;
+  board.style.gridTemplateColumns = `210px repeat(${per.length}, 240px)`;
   board.innerHTML = html;
   const wrap = $('boardWrap'), sl = wrap.scrollLeft, st = wrap.scrollTop;
   wrap.innerHTML = ''; wrap.appendChild(board); wrap.scrollLeft = sl; wrap.scrollTop = st;
-  drawArrows(board, shown, hl);
-  renderStats(); renderViols(); renderDetail();
+  drawArrows(board, hl, crit);
+  renderStats(crit); renderCrit(crit); renderViols(); renderDetail();
 }
-
-function cardHtml(e, inHl) {
-  const b0 = base.nodes[e.key], p = progress(sim, e.key);
-  const moved = b0 && b0.pi !== e.pi, late = lateVsObjective(sim, e.key);
-  const extraSi = sisOf(sim, e.key).slice(1), extraObj = objectivesOf(sim, e.key).slice(1);
-  return `<div class="card s-${statusClass(e.status)} ${e.key === selected ? 'sel' : ''} ${moved ? 'moved' : ''} ${inHl(e.key) ? '' : 'dim'}" draggable="true" data-key="${esc(e.key)}" title="${esc(e.key + ' – ' + e.summary + ' (' + e.status + ')')}">
-    <div class="k"><span>${esc(e.key)}</span><span>${p.hold ? `<span class="badge hold">${p.hold} on hold</span>` : ''}${late ? '<span class="badge late">late vs obj</span>' : ''}</span></div>
+function neighbourhood(k) {   // the epic plus everything upstream/downstream through "blocks"
+  const up = new Set([k]), down = new Set([k]), E = depsOf(sim); let grow = true;
+  while (grow) {
+    grow = false;
+    E.forEach(l => {
+      if (down.has(l.a) && !down.has(l.b)) { down.add(l.b); grow = true; }
+      if (up.has(l.b) && !up.has(l.a)) { up.add(l.a); grow = true; }
+    });
+  }
+  return new Set([...up, ...down]);
+}
+function cardHtml(e, inHl, critSet, copy, si) {
+  const b0 = base.nodes[e.key], p = progress(sim, e.key), w = winOf(sim, e.key);
+  const moved = b0 && b0.pi !== e.pi, late = lateObjective(sim, e.key), isCrit = critSet.has(e.key);
+  const others = sisOfEpic(sim, e.key).filter(s => s !== si);
+  return `<div class="card s-${statusClass(e.status)} ${e.key === selected ? 'sel' : ''} ${moved ? 'moved' : ''} ${isCrit ? 'crit' : ''} ${inHl(e.key) ? '' : 'dim'}" draggable="true" data-key="${esc(e.key)}" title="${esc(e.key + ' – ' + e.summary + ' (' + e.status + ')')}">
+    <div class="k"><span><span class="du" style="background:${duColor(e.du)}">${esc(e.du)}</span> ${esc(e.key.replace(/^.*-/, '#'))}${copy ? ' ↺' : ''}</span><span>${isCrit ? '<span class="badge crit">critical</span>' : ''}${p.hold ? `<span class="badge hold">${p.hold} on hold</span>` : ''}${late ? '<span class="badge late">late</span>' : ''}</span></div>
     <div class="t">${esc(e.summary)}</div>
     <div class="pb"><i style="width:${Math.round(p.pct * 100)}%"></i></div>
-    <div class="pt">${p.total ? `${p.done}/${p.total} stories${p.sp ? ` · ${p.spDone}/${p.sp} SP` : ''}` : 'no stories'} · ${esc(e.assignee || '')}</div>
-    ${extraSi.map(s => `<span class="chip">also ${esc(s)}</span>`).join('')}${extraObj.map(o => `<span class="chip">also solves ${esc(o)}</span>`).join('')}</div>`;
+    <div class="pt">${p.total ? `${p.done}/${p.total} stories${p.sp ? ` · ${p.spDone}/${p.sp} SP` : ''}` : 'no stories'}${w ? ` · ${fmtS(w.start)}–${fmtS(w.end)}${w.src === 'pi' ? ' (PI)' : ''}` : ''}</div>
+    ${others.map(s => `<span class="chip">also ${esc(s)}</span>`).join('')}</div>`;
 }
 
-function drawArrows(board, shown, hl) {
+function drawArrows(board, hl, crit) {
   const svg = document.createElementNS(NS, 'svg');
   svg.id = 'arrows';
   svg.setAttribute('width', board.scrollWidth); svg.setAttribute('height', board.scrollHeight);
-  const colors = { ok: 'var(--ok)', warn: 'var(--warn)', bad: 'var(--bad)' };
+  const colors = { ok: 'var(--ok)', warn: 'var(--warn)', bad: 'var(--bad)', crit: 'var(--crit)' };
   svg.innerHTML = '<defs>' + Object.keys(colors).map(s =>
-    `<marker id="ah-${s}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${colors[s]}"/></marker>`).join('') + '</defs>';
+    `<marker id="ah-${s}" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${colors[s]}"/></marker>`).join('') + '</defs>';
   board.appendChild(svg);
   const br = board.getBoundingClientRect();
-  const el = k => board.querySelector(`.card[data-key="${CSS.escape(k)}"]`);
-  epicEdges(sim).forEach(l => {
-    if (l.t === 'relates' && !$('cRel').checked) return;
-    if (!shown.has(l.a) || !shown.has(l.b)) return;
-    const ea = el(l.a), eb = el(l.b); if (!ea || !eb) return;
-    const ra = ea.getBoundingClientRect(), rb = eb.getBoundingClientRect();
-    let x1 = ra.right - br.left, y1 = (ra.top + ra.bottom) / 2 - br.top, x2 = rb.left - br.left, y2 = (rb.top + rb.bottom) / 2 - br.top;
-    if (l.t === 'relates' && x2 < x1) { [x1, y1, x2, y2] = [rb.right - br.left, (rb.top + rb.bottom) / 2 - br.top, ra.left - br.left, (ra.top + ra.bottom) / 2 - br.top]; }
-    const dx = Math.max(40, Math.abs(x2 - x1) / 2), s = edgeState(sim, l);
+  const inst = k => [...board.querySelectorAll(`.card[data-key="${CSS.escape(k)}"]`)];
+  const critEdges = new Set(crit ? crit.chain.slice(1).map((k, i) => crit.chain[i] + '>' + k) : []);
+  depsOf(sim).forEach(l => {
+    const A = inst(l.a), B = inst(l.b); if (!A.length || !B.length) return;
+    const ra = A[0].getBoundingClientRect(), rb = B[0].getBoundingClientRect();
+    const x1 = ra.right - br.left, y1 = (ra.top + ra.bottom) / 2 - br.top, x2 = rb.left - br.left, y2 = (rb.top + rb.bottom) / 2 - br.top;
+    const dx = Math.max(40, Math.abs(x2 - x1) / 2), s = depState(sim, l).s, isCrit = critEdges.has(l.a + '>' + l.b);
     const p = document.createElementNS(NS, 'path');
     p.setAttribute('d', `M${x1} ${y1} C${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`);
-    p.setAttribute('class', `e ${l.t} ${s} ${(!hl || (hl.has(l.a) && hl.has(l.b))) ? '' : 'dim'}`);
-    if (l.t === 'solves') p.setAttribute('marker-end', `url(#ah-${s})`);
+    p.setAttribute('class', `e dep ${isCrit ? 'crit' : s} ${(!hl || (hl.has(l.a) && hl.has(l.b))) ? '' : 'dim'}`);
+    p.setAttribute('marker-end', `url(#ah-${isCrit ? 'crit' : s})`);
     svg.appendChild(p);
   });
+  if ($('cRel').checked) {   // dotted connectors between the copies of an epic that relates to several SIs
+    const keys = new Set([...board.querySelectorAll('.card')].map(c => c.dataset.key));
+    keys.forEach(k => {
+      const c = inst(k); for (let i = 0; i + 1 < c.length; i++) {
+        const r1 = c[i].getBoundingClientRect(), r2 = c[i + 1].getBoundingClientRect();
+        const x = r1.left - br.left + 12, y1 = r1.bottom - br.top, y2 = r2.top - br.top;
+        const p = document.createElementNS(NS, 'path');
+        p.setAttribute('d', `M${x} ${y1} L${x} ${y2}`);
+        p.setAttribute('class', `e rel ${(!hl || hl.has(k)) ? '' : 'dim'}`);
+        svg.appendChild(p);
+      }
+    });
+  }
 }
 
-function renderStats() {
-  const c = { ok: 0, warn: 0, bad: 0 }, c0 = { ok: 0, warn: 0, bad: 0 };
-  epicEdges(sim).filter(l => l.t === 'solves').forEach(l => c[edgeState(sim, l)]++);
-  epicEdges(base).filter(l => l.t === 'solves').forEach(l => c0[edgeState(base, l)]++);
-  const eps = epicsOf(sim), late = eps.filter(e => lateVsObjective(sim, e.key)).length;
-  const moved = eps.filter(e => base.nodes[e.key].pi !== e.pi).length + (sim.order.join() !== base.order.join() ? 1 : 0) +
+function renderStats(crit) {
+  const eps = epicsOf(sim), deps = depsOf(sim), st = { ok: 0, warn: 0, bad: 0 };
+  deps.forEach(l => st[depState(sim, l).s]++);
+  const bad0 = depsOf(base).filter(l => depState(base, l).s === 'bad').length;
+  const d = st.bad - bad0;
+  const changed = eps.filter(e => base.nodes[e.key].pi !== e.pi).length + (sim.order.join() !== base.order.join() ? 1 : 0) +
     (sim.links.length !== base.links.length || sim.links.some(l => !base.links.some(b => b.a === l.a && b.b === l.b && b.t === l.t)) ? 1 : 0);
-  const d = c.bad - c0.bad;
   $('stats').innerHTML =
-    `<span class="pill"><b>${sim.order.length}</b> objectives</span><span class="pill"><b>${eps.length}</b> epics</span>` +
-    `<span class="pill"><b>${Object.values(sim.nodes).filter(n => n.type === 'story').length}</b> stories</span>` +
-    `<span class="pill"><b class="bad">${c.bad}</b> solve-order violations${d ? ` (${d > 0 ? '+' : ''}${d})` : ''}</span>` +
-    `<span class="pill"><b class="warn">${c.warn}</b> same-PI solves</span>` +
-    `<span class="pill"><b class="${late ? 'bad' : 'ok'}">${late}</b> epics due after their objective</span>` +
-    `<span class="pill">scenario changes: <b>${moved}</b></span>` +
+    `<span class="pill"><b>${sim.order.length}</b> objectives</span>` +
+    `<span class="pill"><b>${Object.values(sim.nodes).filter(n => n.type === 'si').length}</b> solution increments</span>` +
+    `<span class="pill"><b>${eps.length}</b> epics</span><span class="pill"><b>${Object.values(sim.nodes).filter(n => n.type === 'story').length}</b> stories</span>` +
+    `<span class="pill"><b>${deps.length}</b> epic dependencies${savedApplied ? ` (${savedApplied} from saved)` : ''}</span>` +
+    `<span class="pill"><b class="bad">${st.bad}</b> overlap${d ? ` (${d > 0 ? '+' : ''}${d})` : ''}</span><span class="pill"><b class="warn">${st.warn}</b> tight</span>` +
+    `<span class="pill">scenario changes: <b>${changed}</b></span>` +
     (sim.ignored ? `<span class="pill muted">${sim.ignored} link(s) of other types ignored</span>` : '');
 }
-
+function renderCrit(crit) {
+  if (!$('cCrit').checked) { $('critp').innerHTML = '<span class="muted">switched off</span>'; return; }
+  if (!crit) { $('critp').innerHTML = depsOf(sim).length ? '<span class="muted">No chain of dependencies with ≤ 1 sprint slack.</span>' : '<span class="muted">Add epic dependencies to see the critical path.</span>'; return; }
+  const objs = [...new Set(crit.chain.flatMap(k => objectivesOfEpic(sim, k)))].map(o => sim.nodes[o]).filter(o => o.due);
+  const dueTxt = objs.map(o => { const diff = Math.round((crit.end - D(o.due)) / DAY);
+    return `<div class="${diff > 0 ? 'bad' : 'ok'}">vs ${esc(o.key)} due ${fmt(D(o.due))}: ${diff > 0 ? '+' + diff + ' days late' : Math.abs(diff) + ' days spare'}</div>`; }).join('');
+  $('critp').innerHTML = crit.chain.map((k, i) => {
+    const w = winOf(sim, k), l = i ? depsOf(sim).find(x => x.a === crit.chain[i - 1] && x.b === k) : null, sl = l ? depState(sim, l).slack : null;
+    return `<div>${i ? `<span class="muted">↓ slack ${sl == null ? '?' : sl + ' d'}</span><br>` : ''}<b>${esc(k)}</b> ${esc(sim.nodes[k].summary.slice(0, 34))}<br><span class="muted">${w ? fmtS(w.start) + ' – ' + fmt(w.end) : ''}</span></div>`;
+  }).join('') + `<div style="margin-top:6px"><b>Chain ends ${fmt(crit.end)}</b></div>` + dueTxt;
+}
 function renderViols() {
   const last = sim.periods.length - 1, items = [];
-  epicEdges(sim).filter(l => l.t === 'solves').forEach(l => { const s = edgeState(sim, l); if (s === 'bad' || s === 'warn') items.push([l, s]); });
-  items.sort((x, y) => (x[1] === 'bad' ? 0 : 1) - (y[1] === 'bad' ? 0 : 1));
-  let html = (items.some(x => x[1] === 'bad') ? '<button onclick="autoResolve()">Auto-resolve: push solved epics later</button>' : '') +
+  depsOf(sim).forEach(l => { const s = depState(sim, l); if (s.s === 'bad' || s.s === 'warn') items.push([l, s]); });
+  items.sort((x, y) => (x[1].s === 'bad' ? 0 : 1) - (y[1].s === 'bad' ? 0 : 1));
+  let html = (items.some(x => x[1].s === 'bad') ? '<button onclick="autoResolve()">Auto-resolve: push blocked epics later</button>' : '') +
     items.map(([l, s]) => {
-      const ea = sim.nodes[l.a], eb = sim.nodes[l.b];
-      const ia = sim.periods.indexOf(ea.pi), ib = sim.periods.indexOf(eb.pi);
-      const pushB = sim.periods[Math.min(ia + 1, last)], pullA = sim.periods[Math.max(ib - 1, 0)];
-      return `<div class="viol ${s === 'warn' ? 'warn' : ''}"><b>${esc(l.a)}</b> (${esc(ea.pi)}) solves <b>${esc(l.b)}</b> (${esc(eb.pi)})<br><span class="muted">${s === 'bad' ? 'Solver lands after the epic it solves' : 'Same PI – tight'}</span><br>
-        <button onclick="setPI('${esc(l.b)}','${esc(pushB)}')">Move ${esc(l.b)} → ${esc(pushB)}</button>
-        <button onclick="setPI('${esc(l.a)}','${esc(pullA)}')">Move ${esc(l.a)} → ${esc(pullA)}</button></div>`;
+      const ea = sim.nodes[l.a], eb = sim.nodes[l.b], ia = sim.periods.indexOf(ea.pi);
+      const pushB = sim.periods[Math.min(ia + 1, last)];
+      return `<div class="viol ${s.s === 'warn' ? 'warn' : ''}"><b>${esc(l.a)}</b> blocks <b>${esc(l.b)}</b><br><span class="muted">${s.slack == null ? 'same PI – needs a sprint plan' : s.slack < 0 ? 'overlap of ' + (-s.slack) + ' days' : 'only ' + s.slack + ' days slack'}</span><br>
+        <button onclick="setPI('${esc(l.b)}','${esc(pushB)}')">Move ${esc(l.b)} → ${esc(pushB)}</button></div>`;
     }).join('');
-  epicsOf(sim).forEach(e => {
-    const o = lateVsObjective(sim, e.key);
-    if (o) html += `<div class="viol warn"><b>${esc(e.key)}</b> due ${esc(e.due)} is after objective <b>${esc(o.key)}</b> due ${esc(o.due)}</div>`;
-  });
+  const seen = new Set();
+  epicsOf(sim).forEach(e => { const o = lateObjective(sim, e.key); if (o && !seen.has(e.key + o.key)) { seen.add(e.key + o.key);
+    html += `<div class="viol warn"><b>${esc(e.key)}</b> ends ${fmt(winOf(sim, e.key).end)}, after objective <b>${esc(o.key)}</b> due ${fmt(D(o.due))}</div>`; } });
+  Object.values(sim.nodes).filter(n => n.type === 'si' && !epicsOfSi(sim, n.key).length).forEach(s => {
+    html += `<div class="viol warn"><b>${esc(s.key)}</b> has no related epics – nobody delivers it</div>`; });
+  sim.order.filter(o => !sisOfObjective(sim, o).length && !directEpicsOfObjective(sim, o).length).forEach(o => {
+    html += `<div class="viol warn"><b>${esc(o)}</b> has no solution increment</div>`; });
   $('viols').innerHTML = html || '<span class="ok">No conflicts.</span>';
 }
-
 function renderDetail() {
   const e = selected && sim.nodes[selected];
   if (!e || e.type !== 'epic') { $('detail').innerHTML = '<h3>Selected epic</h3><div class="muted">Click an epic card.</div>'; return; }
-  const b0 = base.nodes[e.key], p = progress(sim, e.key);
+  const b0 = base.nodes[e.key], p = progress(sim, e.key), w = winOf(sim, e.key);
   const mine = sim.links.filter(l => l.a === e.key || l.b === e.key);
   const li = l => {
-    const other = l.a === e.key ? l.b : l.a;
-    const label = l.t === 'relates' ? 'relates to' : l.a === e.key ? 'solves' : 'is solved by';
-    return `<div class="link"><span><span class="muted">${label}</span> ${esc(other)} <span class="muted">${esc(sim.nodes[other]?.pi || sim.nodes[other]?.type || 'external')}</span></span>
+    const o = other(l, e.key);
+    const label = l.t === 'relates' ? 'relates to' : l.a === e.key ? 'blocks' : 'is blocked by';
+    return `<div class="link"><span><span class="muted">${label}</span> ${esc(o)} <span class="muted">${esc(sim.nodes[o]?.pi || sim.nodes[o]?.type || 'external')}</span></span>
       <button title="Remove link" onclick="removeLink('${esc(l.a)}','${esc(l.b)}','${l.t}')">✕</button></div>`;
   };
-  const others = Object.values(sim.nodes).filter(n => n.type !== 'story' && n.key !== e.key).map(n => n.key).sort(natural);
   const stories = storiesOf(sim, e.key), bySprint = {};
-  stories.forEach(s => (bySprint[s.sprint || 'Backlog'] = bySprint[s.sprint || 'Backlog'] || []).push(s));
-  const sprintRows = Object.keys(bySprint).sort((a, b) => a === 'Backlog' ? 1 : b === 'Backlog' ? -1 : natural(a, b)).map(sp =>
-    `<tr><td colspan="4" class="sph">${esc(sp)}</td></tr>` + bySprint[sp].sort((a, b) => natural(a.key, b.key)).map(s =>
-      `<tr><td title="${esc(s.summary)}">${esc(s.key)}</td><td>${esc(s.summary.length > 38 ? s.summary.slice(0, 36) + '…' : s.summary)}</td>
+  stories.forEach(s => { const k = s.sprints.length ? Math.max(...s.sprints) : 'Backlog'; (bySprint[k] = bySprint[k] || []).push(s); });
+  const sprintRows = Object.keys(bySprint).sort((a, b) => a === 'Backlog' ? 1 : b === 'Backlog' ? -1 : a - b).map(sp =>
+    `<tr><td colspan="4" class="sph">${sp === 'Backlog' ? 'Backlog' : `Sprint ${sp} · ${fmtS(sprintStart(+sp))}–${fmtS(sprintEnd(+sp))} · ${piOfSprint(+sp) || ''}`}</td></tr>` +
+    bySprint[sp].sort((a, b) => natural(a.key, b.key)).map(s =>
+      `<tr><td title="${esc(s.summary)}">${esc(s.key)}</td><td>${esc(s.summary.length > 36 ? s.summary.slice(0, 34) + '…' : s.summary)}</td>
       <td><span class="st ${statusClass(s.status)}">${esc(s.status)}</span></td><td>${s.sp || ''}</td></tr>`).join('')).join('');
-  const late = lateVsObjective(sim, e.key);
+  const sis = sisOfEpic(sim, e.key), late = lateObjective(sim, e.key);
   $('detail').innerHTML = `<h3>${esc(e.key)}</h3><div>${esc(e.summary)}</div>
-    <div class="muted">${esc(e.assignee || 'no owner')} · ${esc(e.status || 'no status')} · due ${esc(e.due || '–')}</div>
-    ${late ? `<div class="warn">Due after objective ${esc(late.key)} (${esc(late.due)})</div>` : ''}
+    <div class="muted">${esc(e.du)} · ${esc(e.assignee || 'no owner')} · ${esc(e.status || 'no status')}</div>
+    <div class="muted">SI: ${sis.map(esc).join(', ') || 'none'} · Objectives: ${objectivesOfEpic(sim, e.key).map(esc).join(', ') || 'none'}</div>
+    ${w ? `<div class="muted">Window ${fmt(w.start)} – ${fmt(w.end)} (${w.src === 'sprints' ? 'from story sprints' : 'whole PI'})</div>` : ''}
+    ${late ? `<div class="warn">Ends after objective ${esc(late.key)} due ${fmt(D(late.due))}</div>` : ''}
     <div class="row">PI <select onchange="setPI('${esc(e.key)}', this.value)">${sim.periods.map(x => `<option ${x === e.pi ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>
       <span class="muted">baseline: ${esc(b0.pi)}</span></div>
     <div>Progress: <b>${Math.round(p.pct * 100)}%</b> · ${p.done}/${p.total} stories${p.sp ? ` · ${p.spDone}/${p.sp} SP` : ''}${p.hold ? ` · <span class="warn">${p.hold} on hold</span>` : ''}</div>
     <h3 style="margin-top:10px">Links (${mine.length})</h3>${mine.map(li).join('') || '<div class="muted">none</div>'}
-    <div class="row"><select id="addType"><option value="solves">this solves →</option><option value="solvedby">← solved by</option><option value="relates">relates to</option></select>
-      <select id="addOther"><option value="">choose…</option>${others.map(k => `<option>${esc(k)}</option>`).join('')}</select><button onclick="addLink()">+</button></div>
+    <div class="row"><select id="addType" onchange="fillTargets()"><option value="blocks">this blocks →</option><option value="blockedby">← blocked by</option><option value="relates">relates to SI</option></select>
+      <select id="addOther"></select><button onclick="addLink()">+</button></div>
     <h3 style="margin-top:10px">Stories by sprint</h3>
     <div class="stories">${stories.length ? `<table>${sprintRows}</table>` : '<div class="muted">no stories linked to this epic</div>'}</div>`;
+  fillTargets();
+}
+function fillTargets() {
+  const t = $('addType'); if (!t) return;
+  const keys = Object.values(sim.nodes).filter(n => (t.value === 'relates' ? n.type === 'si' : n.type === 'epic') && n.key !== selected).map(n => n.key).sort(natural);
+  $('addOther').innerHTML = '<option value="">choose…</option>' + keys.map(k => `<option>${esc(k)}</option>`).join('');
 }
 
 /* ---------- scenario actions ---------- */
-function setPI(key, p) { if (sim.nodes[key]) { sim.nodes[key].pi = p; render(); } }
+function setPI(key, p) { if (sim.nodes[key]) { sim.nodes[key].pi = p; refreshPeriods(sim); render(); } }
 function removeLink(a, b, t) { sim.links = sim.links.filter(l => !(l.a === a && l.b === b && l.t === t)); render(); }
 function moveObj(k, d) {
   const i = sim.order.indexOf(k), j = i + d; if (j < 0 || j >= sim.order.length) return;
@@ -501,52 +670,100 @@ function moveObj(k, d) {
 }
 function addLink() {
   const t = $('addType').value, o = $('addOther').value; if (!o) return;
-  let a = selected, b = o, type = 'solves';
-  if (t === 'solvedby') { a = o; b = selected; } else if (t === 'relates') type = 'relates';
-  if (sim.links.some(l => l.t === type && ((l.a === a && l.b === b) || (type === 'relates' && l.a === b && l.b === a)))) return;
-  if (type === 'solves' && reaches(b, a)) { alert('This link would create a cycle (' + b + ' already leads to ' + a + ').'); return; }
-  sim.links.push({ a, b, t: type }); render();
+  let l;
+  if (t === 'relates') l = { a: [selected, o].sort()[0], b: [selected, o].sort()[1], t: 'relates' };
+  else l = t === 'blocks' ? { a: selected, b: o, t: 'blocks' } : { a: o, b: selected, t: 'blocks' };
+  if (sim.links.some(x => x.a === l.a && x.b === l.b && x.t === l.t)) return;
+  if (l.t === 'blocks' && reaches(l.b, l.a)) { alert('This dependency would create a cycle (' + l.b + ' already leads to ' + l.a + ').'); return; }
+  sim.links.push(l); render();
 }
 function autoResolve() {
   const last = sim.periods.length - 1;
   for (let i = 0; i < 60; i++) {
     let changed = false;
-    epicEdges(sim).filter(l => l.t === 'solves').forEach(l => {
-      if (edgeState(sim, l) !== 'bad') return;
+    depsOf(sim).forEach(l => {
+      if (depState(sim, l).s !== 'bad') return;
       const eb = sim.nodes[l.b]; if (statusClass(eb.status) === 'done') return;
-      eb.pi = sim.periods[Math.min(sim.periods.indexOf(sim.nodes[l.a].pi) + 1, last)]; changed = true;
+      const pa = sim.periods.indexOf(sim.nodes[l.a].pi), pb = sim.periods.indexOf(eb.pi);
+      eb.pi = sim.periods[Math.min(Math.max(pa, pb) + 1, last)]; changed = true;
     });
     if (!changed) break;
   }
-  render();
+  refreshPeriods(sim); render();
+}
+
+/* ---------- dependencies persistence ---------- */
+const depKey = 'epic-hierarchy-deps';
+const blocksOf = m => m.links.filter(l => l.t === 'blocks').map(l => l.a + '>' + l.b);
+function mergeDeps(pairs, target) {
+  let n = 0;
+  pairs.forEach(p => {
+    const [a, b] = p.split('>');
+    if (!isType(target, a, 'epic') || !isType(target, b, 'epic') || target.links.some(l => l.t === 'blocks' && l.a === a && l.b === b)) return;
+    target.links.push({ a, b, t: 'blocks' }); n++;
+  });
+  return n;
+}
+function saveDeps() {
+  if (!sim) return;
+  try { localStorage.setItem(depKey, JSON.stringify(blocksOf(sim))); alert(blocksOf(sim).length + ' dependencies saved in this browser; they are re-applied on every import.'); }
+  catch (e) { alert('Browser storage is not available – use Export CSV instead.'); }
+}
+function exportDeps() {
+  if (!sim) return;
+  const lines = ['blocker,blocked', ...blocksOf(sim).map(p => p.replace('>', ','))];
+  download('epic-dependencies-export.csv', lines.join('\n'));
+}
+function importDeps(text) {
+  if (!base) { alert('Load epics first.'); return; }
+  const rows = parseCSV(text).filter(r => r.length >= 2 && r[0] && r[1]);
+  const pairs = rows.map(r => (r[0].match(KEY_RE) || [''])[0] + '>' + (r[1].match(KEY_RE) || [''])[0]).filter(p => !p.startsWith('>') && !p.endsWith('>'));
+  const n = mergeDeps(pairs, base); sim = clone(base); savedApplied += n; render();
+}
+function download(name, text) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + text], { type: 'text/csv' })); a.download = name; a.click(); URL.revokeObjectURL(a.href);
 }
 function exportCSV() {
   if (!sim) return;
   const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-  const head = ['Epic', 'Summary', 'Objective', 'Solution Increment', 'PI (scenario)', 'PI (baseline)', 'Changed', 'Stories done', 'Stories total', 'Due', 'Late vs objective', 'Solves'];
-  const lines = [head.map(q).join(',')];
+  const lines = [['Epic', 'Summary', 'Delivery Unit', 'Solution Increments', 'Objectives', 'PI (scenario)', 'PI (baseline)', 'Changed', 'Start', 'End', 'Stories done', 'Stories total', 'Blocks'].map(q).join(',')];
   epicsOf(sim).forEach(e => {
-    const p = progress(sim, e.key);
-    lines.push([e.key, e.summary, objectivesOf(sim, e.key).join(' '), sisOf(sim, e.key).join(' '), e.pi, base.nodes[e.key].pi,
-      e.pi !== base.nodes[e.key].pi ? 'yes' : '', p.done, p.total, e.due, lateVsObjective(sim, e.key) ? 'yes' : '',
-      sim.links.filter(l => l.t === 'solves' && l.a === e.key).map(l => l.b).join(' ')].map(q).join(','));
+    const p = progress(sim, e.key), w = winOf(sim, e.key);
+    lines.push([e.key, e.summary, e.du, sisOfEpic(sim, e.key).join(' '), objectivesOfEpic(sim, e.key).join(' '), e.pi, base.nodes[e.key].pi,
+      e.pi !== base.nodes[e.key].pi ? 'yes' : '', w ? new Date(w.start).toISOString().slice(0, 10) : '', w ? new Date(w.end).toISOString().slice(0, 10) : '',
+      p.done, p.total, depsOf(sim).filter(l => l.a === e.key).map(l => l.b).join(' ')].map(q).join(','));
   });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\n')], { type: 'text/csv' }));
-  a.download = 'epic-hierarchy-scenario.csv'; a.click(); URL.revokeObjectURL(a.href);
+  download('epic-hierarchy-scenario.csv', lines.join('\n'));
+}
+
+/* ---------- calendar form ---------- */
+function calToForm() {
+  $('calN').value = CAL.aN; $('calS').value = CAL.aS; $('calD').value = CAL.days; $('calL').value = CAL.len;
+  $('calP').value = CAL.rows.map(r => `PI${r.n},${r.first},${r.last}`).join('\n');
+}
+function applyCal() {
+  const rows = $('calP').value.split('\n').map(s => s.trim()).filter(Boolean).map(s => {
+    const [p, f, l] = s.split(','); return { n: piNum(p), first: +f, last: +l }; }).filter(r => r.n != null && r.first && r.last);
+  if (!rows.length || isNaN(D($('calS').value))) { alert('Check the calendar: need at least one PI row and a valid start date.'); return; }
+  CAL = { aN: +$('calN').value, aS: $('calS').value, days: +$('calD').value || 14, len: +$('calL').value || 6, rows };
+  if (base) { Object.values(base.nodes).forEach(n => { if (n.type === 'epic' && !n.piGiven) n.pi = ''; }); derivePIs(base); refreshPeriods(base); sim = clone(base); render(); }
 }
 
 /* ---------- wiring ---------- */
 function clearAll() {
-  base = sim = null; selected = null; collapsed.clear();
+  base = sim = null; selected = null; collapsed.clear(); savedApplied = 0;
   $('boardWrap').innerHTML = '<div id="empty">Import a JIRA CSV export or click <b>Load sample</b>.</div>';
-  $('stats').innerHTML = ''; $('viols').textContent = '–';
+  $('stats').innerHTML = ''; $('viols').textContent = '–'; $('critp').textContent = '–';
   $('detail').innerHTML = '<h3>Selected epic</h3><div class="muted">Click an epic card.</div>';
   $('fObj').innerHTML = '<option value="">All objectives</option>';
 }
 function load(csv) {
-  try { base = buildModel(csv); sim = clone(base); selected = null; collapsed.clear(); render(); }
-  catch (err) { alert('Could not read CSV: ' + err.message); }
+  try {
+    base = buildModel(csv); savedApplied = 0;
+    try { savedApplied = mergeDeps(JSON.parse(localStorage.getItem(depKey) || '[]'), base); } catch (e) {}
+    sim = clone(base); selected = null; collapsed.clear(); render();
+  } catch (err) { alert('Could not read CSV: ' + err.message); }
 }
 $('btnImport').onclick = () => $('file').click();
 $('file').onchange = ev => { const f = ev.target.files[0]; if (f) f.text().then(load); ev.target.value = ''; };
@@ -554,8 +771,15 @@ $('btnSample').onclick = () => load(SAMPLE_CSV);
 $('btnReset').onclick = () => { if (base) { sim = clone(base); render(); } };
 $('btnClear').onclick = clearAll;
 $('btnExport').onclick = exportCSV;
-['fStatus', 'fObj', 'cRel'].forEach(id => $(id).onchange = render);
+$('btnSaveDeps').onclick = saveDeps; $('btnExpDeps').onclick = exportDeps;
+$('btnImpDeps').onclick = () => $('depFile').click();
+$('depFile').onchange = ev => { const f = ev.target.files[0]; if (f) f.text().then(importDeps); ev.target.value = ''; };
+$('btnCal').onclick = applyCal;
+['fStatus', 'fObj', 'cRel', 'cCrit'].forEach(id => $(id).onchange = render);
 $('fSearch').oninput = render;
+[['mSI', 'si'], ['mDU', 'du']].forEach(([id, m]) => $(id).onclick = () => {
+  mode = m; $('mSI').classList.toggle('on', m === 'si'); $('mDU').classList.toggle('on', m === 'du'); render(); });
+calToForm();
 
 const wrap = $('boardWrap');
 wrap.addEventListener('click', ev => {
@@ -571,7 +795,7 @@ wrap.addEventListener('dragstart', ev => { const c = ev.target.closest('.card');
 wrap.addEventListener('dragover', ev => { const c = ev.target.closest('.cell'); if (c && dragKey) { ev.preventDefault(); wrap.querySelectorAll('.cell.over').forEach(x => x.classList.remove('over')); c.classList.add('over'); } });
 wrap.addEventListener('drop', ev => {
   const c = ev.target.closest('.cell'); if (!c || !dragKey) return;
-  ev.preventDefault(); sim.nodes[dragKey].pi = c.dataset.per; selected = dragKey; dragKey = null; render();
+  ev.preventDefault(); const k = dragKey; dragKey = null; selected = k; setPI(k, c.dataset.per);
 });
 wrap.addEventListener('dragend', () => { dragKey = null; wrap.querySelectorAll('.cell.over').forEach(x => x.classList.remove('over')); });
 window.addEventListener('resize', () => { if (sim) render(); });
