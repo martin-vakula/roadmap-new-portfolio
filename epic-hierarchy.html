@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Epic Hierarchy Map</title>
+<style>
+  :root {
+    --bg:#f6f7f9; --panel:#fff; --ink:#1f2937; --muted:#6b7280; --line:#d9dde3;
+    --ok:#16a34a; --warn:#d97706; --bad:#dc2626; --ext:#9ca3af; --accent:#2563eb; --rel:#7c3aed;
+    --done:#dcfce7; --prog:#dbeafe; --todo:#f3f4f6; --hold:#fef3c7; --banner:#eef2ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#111418; --panel:#1b2027; --ink:#e5e7eb; --muted:#9aa3b0; --line:#303846;
+            --done:#1b3a2a; --prog:#1e3550; --todo:#262c36; --hold:#3b3220; --banner:#222a3d; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font:13px/1.35 system-ui,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+  header { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:10px 16px; background:var(--panel); border-bottom:1px solid var(--line); }
+  header h1 { font-size:16px; margin:0 12px 0 0; }
+  button, select, input[type=search] { font:inherit; padding:5px 9px; border:1px solid var(--line); border-radius:6px; background:var(--panel); color:var(--ink); cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  label.chk { display:flex; gap:5px; align-items:center; color:var(--muted); cursor:pointer; }
+  .sp { flex:1; }
+  .stats { display:flex; gap:8px; padding:8px 16px; flex-wrap:wrap; }
+  .pill { padding:3px 10px; border-radius:99px; border:1px solid var(--line); background:var(--panel); }
+  .pill b { font-weight:700; }
+  .bad { color:var(--bad); } .warn { color:var(--warn); } .ok { color:var(--ok); }
+  main { display:flex; gap:12px; padding:0 16px 16px; align-items:flex-start; }
+  #boardWrap { flex:1; min-width:0; overflow:auto; background:var(--panel); border:1px solid var(--line); border-radius:8px; max-height:calc(100vh - 170px); }
+  #board { position:relative; display:grid; min-width:max-content; }
+  #arrows { position:absolute; left:0; top:0; pointer-events:none; overflow:visible; z-index:0; }
+  .colhead { position:sticky; top:0; z-index:3; background:var(--panel); padding:8px 10px; font-weight:700; border-bottom:2px solid var(--line); text-align:center; }
+  .lanehead { position:sticky; left:0; z-index:2; background:var(--panel); padding:8px 10px; border-right:2px solid var(--line); border-bottom:1px solid var(--line); font-size:12px; }
+  .lanehead b { display:block; }
+  .corner { position:sticky; left:0; top:0; z-index:4; background:var(--panel); border-bottom:2px solid var(--line); border-right:2px solid var(--line); }
+  .banner { grid-column:1 / -1; position:sticky; left:0; z-index:2; background:var(--banner); border-bottom:1px solid var(--line); border-top:2px solid var(--line); padding:8px 12px; display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+  .banner .ttl { font-weight:700; cursor:pointer; }
+  .banner .meta { color:var(--muted); font-size:12px; }
+  .banner .mv button { padding:0 6px; font-size:11px; }
+  .dot { display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--ext); vertical-align:middle; margin-right:3px; }
+  .dot.ok { background:var(--ok); } .dot.warn { background:var(--warn); } .dot.bad { background:var(--bad); }
+  .cell { border-bottom:1px solid var(--line); border-right:1px dashed var(--line); padding:8px 25px; display:flex; flex-direction:column; gap:14px; min-height:84px; }
+  .cell.over { background:color-mix(in srgb, var(--accent) 12%, transparent); }
+  .card { position:relative; z-index:1; width:190px; padding:7px 9px; border:1.5px solid var(--line); border-left-width:5px; border-radius:7px; background:var(--todo); cursor:grab; user-select:none; }
+  .card.s-done { background:var(--done); border-left-color:var(--ok); }
+  .card.s-prog { background:var(--prog); border-left-color:var(--accent); }
+  .card.s-todo { border-left-color:var(--ext); }
+  .card.sel { outline:2.5px solid var(--accent); }
+  .card.dim { opacity:.22; }
+  .card.moved { box-shadow:0 0 0 2px var(--warn); }
+  .card .k { font-weight:700; font-size:11px; color:var(--muted); display:flex; justify-content:space-between; gap:4px; }
+  .card .t { font-weight:600; max-height:2.7em; overflow:hidden; }
+  .card .pb { height:6px; border-radius:3px; background:var(--line); margin-top:5px; overflow:hidden; }
+  .card .pb i { display:block; height:100%; background:var(--ok); }
+  .card .pt { font-size:10.5px; color:var(--muted); margin-top:2px; }
+  .badge { font-size:10px; padding:0 5px; border-radius:4px; color:#fff; background:var(--warn); margin-left:3px; }
+  .badge.hold { background:#b45309; } .badge.late { background:var(--bad); }
+  .chip { display:inline-block; font-size:10px; padding:0 5px; margin:3px 3px 0 0; border:1px solid var(--line); border-radius:4px; color:var(--muted); }
+  path.e { fill:none; }
+  path.e.solves { stroke-width:2.8; }
+  path.e.solves.ok { stroke:var(--ok); } path.e.solves.warn { stroke:var(--warn); } path.e.solves.bad { stroke:var(--bad); }
+  path.e.relates { stroke:var(--rel); stroke-width:1.6; stroke-dasharray:2 5; stroke-linecap:round; }
+  path.e.dim { opacity:.08; }
+  aside { width:330px; flex:none; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; max-height:calc(100vh - 170px); overflow:auto; }
+  aside h3 { margin:0 0 6px; font-size:13px; }
+  aside section { margin-bottom:14px; }
+  .row { display:flex; gap:6px; align-items:center; margin:4px 0; flex-wrap:wrap; }
+  .row select { max-width:170px; }
+  .viol { padding:6px 8px; border:1px solid var(--line); border-left:4px solid var(--bad); border-radius:6px; margin:5px 0; font-size:12px; }
+  .viol.warn { border-left-color:var(--warn); }
+  .viol button, .link button { font-size:11px; padding:2px 6px; margin:4px 4px 0 0; }
+  .link { display:flex; justify-content:space-between; align-items:center; font-size:12px; }
+  .stories table { width:100%; border-collapse:collapse; font-size:11.5px; }
+  .stories td { padding:3px 4px; border-top:1px solid var(--line); vertical-align:top; }
+  .stories .sph { font-weight:700; padding-top:7px; color:var(--muted); }
+  .st { font-size:10px; padding:0 5px; border-radius:4px; background:var(--todo); white-space:nowrap; }
+  .st.done { background:var(--done); } .st.prog { background:var(--prog); } .st.hold { background:var(--hold); }
+  .muted { color:var(--muted); }
+  .legend { display:flex; gap:12px; flex-wrap:wrap; padding:0 16px 8px; color:var(--muted); font-size:12px; }
+  .legend i { display:inline-block; width:26px; height:0; border-top:3px solid; vertical-align:middle; margin-right:4px; }
+  #empty { padding:40px; text-align:center; color:var(--muted); }
+  @media (max-width:900px){ main{flex-direction:column;} aside{width:100%;max-height:none;} }
+</style>
+</head>
+<body>
+<header>
+  <h1>Epic Hierarchy Map</h1>
+  <button id="btnImport">Import JIRA CSV</button>
+  <input type="file" id="file" accept=".csv,text/csv" hidden>
+  <button id="btnSample">Load sample</button>
+  <select id="fStatus" title="Status filter"><option value="">All statuses</option><option value="open">Not done</option><option value="done">Done only</option></select>
+  <select id="fObj" title="Objective filter"><option value="">All objectives</option></select>
+  <input type="search" id="fSearch" placeholder="Search key / summary">
+  <label class="chk"><input type="checkbox" id="cRel" checked> show "relates" lines</label>
+  <span class="sp"></span>
+  <button id="btnReset" title="Undo what-if changes, keep the data">Reset scenario</button>
+  <button id="btnClear" title="Remove all data and start over">Clear all</button>
+  <button id="btnExport">Export scenario CSV</button>
+</header>
+<div class="stats" id="stats"></div>
+<div class="legend">
+  <span><i style="border-color:var(--ok)"></i>Solves (strong) – solver in earlier PI</span>
+  <span><i style="border-color:var(--warn)"></i>Solves – same PI</span>
+  <span><i style="border-color:var(--bad)"></i>Solves – solver in later PI (violation)</span>
+  <span><i style="border-color:var(--rel);border-top-style:dotted"></i>Relates to (weak)</span>
+  <span class="muted">Objective → Solution Increment (row) → Epic (card, PI column) → Stories (side panel). Click an epic to trace it · drag it to another PI to simulate.</span>
+</div>
+<main>
+  <div id="boardWrap"><div id="empty">Import a JIRA CSV export or click <b>Load sample</b>.</div></div>
+  <aside>
+    <section id="detail"><h3>Selected epic</h3><div class="muted">Click an epic card.</div></section>
+    <section><h3>Issues to resolve</h3><div id="viols" class="muted">–</div></section>
+  </aside>
+</main>
+
+<script>
+const SAMPLE_CSV = `Issue key,Issue Type,Summary,Status,Assignee,PI,Due date,Story Points,Sprint,Sprint,Epic Link,RAG Status,Objective Manager,Global Priority,Outward issue link (Solves),Outward issue link (Solves),Outward issue link (Relates),Outward issue link (Relates)
+ESET-138,Objective,Create XDR monetization model,In Analysis,Igor Hula,H2_2026,2026-11-30,,,,,Attention,Martin Vakula,993,,,,
+SOLINC-3,Solution Increment,Pilot 138 - C&F SI1,In Analysis,Pavol Korvas,,,,,,,,,,,,,
+SOLINC-18,Solution Increment,Pilot 138 - C&F SI2,In Analysis,Pavol Korvas,,,,,,,,,,,,,
+D_UX-2583,Epic,UX XDR monetization model (H2/2026),In Progress,Veronika Slovakova,PI84,2026-12-31,,,,,,,,ESET-138,,SOLINC-3,DU_EPP-2077
+DU_EPP-2157,Epic,XDR Monetization: Retention of Incidents,Open,Martin Antal,PI85,2027-01-06,,,,,,,,ESET-138,,SOLINC-18,
+DU_EPP-2077,Epic,Data retention configuration service Phase 1,In Progress,Martin Stano,PI85,2027-01-06,,,,,,,,DU_EPP-2157,,SOLINC-3,SOLINC-18
+D_EPP-3183,Task,Analyse costs over auditlog mechanism for auditing changes in data retention configuration,Closed,Martin Stano,,,,EPC_292,,DU_EPP-2077,,,,,,,
+D_EPP-3180,Task,Implement synchronization of quotas via GetLinkedLocations,On Hold,EP CERBERUS TEAM,,,5,EPC_292,,DU_EPP-2077,,,,,,,
+D_EPP-3178,Task,Implement Frontend for Data retention service,On Hold,David Kubik,,,5,EPC_292,,DU_EPP-2077,,,,,,,
+D_EPP-3175,Task,Bootstrap data retention management microservice with API and staisy constraints,Closed,Filip Mikula,,,5,EPC_291,,DU_EPP-2077,,,,,,,
+D_EPP-3185,Story,Implement audit logging for Data Retention Management domain (mirroring Incidents pattern),Open,Michal Fabis,,,3,EPC_291,EPC_292,DU_EPP-2077,,,,,,,
+D_EPP-3181,Task,Create eventhubs for emmiting of the data retention quotas for recieving services,Closed,Filip Mikula,,,2,EPC_291,,DU_EPP-2077,,,,,,,
+D_EPP-3179,Story,Implement API from ARCH into Data retention configuration service,In Review,Filip Mikula,,,3,EPC_291,EPC_292,DU_EPP-2077,,,,,,,
+D_EPP-3182,Task,E2E testing of the Data retention configuration service,Open,EP CERBERUS TEAM,,,5,EPC_293,,DU_EPP-2077,,,,,,,
+D_UX-2601,Story,Monetization model wireframes,Closed,Veronika Slovakova,,,3,EPC_290,,D_UX-2583,,,,,,,
+D_UX-2602,Story,Plans and pricing screens,In Progress,Veronika Slovakova,,,5,EPC_291,,D_UX-2583,,,,,,,
+D_UX-2603,Story,Usability test of upsell flow,Open,Veronika Slovakova,,,2,EPC_292,,D_UX-2583,,,,,,,
+DU_EPP-2201,Story,Define incident retention tiers,Open,Martin Antal,,,3,EPC_292,,DU_EPP-2157,,,,,,,
+DU_EPP-2202,Story,Retention cost model per tier,Open,Martin Antal,,,5,EPC_293,,DU_EPP-2157,,,,,,,
+`;
+
+/* ---------- state ---------- */
+let base = null;   // imported baseline
+let sim = null;    // working copy (scenario)
+let selected = null;
+const collapsed = new Set();
+
+function $(id) { return document.getElementById(id); }
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const clone = o => JSON.parse(JSON.stringify(o));
+const natural = (a, b) => String(a).localeCompare(String(b), undefined, { numeric: true });
+
+/* ---------- CSV ---------- */
+function parseCSV(text) {
+  const rows = []; let row = [], cell = '', q = false;
+  text = text.replace(/^﻿/, '');
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; }
+      else cell += c;
+    } else if (c === '"') q = true;
+    else if (c === ',') { row.push(cell); cell = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++;
+      row.push(cell); cell = '';
+      if (row.some(x => x !== '')) rows.push(row);
+      row = [];
+    } else cell += c;
+  }
+  if (cell !== '' || row.length) { row.push(cell); if (row.some(x => x !== '')) rows.push(row); }
+  return rows;
+}
+const norm = s => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+// all columns whose header equals or starts with a candidate word-wise (JIRA repeats Sprint / link columns)
+function findCols(headers, cands) {
+  const out = [];
+  headers.forEach((h, i) => { const n = norm(h); if (cands.some(c => n === c || n.startsWith(c + ' '))) out.push(i); });
+  return out;
+}
+const KEY_RE = /[A-Z][A-Z0-9_]+-\d+/g;
+
+function statusClass(s) {
+  const n = norm(s);
+  if (/hold|block|impediment/.test(n)) return 'hold';
+  if (/done|closed|resolved|complete|released/.test(n)) return 'done';
+  if (/progress|review|test|develop|implement|doing/.test(n)) return 'prog';
+  return 'todo';
+}
+function parseDate(d) {
+  d = (d || '').trim(); if (!d) return '';
+  const t = Date.parse(/^\d{4}-\d{2}-\d{2}/.test(d) ? d : d.replace(/\//g, ' '));
+  return isNaN(t) ? '' : new Date(t).toISOString().slice(0, 10);
+}
+function typeOf(typeText, key, hasParent) {
+  const t = norm(typeText);
+  if (t) {
+    if (/objective/.test(t)) return 'objective';
+    if (/solution increment|solinc/.test(t)) return 'si';
+    if (/epic/.test(t)) return 'epic';
+    return 'story';
+  }
+  if (/^SOLINC-/.test(key)) return 'si';
+  if (/^ESET-/.test(key)) return 'objective';
+  return hasParent ? 'story' : 'epic';
+}
+
+function buildModel(csv) {
+  const rows = parseCSV(csv);
+  if (rows.length < 2) throw new Error('CSV has no data rows');
+  const H = rows[0];
+  const one = c => { const r = findCols(H, c); return r.length ? r[0] : -1; };
+  const iKey = one(['issue key', 'key']), iType = one(['issue type', 'type']), iSum = one(['summary']),
+        iSt = one(['status']), iAs = one(['assignee', 'owner']), iDue = one(['due date', 'target end', 'end date']),
+        iSp = one(['story points', 'story point estimate']), iPar = one(['epic link', 'parent link', 'parent', 'parent id']),
+        iRag = one(['rag status', 'rag']), iMgr = one(['objective manager']), iGp = one(['global priority']),
+        iPi = one(['pi', 'program increment', 'fix version s', 'fix version']);
+  if (iKey < 0) throw new Error('Column "Issue key" not found');
+  const sprintCols = findCols(H, ['sprint']);
+  const outCols = findCols(H, ['outward issue link']), inCols = findCols(H, ['inward issue link']);
+  const nodes = {}, seen = new Set(); const links = []; let ignored = 0;
+  const addLink = (self, other, col, outward) => {
+    const n = norm(H[col]);
+    let t = /solve/.test(n) ? 'solves' : /relat/.test(n) ? 'relates' : null;
+    if (!t) { ignored++; return; }
+    let a = self, b = other;
+    if (t === 'solves' && !outward) { a = other; b = self; }      // inward "is solved by": other solves self
+    const id = t === 'relates' ? [a, b].sort().join('~') + t : a + '>' + b + t;
+    if (seen.has(id) || a === b) return;
+    seen.add(id); links.push({ a, b, t });
+  };
+  rows.slice(1).forEach(r => {
+    const key = (r[iKey] || '').trim(); if (!key) return;
+    const parent = iPar >= 0 ? ((r[iPar] || '').match(KEY_RE) || [''])[0] : '';
+    const sprints = sprintCols.map(c => (r[c] || '').trim()).filter(Boolean);
+    const type = typeOf(iType >= 0 ? r[iType] : '', key, !!parent);
+    nodes[key] = {
+      key, type, summary: (iSum >= 0 && r[iSum]) || key, status: iSt >= 0 ? r[iSt] : '',
+      assignee: iAs >= 0 ? r[iAs] : '', due: iDue >= 0 ? parseDate(r[iDue]) : '',
+      sp: iSp >= 0 && r[iSp] !== '' ? Number(r[iSp]) || 0 : 0,
+      sprint: sprints.length ? sprints[sprints.length - 1] : '', parent,
+      rag: iRag >= 0 ? r[iRag] : '', mgr: iMgr >= 0 ? r[iMgr] : '', gp: iGp >= 0 ? r[iGp] : '',
+      pi: iPi >= 0 ? (r[iPi] || '').split(/[;,]/)[0].trim() : ''
+    };
+    outCols.forEach(c => (r[c] || '').match(KEY_RE)?.forEach(o => addLink(key, o, c, true)));
+    inCols.forEach(c => (r[c] || '').match(KEY_RE)?.forEach(o => addLink(key, o, c, false)));
+  });
+  // epics without PI -> bucket; stories need a known parent
+  Object.values(nodes).forEach(n => { if (n.type === 'epic' && !n.pi) n.pi = 'No PI'; });
+  const periods = [...new Set(Object.values(nodes).filter(n => n.type === 'epic').map(n => n.pi))]
+    .sort((a, b) => a === 'No PI' ? 1 : b === 'No PI' ? -1 : natural(a, b));
+  const order = Object.values(nodes).filter(n => n.type === 'objective')
+    .sort((x, y) => (Number(y.gp) || 0) - (Number(x.gp) || 0) || natural(x.key, y.key)).map(n => n.key);
+  return { nodes, links, periods, order, ignored };
+}
+
+/* ---------- derived helpers ---------- */
+const epicsOf = m => Object.values(m.nodes).filter(n => n.type === 'epic');
+const storiesOf = (m, ek) => Object.values(m.nodes).filter(n => n.type === 'story' && n.parent === ek);
+function objectivesOf(m, ek) {   // objectives this epic solves (directly, else via the epics it solves), in priority order
+  const set = new Set(), seen = new Set([ek]), queue = [ek];
+  while (queue.length) {
+    const x = queue.shift();
+    m.links.forEach(l => {
+      if (l.t !== 'solves' || l.a !== x) return;
+      if (m.nodes[l.b]?.type === 'objective') set.add(l.b);
+      else if (m.nodes[l.b]?.type === 'epic' && !seen.has(l.b)) { seen.add(l.b); queue.push(l.b); }
+    });
+    if (set.size) break;   // nearest objectives win
+  }
+  return m.order.filter(k => set.has(k));
+}
+function sisOf(m, ek) {
+  const out = new Set();
+  m.links.forEach(l => {
+    if (l.t !== 'relates') return;
+    const o = l.a === ek ? l.b : l.b === ek ? l.a : null;
+    if (o && m.nodes[o]?.type === 'si') out.add(o);
+  });
+  return [...out].sort(natural);
+}
+function progress(m, ek) {
+  const st = storiesOf(m, ek); const done = st.filter(s => statusClass(s.status) === 'done');
+  const sp = st.reduce((a, s) => a + s.sp, 0), spDone = done.reduce((a, s) => a + s.sp, 0);
+  const pct = sp ? spDone / sp : st.length ? done.length / st.length : 0;
+  return { total: st.length, done: done.length, hold: st.filter(s => statusClass(s.status) === 'hold').length, sp, spDone, pct };
+}
+function lateVsObjective(m, ek) {
+  const e = m.nodes[ek]; if (!e.due) return null;
+  return objectivesOf(m, ek).map(o => m.nodes[o]).find(o => o.due && e.due > o.due) || null;
+}
+function edgeState(m, l) {   // only 'solves' between epics has an ordering rule
+  if (l.t !== 'solves') return 'rel';
+  const ea = m.nodes[l.a], eb = m.nodes[l.b];
+  if (ea?.type !== 'epic' || eb?.type !== 'epic') return 'rel';
+  if (ea.pi === 'No PI' || eb.pi === 'No PI') return 'warn';
+  const d = m.periods.indexOf(eb.pi) - m.periods.indexOf(ea.pi);
+  return d > 0 ? 'ok' : d === 0 ? 'warn' : 'bad';
+}
+const epicEdges = m => m.links.filter(l => m.nodes[l.a]?.type === 'epic' && m.nodes[l.b]?.type === 'epic');
+function chain(key) {
+  const set = new Set([key]); const up = new Set([key]), down = new Set([key]);
+  const E = epicEdges(sim); let grow = true;
+  while (grow) {
+    grow = false;
+    E.filter(l => l.t === 'solves').forEach(l => {
+      if (up.has(l.b) && !up.has(l.a)) { up.add(l.a); grow = true; }
+      if (down.has(l.a) && !down.has(l.b)) { down.add(l.b); grow = true; }
+    });
+  }
+  up.forEach(k => set.add(k)); down.forEach(k => set.add(k));
+  E.filter(l => l.t === 'relates').forEach(l => { if (set.has(l.a)) set.add(l.b); if (set.has(l.b)) set.add(l.a); });
+  return set;
+}
+function reaches(from, to) {
+  const seen = new Set([from]), st = [from];
+  while (st.length) {
+    const x = st.pop(); if (x === to) return true;
+    sim.links.forEach(l => { if (l.t === 'solves' && l.a === x && !seen.has(l.b)) { seen.add(l.b); st.push(l.b); } });
+  }
+  return false;
+}
+
+/* ---------- rendering ---------- */
+const NS = 'http://www.w3.org/2000/svg';
+const RAG = r => { const n = norm(r); return /green|ok|on track/.test(n) ? 'ok' : /red|critical|off track/.test(n) ? 'bad' : n ? 'warn' : ''; };
+
+function visibleEpics() {
+  const st = $('fStatus').value, ob = $('fObj').value, q = $('fSearch').value.toLowerCase();
+  return epicsOf(sim).filter(e => {
+    const sc = statusClass(e.status);
+    if (st === 'done' && sc !== 'done') return false;
+    if (st === 'open' && sc === 'done') return false;
+    if (ob && !objectivesOf(sim, e.key).includes(ob)) return false;
+    if (q && !(e.key + ' ' + e.summary).toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function render() {
+  if (!sim) return;
+  const eps = visibleEpics(), vis = new Set(eps.map(e => e.key));
+  const cur = $('fObj').value;
+  $('fObj').innerHTML = '<option value="">All objectives</option>' +
+    sim.order.map(k => `<option value="${esc(k)}" ${k === cur ? 'selected' : ''}>${esc(k)} – ${esc(sim.nodes[k].summary.slice(0, 40))}</option>`).join('');
+  // group epics: objective -> SI (first) -> cell
+  const groups = [...sim.order, null];
+  const per = sim.periods;
+  const hl = selected && sim.nodes[selected]?.type === 'epic' ? chain(selected) : null;
+  const inHl = k => !hl || hl.has(k);
+  let html = '<div class="corner"></div>' + per.map(p => `<div class="colhead">${esc(p)}</div>`).join('');
+  const shown = new Set();
+  groups.forEach(g => {
+    const gEps = eps.filter(e => (objectivesOf(sim, e.key)[0] || null) === g);
+    if (!gEps.length) return;
+    gEps.forEach(e => shown.add(e.key));
+    if (g) {
+      const o = sim.nodes[g], all = epicsOf(sim).filter(e => objectivesOf(sim, e.key)[0] === g);
+      let tot = 0, dn = 0; all.forEach(e => { const p = progress(sim, e.key); tot += p.sp || p.total; dn += p.sp ? p.spDone : p.done; });
+      const idx = sim.order.indexOf(g);
+      html += `<div class="banner"><span class="ttl" data-toggle="${esc(g)}">${collapsed.has(g) ? '▸' : '▾'} ${esc(g)} · ${esc(o.summary)}</span>
+        <span class="meta"><span class="dot ${RAG(o.rag)}"></span>${esc(o.rag || 'no RAG')} · ${esc(o.status)} · Owner ${esc(o.assignee || '–')} · Manager ${esc(o.mgr || '–')} · Global priority <b>${esc(o.gp || '–')}</b> · Due ${esc(o.due || '–')} · ${tot ? Math.round(100 * dn / tot) : 0}% done</span>
+        <span class="mv"><button title="Raise priority (scenario)" onclick="moveObj('${esc(g)}',-1)" ${idx === 0 ? 'disabled' : ''}>▲</button><button title="Lower priority (scenario)" onclick="moveObj('${esc(g)}',1)" ${idx === sim.order.length - 1 ? 'disabled' : ''}>▼</button></span></div>`;
+    } else {
+      html += '<div class="banner"><span class="ttl">No objective linked ("solves")</span></div>';
+    }
+    if (g && collapsed.has(g)) { gEps.forEach(e => shown.delete(e.key)); return; }
+    const siKeys = [...new Set(gEps.map(e => sisOf(sim, e.key)[0] || null))].sort((a, b) => a === null ? 1 : b === null ? -1 : natural(a, b));
+    siKeys.forEach(si => {
+      const sn = si && sim.nodes[si];
+      html += `<div class="lanehead"><b>${si ? esc(si) : 'No solution increment'}</b><span class="muted">${sn ? esc(sn.summary) : 'epics without a "relates" SOLINC link'}</span></div>`;
+      per.forEach(p => {
+        const cards = gEps.filter(e => (sisOf(sim, e.key)[0] || null) === si && e.pi === p)
+          .sort((a, b) => natural(a.key, b.key)).map(e => cardHtml(e, inHl)).join('');
+        html += `<div class="cell" data-per="${esc(p)}">${cards}</div>`;
+      });
+    });
+  });
+  const board = document.createElement('div');
+  board.id = 'board';
+  board.style.gridTemplateColumns = `200px repeat(${per.length}, 240px)`;
+  board.innerHTML = html;
+  const wrap = $('boardWrap'), sl = wrap.scrollLeft, st = wrap.scrollTop;
+  wrap.innerHTML = ''; wrap.appendChild(board); wrap.scrollLeft = sl; wrap.scrollTop = st;
+  drawArrows(board, shown, hl);
+  renderStats(); renderViols(); renderDetail();
+}
+
+function cardHtml(e, inHl) {
+  const b0 = base.nodes[e.key], p = progress(sim, e.key);
+  const moved = b0 && b0.pi !== e.pi, late = lateVsObjective(sim, e.key);
+  const extraSi = sisOf(sim, e.key).slice(1), extraObj = objectivesOf(sim, e.key).slice(1);
+  return `<div class="card s-${statusClass(e.status)} ${e.key === selected ? 'sel' : ''} ${moved ? 'moved' : ''} ${inHl(e.key) ? '' : 'dim'}" draggable="true" data-key="${esc(e.key)}" title="${esc(e.key + ' – ' + e.summary + ' (' + e.status + ')')}">
+    <div class="k"><span>${esc(e.key)}</span><span>${p.hold ? `<span class="badge hold">${p.hold} on hold</span>` : ''}${late ? '<span class="badge late">late vs obj</span>' : ''}</span></div>
+    <div class="t">${esc(e.summary)}</div>
+    <div class="pb"><i style="width:${Math.round(p.pct * 100)}%"></i></div>
+    <div class="pt">${p.total ? `${p.done}/${p.total} stories${p.sp ? ` · ${p.spDone}/${p.sp} SP` : ''}` : 'no stories'} · ${esc(e.assignee || '')}</div>
+    ${extraSi.map(s => `<span class="chip">also ${esc(s)}</span>`).join('')}${extraObj.map(o => `<span class="chip">also solves ${esc(o)}</span>`).join('')}</div>`;
+}
+
+function drawArrows(board, shown, hl) {
+  const svg = document.createElementNS(NS, 'svg');
+  svg.id = 'arrows';
+  svg.setAttribute('width', board.scrollWidth); svg.setAttribute('height', board.scrollHeight);
+  const colors = { ok: 'var(--ok)', warn: 'var(--warn)', bad: 'var(--bad)' };
+  svg.innerHTML = '<defs>' + Object.keys(colors).map(s =>
+    `<marker id="ah-${s}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${colors[s]}"/></marker>`).join('') + '</defs>';
+  board.appendChild(svg);
+  const br = board.getBoundingClientRect();
+  const el = k => board.querySelector(`.card[data-key="${CSS.escape(k)}"]`);
+  epicEdges(sim).forEach(l => {
+    if (l.t === 'relates' && !$('cRel').checked) return;
+    if (!shown.has(l.a) || !shown.has(l.b)) return;
+    const ea = el(l.a), eb = el(l.b); if (!ea || !eb) return;
+    const ra = ea.getBoundingClientRect(), rb = eb.getBoundingClientRect();
+    let x1 = ra.right - br.left, y1 = (ra.top + ra.bottom) / 2 - br.top, x2 = rb.left - br.left, y2 = (rb.top + rb.bottom) / 2 - br.top;
+    if (l.t === 'relates' && x2 < x1) { [x1, y1, x2, y2] = [rb.right - br.left, (rb.top + rb.bottom) / 2 - br.top, ra.left - br.left, (ra.top + ra.bottom) / 2 - br.top]; }
+    const dx = Math.max(40, Math.abs(x2 - x1) / 2), s = edgeState(sim, l);
+    const p = document.createElementNS(NS, 'path');
+    p.setAttribute('d', `M${x1} ${y1} C${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`);
+    p.setAttribute('class', `e ${l.t} ${s} ${(!hl || (hl.has(l.a) && hl.has(l.b))) ? '' : 'dim'}`);
+    if (l.t === 'solves') p.setAttribute('marker-end', `url(#ah-${s})`);
+    svg.appendChild(p);
+  });
+}
+
+function renderStats() {
+  const c = { ok: 0, warn: 0, bad: 0 }, c0 = { ok: 0, warn: 0, bad: 0 };
+  epicEdges(sim).filter(l => l.t === 'solves').forEach(l => c[edgeState(sim, l)]++);
+  epicEdges(base).filter(l => l.t === 'solves').forEach(l => c0[edgeState(base, l)]++);
+  const eps = epicsOf(sim), late = eps.filter(e => lateVsObjective(sim, e.key)).length;
+  const moved = eps.filter(e => base.nodes[e.key].pi !== e.pi).length + (sim.order.join() !== base.order.join() ? 1 : 0) +
+    (sim.links.length !== base.links.length || sim.links.some(l => !base.links.some(b => b.a === l.a && b.b === l.b && b.t === l.t)) ? 1 : 0);
+  const d = c.bad - c0.bad;
+  $('stats').innerHTML =
+    `<span class="pill"><b>${sim.order.length}</b> objectives</span><span class="pill"><b>${eps.length}</b> epics</span>` +
+    `<span class="pill"><b>${Object.values(sim.nodes).filter(n => n.type === 'story').length}</b> stories</span>` +
+    `<span class="pill"><b class="bad">${c.bad}</b> solve-order violations${d ? ` (${d > 0 ? '+' : ''}${d})` : ''}</span>` +
+    `<span class="pill"><b class="warn">${c.warn}</b> same-PI solves</span>` +
+    `<span class="pill"><b class="${late ? 'bad' : 'ok'}">${late}</b> epics due after their objective</span>` +
+    `<span class="pill">scenario changes: <b>${moved}</b></span>` +
+    (sim.ignored ? `<span class="pill muted">${sim.ignored} link(s) of other types ignored</span>` : '');
+}
+
+function renderViols() {
+  const last = sim.periods.length - 1, items = [];
+  epicEdges(sim).filter(l => l.t === 'solves').forEach(l => { const s = edgeState(sim, l); if (s === 'bad' || s === 'warn') items.push([l, s]); });
+  items.sort((x, y) => (x[1] === 'bad' ? 0 : 1) - (y[1] === 'bad' ? 0 : 1));
+  let html = (items.some(x => x[1] === 'bad') ? '<button onclick="autoResolve()">Auto-resolve: push solved epics later</button>' : '') +
+    items.map(([l, s]) => {
+      const ea = sim.nodes[l.a], eb = sim.nodes[l.b];
+      const ia = sim.periods.indexOf(ea.pi), ib = sim.periods.indexOf(eb.pi);
+      const pushB = sim.periods[Math.min(ia + 1, last)], pullA = sim.periods[Math.max(ib - 1, 0)];
+      return `<div class="viol ${s === 'warn' ? 'warn' : ''}"><b>${esc(l.a)}</b> (${esc(ea.pi)}) solves <b>${esc(l.b)}</b> (${esc(eb.pi)})<br><span class="muted">${s === 'bad' ? 'Solver lands after the epic it solves' : 'Same PI – tight'}</span><br>
+        <button onclick="setPI('${esc(l.b)}','${esc(pushB)}')">Move ${esc(l.b)} → ${esc(pushB)}</button>
+        <button onclick="setPI('${esc(l.a)}','${esc(pullA)}')">Move ${esc(l.a)} → ${esc(pullA)}</button></div>`;
+    }).join('');
+  epicsOf(sim).forEach(e => {
+    const o = lateVsObjective(sim, e.key);
+    if (o) html += `<div class="viol warn"><b>${esc(e.key)}</b> due ${esc(e.due)} is after objective <b>${esc(o.key)}</b> due ${esc(o.due)}</div>`;
+  });
+  $('viols').innerHTML = html || '<span class="ok">No conflicts.</span>';
+}
+
+function renderDetail() {
+  const e = selected && sim.nodes[selected];
+  if (!e || e.type !== 'epic') { $('detail').innerHTML = '<h3>Selected epic</h3><div class="muted">Click an epic card.</div>'; return; }
+  const b0 = base.nodes[e.key], p = progress(sim, e.key);
+  const mine = sim.links.filter(l => l.a === e.key || l.b === e.key);
+  const li = l => {
+    const other = l.a === e.key ? l.b : l.a;
+    const label = l.t === 'relates' ? 'relates to' : l.a === e.key ? 'solves' : 'is solved by';
+    return `<div class="link"><span><span class="muted">${label}</span> ${esc(other)} <span class="muted">${esc(sim.nodes[other]?.pi || sim.nodes[other]?.type || 'external')}</span></span>
+      <button title="Remove link" onclick="removeLink('${esc(l.a)}','${esc(l.b)}','${l.t}')">✕</button></div>`;
+  };
+  const others = Object.values(sim.nodes).filter(n => n.type !== 'story' && n.key !== e.key).map(n => n.key).sort(natural);
+  const stories = storiesOf(sim, e.key), bySprint = {};
+  stories.forEach(s => (bySprint[s.sprint || 'Backlog'] = bySprint[s.sprint || 'Backlog'] || []).push(s));
+  const sprintRows = Object.keys(bySprint).sort((a, b) => a === 'Backlog' ? 1 : b === 'Backlog' ? -1 : natural(a, b)).map(sp =>
+    `<tr><td colspan="4" class="sph">${esc(sp)}</td></tr>` + bySprint[sp].sort((a, b) => natural(a.key, b.key)).map(s =>
+      `<tr><td title="${esc(s.summary)}">${esc(s.key)}</td><td>${esc(s.summary.length > 38 ? s.summary.slice(0, 36) + '…' : s.summary)}</td>
+      <td><span class="st ${statusClass(s.status)}">${esc(s.status)}</span></td><td>${s.sp || ''}</td></tr>`).join('')).join('');
+  const late = lateVsObjective(sim, e.key);
+  $('detail').innerHTML = `<h3>${esc(e.key)}</h3><div>${esc(e.summary)}</div>
+    <div class="muted">${esc(e.assignee || 'no owner')} · ${esc(e.status || 'no status')} · due ${esc(e.due || '–')}</div>
+    ${late ? `<div class="warn">Due after objective ${esc(late.key)} (${esc(late.due)})</div>` : ''}
+    <div class="row">PI <select onchange="setPI('${esc(e.key)}', this.value)">${sim.periods.map(x => `<option ${x === e.pi ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>
+      <span class="muted">baseline: ${esc(b0.pi)}</span></div>
+    <div>Progress: <b>${Math.round(p.pct * 100)}%</b> · ${p.done}/${p.total} stories${p.sp ? ` · ${p.spDone}/${p.sp} SP` : ''}${p.hold ? ` · <span class="warn">${p.hold} on hold</span>` : ''}</div>
+    <h3 style="margin-top:10px">Links (${mine.length})</h3>${mine.map(li).join('') || '<div class="muted">none</div>'}
+    <div class="row"><select id="addType"><option value="solves">this solves →</option><option value="solvedby">← solved by</option><option value="relates">relates to</option></select>
+      <select id="addOther"><option value="">choose…</option>${others.map(k => `<option>${esc(k)}</option>`).join('')}</select><button onclick="addLink()">+</button></div>
+    <h3 style="margin-top:10px">Stories by sprint</h3>
+    <div class="stories">${stories.length ? `<table>${sprintRows}</table>` : '<div class="muted">no stories linked to this epic</div>'}</div>`;
+}
+
+/* ---------- scenario actions ---------- */
+function setPI(key, p) { if (sim.nodes[key]) { sim.nodes[key].pi = p; render(); } }
+function removeLink(a, b, t) { sim.links = sim.links.filter(l => !(l.a === a && l.b === b && l.t === t)); render(); }
+function moveObj(k, d) {
+  const i = sim.order.indexOf(k), j = i + d; if (j < 0 || j >= sim.order.length) return;
+  [sim.order[i], sim.order[j]] = [sim.order[j], sim.order[i]]; render();
+}
+function addLink() {
+  const t = $('addType').value, o = $('addOther').value; if (!o) return;
+  let a = selected, b = o, type = 'solves';
+  if (t === 'solvedby') { a = o; b = selected; } else if (t === 'relates') type = 'relates';
+  if (sim.links.some(l => l.t === type && ((l.a === a && l.b === b) || (type === 'relates' && l.a === b && l.b === a)))) return;
+  if (type === 'solves' && reaches(b, a)) { alert('This link would create a cycle (' + b + ' already leads to ' + a + ').'); return; }
+  sim.links.push({ a, b, t: type }); render();
+}
+function autoResolve() {
+  const last = sim.periods.length - 1;
+  for (let i = 0; i < 60; i++) {
+    let changed = false;
+    epicEdges(sim).filter(l => l.t === 'solves').forEach(l => {
+      if (edgeState(sim, l) !== 'bad') return;
+      const eb = sim.nodes[l.b]; if (statusClass(eb.status) === 'done') return;
+      eb.pi = sim.periods[Math.min(sim.periods.indexOf(sim.nodes[l.a].pi) + 1, last)]; changed = true;
+    });
+    if (!changed) break;
+  }
+  render();
+}
+function exportCSV() {
+  if (!sim) return;
+  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const head = ['Epic', 'Summary', 'Objective', 'Solution Increment', 'PI (scenario)', 'PI (baseline)', 'Changed', 'Stories done', 'Stories total', 'Due', 'Late vs objective', 'Solves'];
+  const lines = [head.map(q).join(',')];
+  epicsOf(sim).forEach(e => {
+    const p = progress(sim, e.key);
+    lines.push([e.key, e.summary, objectivesOf(sim, e.key).join(' '), sisOf(sim, e.key).join(' '), e.pi, base.nodes[e.key].pi,
+      e.pi !== base.nodes[e.key].pi ? 'yes' : '', p.done, p.total, e.due, lateVsObjective(sim, e.key) ? 'yes' : '',
+      sim.links.filter(l => l.t === 'solves' && l.a === e.key).map(l => l.b).join(' ')].map(q).join(','));
+  });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\n')], { type: 'text/csv' }));
+  a.download = 'epic-hierarchy-scenario.csv'; a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ---------- wiring ---------- */
+function clearAll() {
+  base = sim = null; selected = null; collapsed.clear();
+  $('boardWrap').innerHTML = '<div id="empty">Import a JIRA CSV export or click <b>Load sample</b>.</div>';
+  $('stats').innerHTML = ''; $('viols').textContent = '–';
+  $('detail').innerHTML = '<h3>Selected epic</h3><div class="muted">Click an epic card.</div>';
+  $('fObj').innerHTML = '<option value="">All objectives</option>';
+}
+function load(csv) {
+  try { base = buildModel(csv); sim = clone(base); selected = null; collapsed.clear(); render(); }
+  catch (err) { alert('Could not read CSV: ' + err.message); }
+}
+$('btnImport').onclick = () => $('file').click();
+$('file').onchange = ev => { const f = ev.target.files[0]; if (f) f.text().then(load); ev.target.value = ''; };
+$('btnSample').onclick = () => load(SAMPLE_CSV);
+$('btnReset').onclick = () => { if (base) { sim = clone(base); render(); } };
+$('btnClear').onclick = clearAll;
+$('btnExport').onclick = exportCSV;
+['fStatus', 'fObj', 'cRel'].forEach(id => $(id).onchange = render);
+$('fSearch').oninput = render;
+
+const wrap = $('boardWrap');
+wrap.addEventListener('click', ev => {
+  const t = ev.target.closest('[data-toggle]');
+  if (t) { const k = t.dataset.toggle; collapsed.has(k) ? collapsed.delete(k) : collapsed.add(k); render(); return; }
+  if (ev.target.closest('.mv')) return;
+  const c = ev.target.closest('.card');
+  selected = c ? (c.dataset.key === selected ? null : c.dataset.key) : null;
+  render();
+});
+let dragKey = null;
+wrap.addEventListener('dragstart', ev => { const c = ev.target.closest('.card'); if (c) { dragKey = c.dataset.key; ev.dataTransfer.setData('text/plain', dragKey); } });
+wrap.addEventListener('dragover', ev => { const c = ev.target.closest('.cell'); if (c && dragKey) { ev.preventDefault(); wrap.querySelectorAll('.cell.over').forEach(x => x.classList.remove('over')); c.classList.add('over'); } });
+wrap.addEventListener('drop', ev => {
+  const c = ev.target.closest('.cell'); if (!c || !dragKey) return;
+  ev.preventDefault(); sim.nodes[dragKey].pi = c.dataset.per; selected = dragKey; dragKey = null; render();
+});
+wrap.addEventListener('dragend', () => { dragKey = null; wrap.querySelectorAll('.cell.over').forEach(x => x.classList.remove('over')); });
+window.addEventListener('resize', () => { if (sim) render(); });
+</script>
+</body>
+</html>
