@@ -101,6 +101,7 @@ Many-to-many on both links: an SI can feed several Objectives, an epic can serve
 - **Epic dependencies** are not in JIRA yet: add "blocks" links on an epic, *Save in browser* (re-applied on every import) or export/import as CSV. A real `Blocks` link in the JIRA CSV is read too.
 - **Critical path** = longest chain of dependencies with ≤ 1 sprint of slack, compared with the Objective due dates.
 - Flags: epic/SI ends after Objective due, SI without epics, Objective without SI, dependency overlap.
+- **Data mapping panel**: columns, link-type meanings (solves / relates / blocks / depends / ignore), issue-type levels, priority direction and Delivery Unit source are auto-detected and can all be overridden in the app. Click an SI row header to add/remove its Objective and epic links by hand.
 - Simulation: drag epic to another PI, add/remove links, ▲▼ objective priority, auto-resolve. **Reset scenario** = back to imported data; **Clear all** = empty dashboard.
 
 JIRA export (one CSV, all issue types): Issue key, Issue Type, Summary, Status, Assignee, PI, Story Points, Sprint (repeated), Epic Link, RAG Status,

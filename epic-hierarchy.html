@@ -142,6 +142,11 @@
       <textarea id="calP"></textarea>
       <div class="row"><button id="btnCal">Apply calendar (resets scenario)</button></div>
     </section>
+    <section>
+      <h3>Data mapping</h3>
+      <div class="muted">Detected automatically from the CSV – change whatever is wrong or missing.</div>
+      <div id="mapping" class="muted">Load data first.</div>
+    </section>
   </aside>
 </main>
 
@@ -178,7 +183,7 @@ DU_FE-772,Story,Upgrade flow,Open,Anna Kovacova,,,5,EPC_303,,DU_FE-77,,,,,,,,
 `;
 
 /* ---------- state ---------- */
-let base = null, sim = null, selected = null, mode = 'si', savedApplied = 0;
+let base = null, sim = null, selected = null, mode = 'si', savedApplied = 0, rawCSV = '';
 const collapsed = new Set();
 function $(id) { return document.getElementById(id); }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
@@ -259,64 +264,75 @@ function parseDate(d) {
   const t = Date.parse(/^\d{4}-\d{2}-\d{2}/.test(d) ? d + 'T00:00:00Z' : d.replace(/\//g, ' ') + ' UTC');
   return isNaN(t) ? '' : new Date(t).toISOString().slice(0, 10);
 }
-function typeOf(typeText, key, hasParent) {
+const FIELD_DEFS = [
+  ['key', 'Issue key', ['issue key', 'key']], ['type', 'Issue type', ['issue type', 'type']], ['summary', 'Summary', ['summary']],
+  ['status', 'Status', ['status']], ['assignee', 'Assignee / owner', ['assignee', 'owner']], ['due', 'Due date', ['due date', 'target end', 'end date']],
+  ['sp', 'Story points', ['story points', 'story point estimate']], ['parent', 'Epic link / parent', ['epic link', 'parent link', 'parent', 'parent id']],
+  ['rag', 'RAG status', ['rag status', 'rag']], ['mgr', 'Objective manager', ['objective manager']], ['gp', 'Global priority', ['global priority']],
+  ['pi', 'PI', ['pi', 'program increment', 'fix version s', 'fix version']], ['project', 'Project (Delivery Unit)', ['project key', 'project']]];
+const LINK_KINDS = [['solves', 'solves'], ['relates', 'relates to'], ['blocks', 'blocks (dependency)'], ['depends', 'depends on (dependency)'], ['ignore', 'ignore']];
+const TYPE_KINDS = [['objective', 'Objective'], ['si', 'Solution Increment'], ['epic', 'Epic'], ['story', 'Story / task']];
+const guessLink = h => { const n = norm(h); return /solve/.test(n) ? 'solves' : /relat/.test(n) ? 'relates' : /depend/.test(n) ? 'depends' : /block/.test(n) ? 'blocks' : 'ignore'; };
+function guessType(typeText, key, hasParent) {
   const t = norm(typeText);
-  if (t) {
-    if (/objective/.test(t)) return 'objective';
-    if (/solution increment|solinc/.test(t)) return 'si';
-    if (/epic/.test(t)) return 'epic';
-    return 'story';
-  }
+  if (t) return /objective/.test(t) ? 'objective' : /solution increment|solinc/.test(t) ? 'si' : /epic/.test(t) ? 'epic' : 'story';
   if (/^SOLINC-/.test(key)) return 'si';
   if (/^ESET-/.test(key)) return 'objective';
   return hasParent ? 'story' : 'epic';
 }
+function detect(rows) {   // automatic mapping of CSV columns, link types and issue types; the user may override all of it
+  const H = rows[0], cols = {};
+  FIELD_DEFS.forEach(([f, , c]) => { const r = findCols(H, c); cols[f] = r.length ? r[0] : -1; });
+  const linkCols = {};
+  H.forEach((h, i) => { const n = norm(h); if (/^(outward|inward) issue link/.test(n)) linkCols[i] = guessLink(h); });
+  const types = {};
+  if (cols.type >= 0) rows.slice(1).forEach(r => { const t = (r[cols.type] || '').trim(); if (t && !types[t]) types[t] = guessType(t, '', false); });
+  return { cols, sprintPrefix: 'sprint', linkCols, types, prioDesc: true, duMode: 'auto' };
+}
 
-function buildModel(csv) {
+function buildModel(csv, S) {
   const rows = parseCSV(csv);
   if (rows.length < 2) throw new Error('CSV has no data rows');
-  const H = rows[0];
-  const one = c => { const r = findCols(H, c); return r.length ? r[0] : -1; };
-  const iKey = one(['issue key', 'key']), iType = one(['issue type', 'type']), iSum = one(['summary']),
-        iSt = one(['status']), iAs = one(['assignee', 'owner']), iDue = one(['due date', 'target end', 'end date']),
-        iSp = one(['story points', 'story point estimate']), iPar = one(['epic link', 'parent link', 'parent', 'parent id']),
-        iRag = one(['rag status', 'rag']), iMgr = one(['objective manager']), iGp = one(['global priority']),
-        iPi = one(['pi', 'program increment', 'fix version s', 'fix version']), iPrj = one(['project key', 'project']);
-  if (iKey < 0) throw new Error('Column "Issue key" not found');
-  const sprintCols = findCols(H, ['sprint']);
-  const outCols = findCols(H, ['outward issue link']), inCols = findCols(H, ['inward issue link']);
+  const H = rows[0]; S = S || detect(rows);
+  const c = S.cols;
+  if (c.key < 0) throw new Error('Column "Issue key" not found – choose it in the data mapping panel');
+  const sprintCols = findCols(H, [norm(S.sprintPrefix || 'sprint')]);
   const nodes = {}, seen = new Set(), links = []; let ignored = 0;
-  const addLink = (self, other, col, outward) => {
-    const n = norm(H[col]);
-    let t = /solve/.test(n) ? 'solves' : /relat/.test(n) ? 'relates' : /block|depend/.test(n) ? 'blocks' : null;
-    if (!t) { ignored++; return; }
-    let a = self, b = other;
-    const reversed = t === 'blocks' && /depend/.test(n) ? outward : !outward;   // "depends on" (outward) = other blocks self
-    if (t !== 'relates' && reversed) { a = other; b = self; }
-    t === 'relates' && ([a, b] = [a, b].sort());
+  const get = (r, f) => c[f] >= 0 ? (r[c[f]] || '') : '';
+  const addLink = (self, other, kind, outward) => {
+    let a = self, b = other, t = kind;
+    if (kind === 'depends') { t = 'blocks'; if (outward) { a = other; b = self; } }      // "depends on" = the other blocks me
+    else if (kind === 'blocks') { if (!outward) { a = other; b = self; } }
+    else if (kind === 'solves') { if (!outward) { a = other; b = self; } }
+    else if (kind === 'relates') [a, b] = [a, b].sort();
     const id = a + '>' + b + t;
     if (seen.has(id) || a === b) return;
     seen.add(id); links.push({ a, b, t });
   };
   rows.slice(1).forEach(r => {
-    const key = (r[iKey] || '').trim(); if (!key) return;
-    const parent = iPar >= 0 ? ((r[iPar] || '').match(KEY_RE) || [''])[0] : '';
-    const type = typeOf(iType >= 0 ? r[iType] : '', key, !!parent);
-    const pi = iPi >= 0 ? (r[iPi] || '').split(/[;,]/)[0].trim() : '';
+    const key = (get(r, 'key') || '').trim(); if (!key) return;
+    const parent = (get(r, 'parent').match(KEY_RE) || [''])[0];
+    const tt = get(r, 'type').trim();
+    const type = c.type >= 0 && tt ? (S.types[tt] || guessType(tt, key, !!parent)) : guessType('', key, !!parent);
+    const pi = get(r, 'pi').split(/[;,]/)[0].trim();
+    const prj = get(r, 'project').trim();
     nodes[key] = {
-      key, type, summary: (iSum >= 0 && r[iSum]) || key, status: iSt >= 0 ? r[iSt] : '',
-      assignee: iAs >= 0 ? r[iAs] : '', due: iDue >= 0 ? parseDate(r[iDue]) : '',
-      sp: iSp >= 0 && r[iSp] !== '' ? Number(r[iSp]) || 0 : 0,
-      sprints: sprintCols.map(c => sprintNum(r[c])).filter(x => x != null), parent,
-      rag: iRag >= 0 ? r[iRag] : '', mgr: iMgr >= 0 ? r[iMgr] : '', gp: iGp >= 0 ? r[iGp] : '',
-      pi, piGiven: !!pi, du: (iPrj >= 0 && r[iPrj]) || key.replace(/-\d+$/, '')
+      key, type, summary: get(r, 'summary') || key, status: get(r, 'status'), assignee: get(r, 'assignee'),
+      due: parseDate(get(r, 'due')), sp: Number(get(r, 'sp')) || 0,
+      sprints: sprintCols.map(i => sprintNum(r[i])).filter(x => x != null), parent,
+      rag: get(r, 'rag'), mgr: get(r, 'mgr'), gp: get(r, 'gp'), pi, piGiven: !!pi,
+      du: S.duMode === 'prefix' ? key.replace(/-\d+$/, '') : (prj || key.replace(/-\d+$/, ''))
     };
-    outCols.forEach(c => (r[c] || '').match(KEY_RE)?.forEach(o => addLink(key, o, c, true)));
-    inCols.forEach(c => (r[c] || '').match(KEY_RE)?.forEach(o => addLink(key, o, c, false)));
+    Object.keys(S.linkCols).forEach(i => {
+      const kind = S.linkCols[i], vals = (r[i] || '').match(KEY_RE);
+      if (!vals) return;
+      if (kind === 'ignore') { ignored += vals.length; return; }
+      vals.forEach(o => addLink(key, o, kind, /^outward/.test(norm(H[i]))));
+    });
   });
-  const m = { nodes, links, order: [], periods: [], ignored };
+  const m = { nodes, links, order: [], periods: [], ignored, settings: S, headers: H };
   m.order = Object.values(nodes).filter(n => n.type === 'objective')
-    .sort((x, y) => (Number(y.gp) || 0) - (Number(x.gp) || 0) || natural(x.key, y.key)).map(n => n.key);
+    .sort((x, y) => (S.prioDesc ? -1 : 1) * ((Number(x.gp) || 0) - (Number(y.gp) || 0)) || natural(x.key, y.key)).map(n => n.key);
   derivePIs(m); refreshPeriods(m);
   return m;
 }
@@ -497,7 +513,7 @@ function render() {
     html += `<div class="banner">${sec.banner}</div>`;
     if (collapsed.has(sec.id)) return;
     sec.lanes.forEach(l => {
-      html += `<div class="lanehead ${l.empty ? 'empty' : ''}">${l.head}</div>`;
+      html += `<div class="lanehead ${l.empty ? 'empty' : ''}" ${l.si ? `data-si="${esc(l.si)}" style="cursor:pointer;${l.si === selected ? 'background:var(--banner)' : ''}" title="Click to edit this solution increment"` : ''}>${l.head}</div>`;
       per.forEach(p => {
         const cards = l.epics.filter(k => sim.nodes[k].pi === p).sort(natural).map(k => {
           const copy = placed.has(k); placed.add(k); return cardHtml(sim.nodes[k], inHl, critSet, copy, l.si); }).join('');
@@ -621,8 +637,29 @@ function renderViols() {
     html += `<div class="viol warn"><b>${esc(o)}</b> has no solution increment</div>`; });
   $('viols').innerHTML = html || '<span class="ok">No conflicts.</span>';
 }
+function renderSiDetail(e) {
+  const mine = sim.links.filter(l => (l.t === 'solves' || l.t === 'relates') && (l.a === e.key || l.b === e.key));
+  const row = l => { const o = other(l, e.key);
+    return `<div class="link"><span><span class="muted">${l.t === 'solves' ? 'solves' : 'related epic'}</span> ${esc(o)} <span class="muted">${esc(sim.nodes[o]?.summary?.slice(0, 28) || '')}</span></span>
+    <button title="Remove link" onclick="removeLink('${esc(l.a)}','${esc(l.b)}','${l.t}')">✕</button></div>`; };
+  const objs = sim.order.map(k => `<option>${esc(k)}</option>`).join('');
+  const eps = epicsOf(sim).map(x => x.key).sort(natural).map(k => `<option>${esc(k)}</option>`).join('');
+  const span = spanOf(sim, epicsOfSi(sim, e.key));
+  $('detail').innerHTML = `<h3>${esc(e.key)} <span class="muted">solution increment</span></h3><div>${esc(e.summary)}</div>
+    <div class="muted">${esc(e.assignee || 'no owner')} · ${esc(e.status || 'no status')}${span ? ` · derived ${fmt(span.start)} – ${fmt(span.end)}` : ''}</div>
+    <h3 style="margin-top:10px">Links (${mine.length})</h3>${mine.map(row).join('') || '<div class="muted">none</div>'}
+    <div class="row"><select id="siObj"><option value="">solves objective…</option>${objs}</select><button onclick="addSiLink('solves')">+</button></div>
+    <div class="row"><select id="siEpic"><option value="">related epic…</option>${eps}</select><button onclick="addSiLink('relates')">+</button></div>`;
+}
+function addSiLink(kind) {
+  const o = $(kind === 'solves' ? 'siObj' : 'siEpic').value; if (!o) return;
+  const l = kind === 'solves' ? { a: selected, b: o, t: 'solves' } : { a: [selected, o].sort()[0], b: [selected, o].sort()[1], t: 'relates' };
+  if (sim.links.some(x => x.t === l.t && ((x.a === l.a && x.b === l.b) || (l.t === 'relates' && x.a === l.b && x.b === l.a) || (l.t === 'solves' && x.a === l.b && x.b === l.a)))) return;
+  sim.links.push(l); render();
+}
 function renderDetail() {
   const e = selected && sim.nodes[selected];
+  if (e && e.type === 'si') { renderSiDetail(e); return; }
   if (!e || e.type !== 'epic') { $('detail').innerHTML = '<h3>Selected epic</h3><div class="muted">Click an epic card.</div>'; return; }
   const b0 = base.nodes[e.key], p = progress(sim, e.key), w = winOf(sim, e.key);
   const mine = sim.links.filter(l => l.a === e.key || l.b === e.key);
@@ -750,9 +787,44 @@ function applyCal() {
   if (base) { Object.values(base.nodes).forEach(n => { if (n.type === 'epic' && !n.piGiven) n.pi = ''; }); derivePIs(base); refreshPeriods(base); sim = clone(base); render(); }
 }
 
+/* ---------- data mapping (override what auto-detection got wrong) ---------- */
+function renderMapping() {
+  if (!base) { $('mapping').textContent = 'Load data first.'; return; }
+  const S = base.settings, H = base.headers;
+  const hopts = sel => '<option value="-1">— not in CSV —</option>' + H.map((h, i) => `<option value="${i}" ${i === sel ? 'selected' : ''}>${esc(h)}</option>`).join('');
+  const kopts = (list, sel) => list.map(([v, t]) => `<option value="${v}" ${v === sel ? 'selected' : ''}>${t}</option>`).join('');
+  $('mapping').innerHTML = `
+    <div class="muted">Columns</div>
+    ${FIELD_DEFS.map(([f, label]) => `<div class="row"><span style="width:130px">${label}</span><select data-map="col" data-f="${f}">${hopts(S.cols[f])}</select></div>`).join('')}
+    <div class="row"><span style="width:130px">Sprint columns start with</span><input data-map="sprint" value="${esc(S.sprintPrefix)}" style="width:100px"></div>
+    <div class="muted" style="margin-top:6px">Link columns → meaning</div>
+    ${Object.keys(S.linkCols).map(i => `<div class="row"><span style="width:150px;font-size:11px">${esc(H[i])}</span><select data-map="link" data-i="${i}">${kopts(LINK_KINDS, S.linkCols[i])}</select></div>`).join('') || '<div class="muted">no "issue link" columns found</div>'}
+    <div class="muted" style="margin-top:6px">Issue types → level</div>
+    ${Object.keys(S.types).map(t => `<div class="row"><span style="width:150px">${esc(t)}</span><select data-map="type" data-t="${esc(t)}">${kopts(TYPE_KINDS, S.types[t])}</select></div>`).join('') || '<div class="muted">no issue type column – levels are guessed from keys</div>'}
+    <div class="muted" style="margin-top:6px">Other</div>
+    <div class="row"><label class="chk"><input type="checkbox" data-map="prio" ${S.prioDesc ? 'checked' : ''}> higher Global Priority number = more important</label></div>
+    <div class="row"><span style="width:130px">Delivery Unit from</span><select data-map="du"><option value="auto" ${S.duMode === 'auto' ? 'selected' : ''}>Project column, else key prefix</option><option value="prefix" ${S.duMode === 'prefix' ? 'selected' : ''}>Key prefix only</option></select></div>
+    <div class="row"><button onclick="applyMapping()">Apply mapping (resets scenario)</button></div>`;
+}
+function applyMapping() {
+  if (!rawCSV) return;
+  const S = clone(base.settings), q = sel => [...$('mapping').querySelectorAll(sel)];
+  q('[data-map=col]').forEach(el => S.cols[el.dataset.f] = +el.value);
+  S.sprintPrefix = $('mapping').querySelector('[data-map=sprint]').value || 'sprint';
+  q('[data-map=link]').forEach(el => S.linkCols[el.dataset.i] = el.value);
+  q('[data-map=type]').forEach(el => S.types[el.dataset.t] = el.value);
+  S.prioDesc = $('mapping').querySelector('[data-map=prio]').checked;
+  S.duMode = $('mapping').querySelector('[data-map=du]').value;
+  try {
+    base = buildModel(rawCSV, S); savedApplied = 0;
+    try { savedApplied = mergeDeps(JSON.parse(localStorage.getItem(depKey) || '[]'), base); } catch (e) {}
+    sim = clone(base); selected = null; render(); renderMapping();
+  } catch (err) { alert('Mapping problem: ' + err.message); }
+}
+
 /* ---------- wiring ---------- */
 function clearAll() {
-  base = sim = null; selected = null; collapsed.clear(); savedApplied = 0;
+  base = sim = null; rawCSV = ''; selected = null; collapsed.clear(); savedApplied = 0; $('mapping').textContent = 'Load data first.';
   $('boardWrap').innerHTML = '<div id="empty">Import a JIRA CSV export or click <b>Load sample</b>.</div>';
   $('stats').innerHTML = ''; $('viols').textContent = '–'; $('critp').textContent = '–';
   $('detail').innerHTML = '<h3>Selected epic</h3><div class="muted">Click an epic card.</div>';
@@ -760,9 +832,9 @@ function clearAll() {
 }
 function load(csv) {
   try {
-    base = buildModel(csv); savedApplied = 0;
+    rawCSV = csv; base = buildModel(csv); savedApplied = 0;
     try { savedApplied = mergeDeps(JSON.parse(localStorage.getItem(depKey) || '[]'), base); } catch (e) {}
-    sim = clone(base); selected = null; collapsed.clear(); render();
+    sim = clone(base); selected = null; collapsed.clear(); render(); renderMapping();
   } catch (err) { alert('Could not read CSV: ' + err.message); }
 }
 $('btnImport').onclick = () => $('file').click();
@@ -786,6 +858,8 @@ wrap.addEventListener('click', ev => {
   const t = ev.target.closest('[data-toggle]');
   if (t) { const k = t.dataset.toggle; collapsed.has(k) ? collapsed.delete(k) : collapsed.add(k); render(); return; }
   if (ev.target.closest('.mv')) return;
+  const h = ev.target.closest('[data-si]');
+  if (h) { selected = h.dataset.si === selected ? null : h.dataset.si; render(); return; }
   const c = ev.target.closest('.card');
   selected = c ? (c.dataset.key === selected ? null : c.dataset.key) : null;
   render();
