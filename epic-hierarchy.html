@@ -63,7 +63,7 @@
   .card .pb i { display:block; height:100%; background:var(--ok); }
   .card .pt { font-size:10.5px; color:var(--muted); margin-top:2px; }
   .card .du { font-size:10px; font-weight:700; padding:0 4px; border-radius:3px; background:var(--line); color:var(--ink); }
-  .badge { font-size:10px; padding:0 5px; border-radius:4px; color:#fff; background:var(--warn); margin-left:3px; }
+  .badge { white-space:nowrap; font-size:10px; padding:0 5px; border-radius:4px; color:#fff; background:var(--warn); margin-left:3px; }
   .badge.hold { background:#b45309; } .badge.late { background:var(--bad); } .badge.crit { background:var(--crit); color:var(--bg); }
   .chip { display:inline-block; font-size:10px; padding:0 5px; margin:3px 3px 0 0; border:1px solid var(--line); border-radius:4px; color:var(--muted); }
   path.e { fill:none; }
@@ -72,7 +72,7 @@
   path.e.dep.crit { stroke:var(--crit); stroke-width:4; }
   path.e.rel { stroke:var(--rel); stroke-width:1.8; stroke-dasharray:2 5; stroke-linecap:round; }
   path.e.dim { opacity:.08; }
-  aside { width:var(--aw,340px); flex:none; min-width:0; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; max-height:calc(100vh - 190px); overflow:auto; }
+  aside { position:sticky; top:8px; width:var(--aw,340px); flex:none; min-width:0; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; max-height:calc(100vh - 190px); overflow:auto; }
   aside h3 { margin:0 0 6px; font-size:13px; }
   aside section { margin-bottom:14px; }
   aside section.acc { margin-bottom:6px; border:1px solid var(--line); border-radius:7px; }
@@ -106,10 +106,108 @@
   .legend i { display:inline-block; width:26px; height:0; border-top:3px solid; vertical-align:middle; margin-right:4px; }
   #empty { padding:40px; text-align:center; color:var(--muted); }
   [hidden] { display:none !important; }
+  :root { --link:#1d4ed8; } @media (prefers-color-scheme: dark) { :root { --link:#8ab4ff; } }
+  a { color:var(--link); }
+  body.m-dash #boardWrap { max-height:none; overflow:visible; }
+  :root { --dq-r:#d03b3b; --dq-y:#fab219; --dq-g:#0ca30c; }   /* fixed status colours – always paired with a label, never colour alone */
+  .dq { display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:700; padding:1px 8px 1px 3px; border-radius:99px; border:1px solid var(--line); background:var(--panel); color:var(--ink); white-space:nowrap; font-style:normal; }
+  .dq i { width:14px; height:14px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:9px; font-style:normal; color:#fff; }
+  .dq.red i { background:var(--dq-r); } .dq.red i::before { content:'✕'; }
+  .dq.yellow i { background:var(--dq-y); color:#1f2937; } .dq.yellow i::before { content:'!'; font-weight:900; }
+  .dq.green i { background:var(--dq-g); } .dq.green i::before { content:'✓'; }
+  .dqr { display:inline-flex; gap:2px; margin-left:4px; vertical-align:middle; }
+  .dqr b { min-width:19px; text-align:center; font-size:10px; padding:1px 4px; border-radius:4px; color:#fff; font-weight:700; }
+  .dqr b.z { background:var(--line) !important; color:var(--muted) !important; font-weight:400; }
+  .dqr b.red { background:var(--dq-r); } .dqr b.yellow { background:var(--dq-y); color:#1f2937; } .dqr b.green { background:var(--dq-g); }
+  .gap { padding:5px 8px; border:1px solid var(--line); border-left:4px solid var(--ext); border-radius:6px; margin:4px 0; font-size:12px; }
+  .gap.high { border-left-color:var(--dq-r); } .gap.med { border-left-color:var(--dq-y); } .gap.low { border-left-color:var(--ext); }
+  /* data-quality backlog */
+  .dqsec { margin:0 16px 28px; background:var(--panel); border:1px solid var(--line); border-radius:8px; }
+  .dqh { display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:10px 14px; border-bottom:1px solid var(--line); }
+  .dqh b { font-size:14px; }
+  .dqsec.shut #dqBody { display:none; } .dqsec.shut .dqh { border-bottom:0; }
+  .dqtop { display:grid; grid-template-columns:minmax(260px,1fr) minmax(300px,1.2fr); gap:20px; padding:12px 14px; }
+  .dqtop h4 { margin:0 0 6px; font-size:12px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+  .dqt { display:grid; grid-template-columns:130px 1fr; gap:8px; align-items:center; margin:5px 0; font-size:12px; }
+  .dqbar { display:flex; gap:2px; height:20px; }
+  .dqbar button { padding:0; border:0; border-radius:2px 4px 4px 2px; color:#fff; font-weight:700; font-size:11px; min-width:6px; cursor:pointer; }
+  .dqbar button:first-child { border-radius:4px 2px 2px 4px; } .dqbar button:hover { filter:brightness(1.12); outline:2px solid var(--ink); outline-offset:-2px; }
+  .dqbar .red { background:var(--dq-r); } .dqbar .yellow { background:var(--dq-y); color:#1f2937; } .dqbar .green { background:var(--dq-g); }
+  .dqrule { display:grid; grid-template-columns:minmax(0,1.3fr) 1fr 34px; gap:8px; align-items:center; width:100%; text-align:left; border:0; background:none; padding:3px 4px; font-size:12px; border-radius:5px; }
+  .dqrule:hover { background:color-mix(in srgb, var(--accent) 8%, transparent); } .dqrule.on { background:color-mix(in srgb, var(--accent) 16%, transparent); }
+  .dqrule .nm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .dqrule .nm small { color:var(--muted); }
+  .dqrule .tr { height:8px; background:var(--line); border-radius:4px; overflow:hidden; } .dqrule .tr i { display:block; height:100%; border-radius:0 4px 4px 0; background:var(--accent); }
+  .dqrule.high .tr i { background:var(--dq-r); } .dqrule.med .tr i { background:var(--dq-y); } .dqrule.low .tr i { background:var(--ext); }
+  .dqrule b { text-align:right; font-variant-numeric:tabular-nums; }
+  .dqfilt { display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:8px 14px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:color-mix(in srgb, var(--banner) 35%, var(--panel)); }
+  .dqfilt .seg button { padding:3px 9px; }
+  .dqscroll { max-height:420px; overflow:auto; }
+  table.dqtab { width:100%; border-collapse:collapse; font-size:12px; }
+  table.dqtab th { position:sticky; top:0; background:var(--panel); text-align:left; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; padding:6px 10px; border-bottom:2px solid var(--line); z-index:1; }
+  table.dqtab td { padding:5px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.dqtab tr.dqrow { cursor:pointer; } table.dqtab tr.dqrow:hover { background:color-mix(in srgb, var(--accent) 6%, transparent); } table.dqtab tr.sel { background:color-mix(in srgb, var(--accent) 14%, transparent); }
+  table.dqtab td.sm { max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mchip { display:inline-block; font-size:10.5px; padding:0 6px; margin:1px 3px 1px 0; border-radius:4px; border:1px solid var(--line); border-left-width:4px; background:var(--panel); }
+  .mchip.high { border-left-color:var(--dq-r); } .mchip.med { border-left-color:var(--dq-y); } .mchip.low { border-left-color:var(--ext); }
+  /* dashboard */
+  :root { --s-done:#184f95; --s-prog:#6da7ec; --s-todo:#c3c2b7; --s-hold:#ec835a; --t-done:#fff; --t-prog:#0b0b0b; --t-todo:#0b0b0b; --t-hold:#0b0b0b; --one:#2a78d6; }
+  @media (prefers-color-scheme: dark) { :root { --s-done:#86b6ef; --s-prog:#3987e5; --s-todo:#4a4a47; --s-hold:#ec835a; --t-done:#0b0b0b; --t-prog:#fff; --t-todo:#f0efec; --t-hold:#0b0b0b; --one:#3987e5; } }
+  .dash { padding:14px 16px 20px; display:flex; flex-direction:column; gap:14px; min-width:0; }
+  .dbar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .dbar .muted { font-size:12px; }
+  .dtop { display:grid; grid-template-columns:minmax(230px,290px) 1fr; gap:14px; align-items:stretch; }
+  .hero { border:1px solid var(--line); border-radius:8px; padding:12px 16px; background:var(--panel); display:flex; flex-direction:column; justify-content:center; }
+  .hero .n { font-size:60px; line-height:1; font-weight:700; letter-spacing:-.02em; }
+  .hero .n small { font-size:26px; font-weight:600; margin-left:2px; color:var(--muted); }
+  .hero .t { color:var(--muted); font-size:12px; margin-top:6px; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; }
+  .tile { text-align:left; border:1px solid var(--line); border-radius:8px; padding:10px 12px; background:var(--panel); cursor:pointer; display:flex; flex-direction:column; gap:2px; }
+  .tile:hover { border-color:var(--ink); } .tile.on { outline:2px solid var(--accent); outline-offset:-1px; } .tile.dim { opacity:.5; }
+  .tile .l { font-size:12px; color:var(--muted); display:flex; align-items:center; gap:6px; } .tile .v { font-size:28px; font-weight:700; line-height:1.1; }
+  .sw { width:10px; height:10px; border-radius:3px; display:inline-block; flex:none; }
+  .sw-done, .seg-done { background:var(--s-done); color:var(--t-done); } .sw-prog, .seg-prog { background:var(--s-prog); color:var(--t-prog); }
+  .sw-todo, .seg-todo { background:var(--s-todo); color:var(--t-todo); } .sw-hold, .seg-hold { background:var(--s-hold); color:var(--t-hold); }
+  .dq-red { background:var(--dq-r); color:#fff; } .dq-yellow { background:var(--dq-y); color:#1f2937; } .dq-green { background:var(--dq-g); color:#fff; }
+  .dgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:14px; }
+  .dcard { border:1px solid var(--line); border-radius:8px; padding:11px 14px 12px; background:var(--panel); min-width:0; }
+  .dcard.wide { grid-column:1 / -1; }
+  .dcard h4 { margin:0; font-size:13px; } .dcard .sub { color:var(--muted); font-size:11.5px; margin:1px 0 9px; }
+  .hrow { display:grid; grid-template-columns:118px 1fr; gap:8px; align-items:center; margin:4px 0; }
+  .hl, .vl { border:0; background:none; padding:2px 4px; text-align:left; font-size:12px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; border-radius:4px; }
+  .hl:hover, .vl:hover { background:color-mix(in srgb, var(--accent) 10%, transparent); } .hl.on, .vl.on { font-weight:700; background:color-mix(in srgb, var(--accent) 16%, transparent); }
+  .htrack { min-width:0; } .hwrap { position:relative; min-width:0; }
+  .hbar { position:relative; }
+  .hv { position:absolute; left:calc(100% + 6px); top:0; line-height:18px; }
+  .hbar { display:flex; gap:2px; height:18px; min-width:6px; }
+  .hbar button, .vbar button { border:0; padding:0; font-size:11px; font-weight:700; cursor:pointer; min-width:3px; }
+  .hbar button { border-radius:0; } .hbar button:last-child { border-radius:0 4px 4px 0; }
+  .hbar button:hover, .vbar button:hover { filter:brightness(1.12); outline:2px solid var(--ink); outline-offset:-2px; }
+  .hbar.one button { background:var(--one); color:#fff; }
+  .hv { font-size:12px; font-variant-numeric:tabular-nums; color:var(--ink); white-space:nowrap; }
+  .dim { opacity:.35; }
+  .vch { display:flex; gap:8px; align-items:flex-end; min-height:190px; padding-bottom:2px; border-bottom:1px solid var(--line); }
+  .vcol { display:flex; flex-direction:column; align-items:center; gap:3px; justify-content:flex-end; flex:1 1 0; min-width:30px; max-width:60px; }
+  .vbar { width:28px; display:flex; flex-direction:column-reverse; gap:2px; }
+  .vbar button:last-child { border-radius:4px 4px 0 0; }
+  .vv { font-size:12px; font-variant-numeric:tabular-nums; } .vl { width:100%; text-align:center; font-size:11px; padding:3px 0; }
+  .tl { position:relative; margin-top:4px; }
+  .tlrow { display:grid; grid-template-columns:230px 1fr; align-items:center; height:22px; gap:8px; }
+  .tlrow .nm { font-size:11.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; border:0; background:none; text-align:left; padding:0 2px; color:var(--ink); border-radius:4px; } .tlrow .nm:hover, .tlrow .nm.on { background:color-mix(in srgb, var(--accent) 16%, transparent); }
+  .tlrow .nm b { color:var(--muted); font-weight:700; }
+  .tlt { position:relative; height:100%; } .tlt button { position:absolute; top:4px; height:14px; border:0; padding:0; border-radius:3px 4px 4px 3px; cursor:pointer; min-width:4px; }
+  .tlt button:hover { filter:brightness(1.12); outline:2px solid var(--ink); outline-offset:1px; } .tlt button.on { outline:2px solid var(--accent); outline-offset:1px; }
+  .tlax { position:relative; height:18px; margin-left:238px; border-bottom:1px solid var(--line); }
+  .tlax span { position:absolute; top:0; font-size:10.5px; color:var(--muted); padding-left:3px; border-left:1px solid var(--line); height:100%; }
+  .tlmk { position:absolute; top:0; bottom:0; width:2px; z-index:2; pointer-events:none; } .tlmk i { position:absolute; top:-1px; left:4px; font-size:10px; font-style:normal; white-space:nowrap; font-weight:700; }
+  .objs .orw { display:grid; grid-template-columns:minmax(200px,1.2fr) minmax(120px,1fr) minmax(220px,1.2fr) auto; gap:12px; align-items:center; width:100%; text-align:left; border:0; border-top:1px solid var(--line); background:none; padding:7px 4px; font-size:12.5px; }
+  .objs .orw:first-of-type { border-top:0; } .objs .orw:hover { background:color-mix(in srgb, var(--accent) 7%, transparent); } .objs .orw.sel { background:color-mix(in srgb, var(--accent) 14%, transparent); }
+  .objs .pb { height:8px; border-radius:4px; background:var(--line); overflow:hidden; } .objs .pb i { display:block; height:100%; background:var(--s-done); border-radius:0 4px 4px 0; }
+  #tip { position:fixed; z-index:50; pointer-events:none; background:var(--ink); color:var(--bg); padding:5px 9px; border-radius:6px; font-size:12px; max-width:320px; white-space:pre-line; box-shadow:0 4px 14px rgba(0,0,0,.25); }
   /* outline view */
   #olbar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; padding:0 16px 8px; color:var(--muted); font-size:12px; }
-  .ol { min-width:1000px; }
-  .ohead, .orow { display:grid; grid-template-columns:minmax(340px,1fr) 100px 150px 165px minmax(220px,1.1fr); gap:10px; align-items:center; padding:5px 12px; border-bottom:1px solid var(--line); }
+  .ol { min-width:1130px; }
+  .odq { display:flex; flex-wrap:wrap; gap:3px; align-items:center; font-weight:400; }
+  .ohead, .orow { display:grid; grid-template-columns:minmax(320px,1fr) 100px 128px 140px 172px minmax(210px,1.1fr); gap:10px; align-items:center; padding:5px 12px; border-bottom:1px solid var(--line); }
   .ohead { position:sticky; top:0; z-index:3; background:var(--panel); font-weight:700; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.04em; border-bottom:2px solid var(--line); }
   .orow { cursor:pointer; min-height:32px; }
   .orow:hover { background:color-mix(in srgb, var(--accent) 6%, transparent); }
@@ -145,7 +243,7 @@
   <button id="btnImport">Import JIRA export (Word / CSV)</button>
   <input type="file" id="file" accept=".doc,.docx,.htm,.html,.csv,text/csv" hidden>
   <button id="btnSample">Load sample</button>
-  <span class="seg"><button id="mOL" class="on" title="Simple collapsible tree: Objective → Solution Increment → Epic → Work items">Outline</button><button id="mSI" title="Board: rows = Solution Increments grouped under Objectives, columns = PI">Board: by SI</button><button id="mDU" title="Board: rows = Delivery Units (Jira projects)">Board: by Delivery Unit</button></span>
+  <span class="seg"><button id="mOL" class="on" title="Simple collapsible tree: Objective → Solution Increment → Epic → Work items">Outline</button><button id="mDB" title="Interactive dashboard: click anything to filter everything">Dashboard</button><button id="mSI" title="Board: rows = Solution Increments grouped under Objectives, columns = PI">Board: by SI</button><button id="mDU" title="Board: rows = Delivery Units (Jira projects)">Board: by Delivery Unit</button></span>
   <select id="fStatus" title="Status filter"><option value="">All statuses</option><option value="open">Not done</option><option value="done">Done only</option></select>
   <select id="fObj" title="Objective filter"><option value="">All objectives</option></select>
   <input type="search" id="fSearch" placeholder="Search key / summary">
@@ -196,12 +294,38 @@
       <textarea id="calP"></textarea>
       <div class="row"><button id="btnCal">Apply calendar (resets scenario)</button></div>
     </div></section>
+    <section class="acc" data-k="rules"><div class="sh"><span class="car">▾</span><b>Data-quality rules</b></div><div class="sb">
+      <div class="muted">What counts as "missing data" and how serious it is. Rules whose column is not in your export are greyed out. Saved in this browser.</div>
+      <div id="rules"></div>
+    </div></section>
     <section class="acc" data-k="map"><div class="sh"><span class="car">▾</span><b>Data mapping</b></div><div class="sb">
       <div class="muted">Detected automatically from the CSV – change whatever is wrong or missing.</div>
       <div id="mapping" class="muted">Load data first.</div>
     </div></section>
   </aside>
 </main>
+<section class="dqsec" id="dq">
+  <div class="dqh">
+    <button id="dqToggle" title="Fold / unfold the backlog">▾</button><b>Data-quality backlog</b><span id="dqSum" class="muted"></span>
+    <span class="sp"></span><button id="dqCsv" title="Download what is listed below as CSV – hand it to the owners">Export CSV</button>
+  </div>
+  <div id="dqBody">
+    <div class="dqtop">
+      <div><h4>Health by level – click a bar to list it</h4><div id="dqTiles"></div>
+        <div class="muted" style="margin-top:8px;font-size:11.5px"><span class="dq red"><i></i>Red</span> a High gap (e.g. no parent link, no due date) or 3+ Medium · <span class="dq yellow"><i></i>Yellow</span> 1–2 Medium · <span class="dq green"><i></i>Green</span> complete enough. Severities are editable in the side panel (<i>Data-quality rules</i>).</div></div>
+      <div><h4>What is missing most – click to list</h4><div id="dqRules"></div></div>
+    </div>
+    <div class="dqfilt">
+      <span class="seg" id="dqLvl"><button data-l="bad" class="on">Needs work</button><button data-l="red">Red</button><button data-l="yellow">Yellow</button><button data-l="green">Green</button><button data-l="all">All</button></span>
+      <select id="dqType"><option value="">All levels of the hierarchy</option><option value="objective">Objectives</option><option value="si">Solution Increments</option><option value="epic">Epics</option><option value="story">Work items</option></select>
+      <select id="dqOwner"><option value="">All owners</option></select>
+      <input type="search" id="dqQ" placeholder="Search key / summary">
+      <span id="dqRuleChip"></span><span class="sp"></span><span id="dqCount" class="muted"></span>
+    </div>
+    <div class="dqscroll" id="dqList"></div>
+  </div>
+</section>
+<div id="tip" hidden></div>
 
 <script>
 const SAMPLE_CSV = `Issue key,Issue Type,Summary,Status,Assignee,PI,Due date,Story Points,Sprint,Sprint,Epic Link,RAG Status,Objective Manager,Global Priority,Outward issue link (Solves),Outward issue link (Solves),Outward issue link (Relates),Outward issue link (Relates),Outward issue link (Blocks)
@@ -251,7 +375,7 @@ const fmt = ms => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', mon
 const fmtS = ms => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 const sprintStart = n => D(CAL.aS) + (n - CAL.aN) * CAL.days * DAY;
 const sprintEnd = n => sprintStart(n) + (CAL.days - 1) * DAY;
-const sprintNum = s => { const m = /(\d{2,4})\D*$/.exec(s || ''); return m ? +m[1] : null; };
+const sprintNum = s => { const g = (String(s || '').match(/\d{2,4}/g) || []).map(Number).filter(n => Math.abs(n - CAL.aN) <= 60).sort((a, b) => Math.abs(a - CAL.aN) - Math.abs(b - CAL.aN)); return g.length ? g[0] : null; };   // 'P_EH S292 (1.10 - 15.10)' -> 292, '292 Universal (PI85)' -> 292
 const piNum = name => { const m = /(?:^|\D)PI\s*_?(\d+)/i.exec(name || ''); return m ? +m[1] : null; };
 function piRange(name) {
   const n = piNum(name); if (n == null) return null;
@@ -324,7 +448,8 @@ const FIELD_DEFS = [
   ['rag', 'RAG status', ['rag status', 'rag']], ['mgr', 'Objective manager', ['objective manager']], ['gp', 'Global priority', ['global priority']],
   ['pi', 'PI', ['pi', 'program increment', 'fix version s', 'fix version']], ['project', 'Project (Delivery Unit)', ['project key', 'project']],
   ['links', 'Linked issues (text, e.g. from Word)', ['linked issues', 'issue links', 'links']],
-  ['panelA', 'Children list 1 (Objectives Panel)', ['objectives panel']], ['panelB', 'Children list 2 (Requirements Panel)', ['requirements panel']]];
+  ['panelA', 'Children list 1 (Objectives Panel)', ['objectives panel']], ['panelB', 'Children list 2 (Requirements Panel)', ['requirements panel']],
+  ['prio', 'Priority', ['priority']], ['created', 'Created', ['created']], ['updated', 'Updated', ['updated']], ['resolved', 'Resolved', ['resolved']]];
 const PHRASES = { 'solves': ['solves', true], 'is solved by': ['solves', false], 'relates to': ['relates', true], 'blocks': ['blocks', true], 'is blocked by': ['blocks', false], 'depends on': ['depends', true], 'is depended on by': ['depends', false] };
 const LINK_KINDS = [['solves', 'solves'], ['relates', 'relates to'], ['blocks', 'blocks (dependency)'], ['depends', 'depends on (dependency)'], ['ignore', 'ignore']];
 const TYPE_KINDS = [['objective', 'Objective'], ['si', 'Solution Increment'], ['epic', 'Epic'], ['story', 'Story / task']];
@@ -382,6 +507,7 @@ function buildModel(src, S) {
       due: parseDate(get(r, 'due')), sp: Number(get(r, 'sp')) || 0,
       sprints: sprintCols.flatMap(i => (r[i] || '').split(/[,;\n]+/).map(sprintNum)).filter(x => x != null), parent,
       rag: /^(green|amber|yellow|orange|red|blue|attention|ok|on track|at risk|off track|critical)$/i.test(ragRaw) ? ragRaw : '',   // junk in a mislabeled column is ignored
+      inSprint: sprintCols.some(i => (r[i] || '').trim() !== ''), prio: get(r, 'prio').trim(), created: parseDate(get(r, 'created')), updated: parseDate(get(r, 'updated')), resolved: parseDate(get(r, 'resolved')),
       mgr: get(r, 'mgr'), gp: /^\d+(\.\d+)?$/.test(get(r, 'gp').trim()) ? get(r, 'gp').trim() : '', pi, piGiven: !!pi,
       du: S.duMode === 'prefix' ? key.replace(/-\d+$/, '') : (prj || key.replace(/-\d+$/, ''))
     };
@@ -413,7 +539,8 @@ function buildModel(src, S) {
       else if (n.type === 'epic' && nodes[k].type === 'story' && !nodes[k].parent) nodes[k].parent = key;
     });
   });
-  const m = { nodes, links, order: [], periods: [], ignored, settings: S, headers: H };
+  const has = { due: c.due >= 0, prio: c.prio >= 0, owner: c.assignee >= 0, rag: c.rag >= 0, gp: c.gp >= 0, sp: c.sp >= 0, sprint: sprintCols.length > 0, pi: c.pi >= 0 };   // data-quality rules only apply to columns that exist
+  const m = { nodes, links, order: [], periods: [], ignored, settings: S, headers: H, has };
   m.order = Object.values(nodes).filter(n => n.type === 'objective')
     .sort((x, y) => (S.prioDesc ? -1 : 1) * ((Number(x.gp) || 0) - (Number(y.gp) || 0)) || natural(x.key, y.key)).map(n => n.key);
   derivePIs(m); refreshPeriods(m);
@@ -518,6 +645,71 @@ function criticalPath(m, keys) {
   return top;
 }
 
+/* ---------- data quality: what is missing on each issue, how bad it is ---------- */
+const SEV = { high: ['High', 3], med: ['Medium', 2], low: ['Low', 1], off: ['Off', 0] };
+const TYPE_LABEL = { objective: 'Objective', si: 'Solution Increment', epic: 'Epic', story: 'Work item' };
+const doneN = n => statusClass(n.status) === 'done';
+// need: the CSV column that must exist for the rule to make sense · skipDone: finished issues are exempt
+const DQ_RULES = [
+  { id: 'o_kids', t: 'objective', label: 'Nothing linked below it', hint: 'Link solution increments (solves) or epics to this objective.', sev: 'high', test: (n, m) => !sisOfObjective(m, n.key).length && !directEpicsOfObjective(m, n.key).length },
+  { id: 'o_due', t: 'objective', label: 'No due date', hint: 'Set the Due date – the forecast cannot be compared without it.', sev: 'high', need: 'due', test: n => !n.due },
+  { id: 'o_owner', t: 'objective', label: 'No owner', hint: 'Assign an owner.', sev: 'med', need: 'owner', test: n => !n.assignee },
+  { id: 'o_rag', t: 'objective', label: 'No RAG status', hint: 'Set the RAG status (or check the column in Data mapping).', sev: 'med', need: 'rag', test: n => !n.rag },
+  { id: 'o_gp', t: 'objective', label: 'No global priority', hint: 'Set the Global Priority (or check the column in Data mapping).', sev: 'med', need: 'gp', test: n => !n.gp },
+  { id: 's_obj', t: 'si', label: 'Solves no objective', hint: 'Add a "solves" link to the objective this increment serves.', sev: 'high', test: (n, m) => !objectivesOfSi(m, n.key).length },
+  { id: 's_epics', t: 'si', label: 'No epics linked', hint: 'Link the epics that deliver it ("relates to" / "solves").', sev: 'med', test: (n, m) => !epicsOfSi(m, n.key).length },
+  { id: 's_owner', t: 'si', label: 'No owner', hint: 'Assign an owner.', sev: 'med', need: 'owner', test: n => !n.assignee },
+  { id: 'e_link', t: 'epic', label: 'Not linked to an SI or objective', hint: 'Link it to a solution increment ("relates to") or straight to the objective.', sev: 'high', test: (n, m) => !sisOfEpic(m, n.key).length && !objectivesOfEpic(m, n.key).length },
+  { id: 'e_due', t: 'epic', label: 'No due date', hint: 'Set the Due date.', sev: 'med', need: 'due', skipDone: true, test: n => !n.due },
+  { id: 'e_pi', t: 'epic', label: 'No PI / fix version', hint: 'Set the PI (Fix Version).', sev: 'med', need: 'pi', skipDone: true, test: n => !n.piGiven },
+  { id: 'e_prio', t: 'epic', label: 'No priority', hint: 'Set the priority.', sev: 'med', need: 'prio', skipDone: true, test: n => !n.prio },
+  { id: 'e_owner', t: 'epic', label: 'No owner', hint: 'Assign an owner.', sev: 'med', need: 'owner', skipDone: true, test: n => !n.assignee },
+  { id: 'e_kids', t: 'epic', label: 'No work items', hint: 'Break the epic down into stories / tasks.', sev: 'med', skipDone: true, test: (n, m) => !storiesOf(m, n.key).length },
+  { id: 'e_dep', t: 'epic', label: 'No dependency recorded', hint: 'Add a "blocks" / "is blocked by" link – or accept that it has none.', sev: 'low', skipDone: true, test: (n, m, c) => !c.blk.has(n.key) },
+  { id: 'i_parent', t: 'story', label: 'Not in any epic', hint: 'Set the Epic Link.', sev: 'high', test: n => !n.parent },
+  { id: 'i_owner', t: 'story', label: 'No assignee', hint: 'Assign it.', sev: 'med', need: 'owner', skipDone: true, test: n => !n.assignee },
+  { id: 'i_prio', t: 'story', label: 'No priority', hint: 'Set the priority.', sev: 'med', need: 'prio', skipDone: true, test: n => !n.prio },
+  { id: 'i_sprint', t: 'story', label: 'Not planned in a sprint', hint: 'Put it into a sprint (or leave it in the backlog on purpose).', sev: 'med', need: 'sprint', skipDone: true, test: n => !n.inSprint },
+  { id: 'i_est', t: 'story', label: 'No estimate', hint: 'Add story points.', sev: 'low', need: 'sp', skipDone: true, test: n => !n.sp },
+  { id: 'i_due', t: 'story', label: 'No due date', hint: 'Set a due date if one matters.', sev: 'low', need: 'due', skipDone: true, test: n => !n.due }
+];
+const DQ_KEY = 'epic-hierarchy-dq';
+let dqSev = (() => { try { return JSON.parse(localStorage.getItem(DQ_KEY) || '{}'); } catch (e) { return {}; } })();
+let DQ = {};
+const ruleSev = r => dqSev[r.id] || r.sev;
+const ruleApplies = (r, m) => !r.need || !!(m.has && m.has[r.need]);
+function computeDQ(m) {
+  const blk = new Set(m.links.filter(l => l.t === 'blocks').flatMap(l => [l.a, l.b])), out = {};
+  Object.values(m.nodes).forEach(n => {
+    const gaps = [];
+    DQ_RULES.forEach(r => {
+      const sev = ruleSev(r);
+      if (sev === 'off' || r.t !== n.type || !ruleApplies(r, m) || (r.skipDone && doneN(n))) return;
+      if (r.test(n, m, { blk })) gaps.push({ id: r.id, label: r.label, hint: r.hint, sev });
+    });
+    const c = s => gaps.filter(g => g.sev === s).length, h = c('high'), md = c('med'), lo = c('low');
+    // red: any High gap, or 3+ Medium · yellow: 1–2 Medium, or 3+ Low · green: otherwise (Low gaps stay visible as hints)
+    out[n.key] = { gaps, level: h || md >= 3 ? 'red' : md || lo >= 3 ? 'yellow' : 'green', pts: gaps.reduce((a, g) => a + SEV[g.sev][1], 0) };
+  });
+  return out;
+}
+const LVL_TXT = { red: 'Red – a key link/date is missing', yellow: 'Yellow – some data is missing', green: 'Green – complete enough' };
+function dqPill(k) {
+  const d = DQ[k]; if (!d) return '';
+  const n = d.gaps.filter(g => g.sev !== 'low').length;
+  const tip = LVL_TXT[d.level] + (d.gaps.length ? '\n' + d.gaps.map(g => `• ${g.label} (${SEV[g.sev][0]})`).join('\n') : '');
+  return `<span class="dq ${d.level}" title="${esc(tip)}"><i></i>${n ? n + ' gap' + (n > 1 ? 's' : '') : 'OK'}</span>`;
+}
+function dqRoll(keys) {   // how many red / yellow / green issues sit below a parent line
+  const c = { red: 0, yellow: 0, green: 0 }; [...new Set(keys)].forEach(k => { if (DQ[k]) c[DQ[k].level]++; });
+  if (!c.red && !c.yellow && !c.green) return '';
+  return `<span class="dqr" title="Issues below: ${c.red} red · ${c.yellow} yellow · ${c.green} green">${['red', 'yellow', 'green'].map(l => `<b class="${l} ${c[l] ? '' : 'z'}">${c[l]}</b>`).join('')}</span>`;
+}
+function dqBlock(k) {
+  const d = DQ[k]; if (!d) return '';
+  return `<h3 style="margin-top:10px">Data quality ${dqPill(k)}</h3>` + (d.gaps.length ? d.gaps.map(g => `<div class="gap ${g.sev}"><b>${esc(g.label)}</b> <span class="muted">· ${esc(SEV[g.sev][0])}</span><div class="muted">${esc(g.hint)}</div></div>`).join('') : '<div class="muted">Nothing missing.</div>');
+}
+
 /* ---------- rendering ---------- */
 const NS = 'http://www.w3.org/2000/svg';
 const RAG = r => { const n = norm(r); return /green|ok|on track/.test(n) ? 'ok' : /red|critical|off track/.test(n) ? 'bad' : n ? 'warn' : ''; };
@@ -570,23 +762,25 @@ function siHead(s, o) {
   const late = o && sim.nodes[o].due && span && span.end > D(sim.nodes[o].due);
   return `<b>${esc(s)}</b><span class="muted">${esc(n.summary)}</span>
     <div class="muted">${eps.length} epics · ${Math.round(100 * aggregate(sim, eps))}% done${span ? ` · ${fmtS(span.start)} – ${fmt(span.end)}` : ''}</div>
-    ${late ? '<span class="badge late">ends after objective due</span>' : ''}${!eps.length ? '<span class="badge">no epics</span>' : ''}
+    ${dqRoll(eps)}${late ? '<span class="badge late">ends after objective due</span>' : ''}${!eps.length ? '<span class="badge">no epics</span>' : ''}
     ${objs.length > 1 ? `<div class="muted">solves ${objs.map(esc).join(', ')}</div>` : ''}`;
 }
 function objBanner(g, epicKeys) {
   const o = sim.nodes[g], span = spanOf(sim, epicKeys), idx = sim.order.indexOf(g);
   const late = o.due && span && span.end > D(o.due);
   return `<span class="ttl" data-toggle="${esc(g)}">${collapsed.has(g) ? '▸' : '▾'} ${esc(g)} · ${esc(o.summary)}</span>
-    <span class="meta"><span class="dot ${RAG(o.rag)}"></span>${esc(o.rag || 'no RAG')} · ${esc(o.status)} · Owner ${esc(o.assignee || '–')} · Manager ${esc(o.mgr || '–')} · Global priority <b>${esc(o.gp || '–')}</b> · Due <b>${esc(o.due ? fmt(D(o.due)) : '–')}</b> · ${Math.round(100 * aggregate(sim, epicKeys))}% done · forecast end ${span ? `<b class="${late ? 'bad' : 'ok'}">${fmt(span.end)}</b>` : '–'}${late ? ` <span class="badge late">+${Math.round((span.end - D(o.due)) / DAY)} days</span>` : ''}</span>
+    <span class="meta"><span class="dot ${RAG(o.rag)}"></span>${esc(o.rag || 'no RAG')} · ${esc(o.status)} · Owner ${esc(o.assignee || '–')} · Manager ${esc(o.mgr || '–')} · Global priority <b>${esc(o.gp || '–')}</b> · Due <b>${esc(o.due ? fmt(D(o.due)) : '–')}</b> · ${Math.round(100 * aggregate(sim, epicKeys))}% done · forecast end ${span ? `<b class="${late ? 'bad' : 'ok'}">${fmt(span.end)}</b>` : '–'}${late ? ` <span class="badge late">+${Math.round((span.end - D(o.due)) / DAY)} days</span>` : ''} ${dqRoll(epicKeys)}</span>
     <span class="mv"><button title="Raise priority (scenario)" onclick="moveObj('${esc(g)}',-1)" ${idx === 0 ? 'disabled' : ''}>▲</button><button title="Lower priority (scenario)" onclick="moveObj('${esc(g)}',1)" ${idx === sim.order.length - 1 ? 'disabled' : ''}>▼</button></span>`;
 }
 
 function render() {
   if (!sim) return;
+  DQ = computeDQ(sim); renderBacklog(); renderRules();
   const cur = $('fObj').value;
   $('fObj').innerHTML = '<option value="">All objectives</option>' +
     sim.order.map(k => `<option value="${esc(k)}" ${k === cur ? 'selected' : ''}>${esc(k)} – ${esc(sim.nodes[k].summary.slice(0, 40))}</option>`).join('');
   if (mode === 'outline') { renderOutline(); return; }
+  if (mode === 'dash') { renderDash(); return; }
   const per = sim.periods, sections = buildSections();
   const crit = $('cCrit').checked ? criticalPath(sim, epicsOf(sim).filter(epicVisible).map(e => e.key)) : null;
   const critSet = new Set(crit ? crit.chain : []);
@@ -632,7 +826,7 @@ function cardHtml(e, inHl, critSet, copy, si) {
   const moved = b0 && b0.pi !== e.pi, late = lateObjective(sim, e.key), isCrit = critSet.has(e.key);
   const others = sisOfEpic(sim, e.key).filter(s => s !== si);
   return `<div class="card s-${statusClass(e.status)} ${e.key === selected ? 'sel' : ''} ${moved ? 'moved' : ''} ${isCrit ? 'crit' : ''} ${inHl(e.key) ? '' : 'dim'}" draggable="true" data-key="${esc(e.key)}" title="${esc(e.key + ' – ' + e.summary + ' (' + e.status + ')')}">
-    <div class="k"><span><span class="du" style="background:${duColor(e.du)}">${esc(e.du)}</span> ${esc(e.key.replace(/^.*-/, '#'))}${copy ? ' ↺' : ''}</span><span>${isCrit ? '<span class="badge crit">critical</span>' : ''}${p.hold ? `<span class="badge hold">${p.hold} on hold</span>` : ''}${late ? '<span class="badge late">late</span>' : ''}</span></div>
+    <div class="k"><span><span class="du" style="background:${duColor(e.du)}">${esc(e.du)}</span> ${esc(e.key.replace(/^.*-/, '#'))}${copy ? ' ↺' : ''}</span><span>${dqPill(e.key)}${isCrit ? '<span class="badge crit">critical</span>' : ''}${p.hold ? `<span class="badge hold">${p.hold} on hold</span>` : ''}${late ? '<span class="badge late">late</span>' : ''}</span></div>
     <div class="t">${esc(e.summary)}</div>
     <div class="pb"><i style="width:${Math.round(p.pct * 100)}%"></i></div>
     <div class="pt">${p.total ? `${p.done}/${p.total} stories${p.sp ? ` · ${p.spDone}/${p.sp} SP` : ''}` : 'no stories'}${w ? ` · ${fmtS(w.start)}–${fmtS(w.end)}${w.src === 'pi' ? ' (PI)' : ''}` : ''}</div>
@@ -730,6 +924,7 @@ function olTree() {
 }
 function olWalk(nodes, fn, path = []) { nodes.forEach(n => { fn(n, path); olWalk(n.kids || [], fn, [...path, n]); }); }
 function olApplyDepth(d) { depth = d; olOpen.clear(); olWalk(olTree(), n => { if (n.lvl < d && n.kids.length) olOpen.add(n.id); }); }
+function olDesc(n) { const ks = []; olWalk(n.kids || [], x => { if (x.key && /^(epic|item|si)$/.test(x.kind)) ks.push(x.key); }); return ks; }
 function olKeys(n) { const s = new Set(); olWalk([n], x => { if (x.kind === 'epic') s.add(x.key); }); return [...s]; }
 function olChips(n) {
   const k = n.key, nd = sim.nodes[k], out = [];
@@ -791,8 +986,9 @@ function olRow(n, ind, open, hl, critSet, ctx) {
     lk = (nd.assignee ? `<span class="chip plain">${esc(nd.assignee)}</span>` : '') + lk;
   }
   const dim = hl && n.kind === 'epic' && !hl.has(k);
+  const dqc = (k && DQ[k] ? dqPill(k) : '') + (n.kids.length ? dqRoll(olDesc(n)) : '');
   return `<div class="orow k-${n.kind} ${n.copy ? 'copy' : ''} ${k && k === selected ? 'sel' : ''} ${dim ? 'dim' : ''}" data-row="${esc(n.id)}" ${k ? `data-key="${esc(k)}"` : ''} ${nd ? `title="${esc(k + ' – ' + nd.summary)}"` : ''}>
-    <div class="oname" style="padding-left:${ind * 20}px">${toggle}${name}</div><div>${st}</div><div class="opg">${pg}</div><div class="owh">${wh}</div><div class="olk">${lk}</div></div>`;
+    <div class="oname" style="padding-left:${ind * 20}px">${toggle}${name}</div><div>${st}</div><div class="odq">${dqc}</div><div class="opg">${pg}</div><div class="owh">${wh}</div><div class="olk">${lk}</div></div>`;
 }
 function renderOutline() {
   const wrap = $('boardWrap'), sl = wrap.scrollLeft, st = wrap.scrollTop;
@@ -802,7 +998,7 @@ function renderOutline() {
   const rows = [], tree = olTree();
   const go = (nodes, ind) => nodes.forEach(n => { const o = olOpen.has(n.id); rows.push(olRow(n, ind, o, hl, critSet)); if (o && n.kids.length) go(n.kids, ind + 1); });
   go(tree, 0);
-  wrap.innerHTML = `<div class="ol"><div class="ohead"><div>Objective › Solution Increment › Epic › Work item</div><div>Status</div><div>Progress</div><div>When</div><div>Flags &amp; relations</div></div>${rows.join('') || '<div id="empty">Nothing to show with these filters.</div>'}</div>`;
+  wrap.innerHTML = `<div class="ol"><div class="ohead"><div>Hierarchy</div><div>Status</div><div>Data</div><div>Progress</div><div>When</div><div>Flags &amp; relations</div></div>${rows.join('') || '<div id="empty">Nothing to show with these filters.</div>'}</div>`;
   wrap.scrollLeft = sl; wrap.scrollTop = st;
   renderStats(crit); renderCrit(crit); renderViols(); renderDetail();
 }
@@ -826,6 +1022,8 @@ function renderStats(crit) {
     `<span class="pill"><b>${sim.order.length}</b> objectives</span>` +
     `<span class="pill"><b>${Object.values(sim.nodes).filter(n => n.type === 'si').length}</b> solution increments</span>` +
     `<span class="pill"><b>${eps.length}</b> epics</span><span class="pill"><b>${Object.values(sim.nodes).filter(n => n.type === 'story').length}</b> stories</span>` +
+    (() => { const v = Object.values(DQ), g = v.filter(x => x.level === 'green').length, r = v.filter(x => x.level === 'red').length;
+      return `<a class="pill" href="#dq" style="text-decoration:none;color:inherit" title="Jump to the data-quality backlog">data health <b class="${r ? 'bad' : 'ok'}">${v.length ? Math.round(100 * g / v.length) : 0}%</b> green · <b class="bad">${r}</b> red</a>`; })() +
     `<span class="pill"><b>${deps.length}</b> epic dependencies${savedApplied ? ` (${savedApplied} from saved)` : ''}</span>` +
     `<span class="pill"><b class="bad">${st.bad}</b> overlap${d ? ` (${d > 0 ? '+' : ''}${d})` : ''}</span><span class="pill"><b class="warn">${st.warn}</b> tight</span>` +
     `<span class="pill">scenario changes: <b>${changed}</b></span>` +
@@ -873,6 +1071,7 @@ function renderSiDetail(e) {
   const span = spanOf(sim, epicsOfSi(sim, e.key));
   $('detail').innerHTML = `<h3>${esc(e.key)} <span class="muted">solution increment</span></h3><div>${esc(e.summary)}</div>
     <div class="muted">${esc(e.assignee || 'no owner')} · ${esc(e.status || 'no status')}${span ? ` · derived ${fmt(span.start)} – ${fmt(span.end)}` : ''}</div>
+    ${dqBlock(e.key)}
     <h3 style="margin-top:10px">Links (${mine.length})</h3>${mine.map(row).join('') || '<div class="muted">none</div>'}
     <div class="row"><select id="siObj"><option value="">solves objective…</option>${objs}</select><button onclick="addSiLink('solves')">+</button></div>
     <div class="row"><select id="siEpic"><option value="">related epic…</option>${eps}</select><button onclick="addSiLink('relates')">+</button></div>`;
@@ -884,6 +1083,7 @@ function renderGenericDetail(e) {   // objective or work item: read-only facts +
     <div class="muted">${esc(e.assignee || 'no owner')} · ${esc(e.status || 'no status')}${e.sp ? ' · ' + e.sp + ' SP' : ''}${e.due ? ' · due ' + fmt(D(e.due)) : ''}</div>
     ${par ? `<div class="muted">in epic <a href="#" data-jump="${esc(par.key)}">${esc(par.key)}</a> ${esc(par.summary)}</div>` : ''}
     ${e.sprints.length ? `<div class="muted">sprints ${e.sprints.map(s => piOfSprint(s) ? s + ' (' + piOfSprint(s) + ')' : s).join(', ')}</div>` : ''}
+    ${dqBlock(e.key)}
     <h3 style="margin-top:10px">Links (${mine.length})</h3>${mine.map(l => `<div class="link"><span><span class="muted">${label(l)}</span> ${esc(other(l, e.key))} <span class="muted">${esc((sim.nodes[other(l, e.key)]?.summary || '').slice(0, 30))}</span></span></div>`).join('') || '<div class="muted">none</div>'}`;
 }
 function addSiLink(kind) {
@@ -921,6 +1121,7 @@ function renderDetail() {
     <div class="row">PI <select onchange="setPI('${esc(e.key)}', this.value)">${sim.periods.map(x => `<option ${x === e.pi ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>
       <span class="muted">baseline: ${esc(b0.pi)}</span></div>
     <div>Progress: <b>${Math.round(p.pct * 100)}%</b> · ${p.done}/${p.total} stories${p.sp ? ` · ${p.spDone}/${p.sp} SP` : ''}${p.hold ? ` · <span class="warn">${p.hold} on hold</span>` : ''}</div>
+    ${dqBlock(e.key)}
     <h3 style="margin-top:10px">Links (${mine.length})</h3>${mine.map(li).join('') || '<div class="muted">none</div>'}
     <div class="row"><select id="addType" onchange="fillTargets()"><option value="blocks">this blocks →</option><option value="blockedby">← blocked by</option><option value="relates">relates to SI</option></select>
       <select id="addOther"></select><button onclick="addLink()">+</button></div>
@@ -932,6 +1133,195 @@ function fillTargets() {
   const t = $('addType'); if (!t) return;
   const keys = Object.values(sim.nodes).filter(n => (t.value === 'relates' ? n.type === 'si' : n.type === 'epic') && n.key !== selected).map(n => n.key).sort(natural);
   $('addOther').innerHTML = '<option value="">choose…</option>' + keys.map(k => `<option>${esc(k)}</option>`).join('');
+}
+
+/* ---------- data-quality backlog + rules panel ---------- */
+let dqF = { lvl: 'bad', type: '', owner: '', rule: '', q: '' };
+const TYPE_ORDER = ['objective', 'si', 'epic', 'story'], LVL_RANK = { red: 0, yellow: 1, green: 2 };
+const ownerOf = n => n.assignee || '(unassigned)';
+function dqRows() {
+  const q = dqF.q.toLowerCase();
+  return Object.values(sim.nodes).filter(n => {
+    const d = DQ[n.key]; if (!d) return false;
+    if (dqF.lvl === 'bad' ? d.level === 'green' : dqF.lvl !== 'all' && d.level !== dqF.lvl) return false;
+    if (dqF.type && n.type !== dqF.type) return false;
+    if (dqF.owner && ownerOf(n) !== dqF.owner) return false;
+    if (dqF.rule && !d.gaps.some(g => g.id === dqF.rule)) return false;
+    return !q || (n.key + ' ' + n.summary).toLowerCase().includes(q);
+  }).sort((a, b) => LVL_RANK[DQ[a.key].level] - LVL_RANK[DQ[b.key].level] || DQ[b.key].pts - DQ[a.key].pts || TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type) || natural(a.key, b.key));
+}
+const dqChips = k => DQ[k].gaps.map(g => `<span class="mchip ${g.sev}" title="${esc(g.hint)}">${esc(g.label)}</span>`).join('') || '<span class="muted">–</span>';
+function renderBacklog() {
+  if (!sim) { $('dqSum').textContent = ''; $('dqTiles').innerHTML = ''; $('dqRules').innerHTML = ''; $('dqCount').textContent = ''; $('dqRuleChip').innerHTML = ''; $('dqList').innerHTML = '<div class="muted" style="padding:14px">Load data first.</div>'; return; }
+  const all = Object.values(sim.nodes), cnt = { red: 0, yellow: 0, green: 0 };
+  all.forEach(n => cnt[DQ[n.key].level]++);
+  $('dqSum').innerHTML = `${all.length} issues · <b class="ok">${Math.round(100 * cnt.green / all.length)}% green</b> · <b class="bad">${cnt.red} red</b> · <b>${cnt.yellow} yellow</b>`;
+  $('dqTiles').innerHTML = TYPE_ORDER.map(t => {
+    const ns = all.filter(n => n.type === t); if (!ns.length) return '';
+    const c = { red: 0, yellow: 0, green: 0 }; ns.forEach(n => c[DQ[n.key].level]++);
+    return `<div class="dqt"><div>${TYPE_LABEL[t]} <span class="muted">${ns.length}</span></div><div class="dqbar">${['red', 'yellow', 'green'].filter(l => c[l]).map(l =>
+      `<button class="${l}" style="flex:${c[l]}" data-dqf='${JSON.stringify({ type: t, lvl: l, rule: '' })}' data-tip="${TYPE_LABEL[t]}: ${c[l]} ${l} of ${ns.length}">${c[l] / ns.length >= .08 ? c[l] : ''}</button>`).join('')}</div></div>`;
+  }).join('');
+  const hits = DQ_RULES.filter(r => ruleSev(r) !== 'off' && ruleApplies(r, sim)).map(r => ({ r, n: all.filter(x => DQ[x.key].gaps.some(g => g.id === r.id)).length, of: all.filter(x => x.type === r.t).length }))
+    .filter(x => x.n).sort((a, b) => SEV[ruleSev(b.r)][1] - SEV[ruleSev(a.r)][1] || b.n - a.n);
+  $('dqRules').innerHTML = hits.map(({ r, n, of }) => `<button class="dqrule ${ruleSev(r)} ${dqF.rule === r.id ? 'on' : ''}" data-dqf='${JSON.stringify({ rule: dqF.rule === r.id ? '' : r.id, type: '', lvl: 'all' })}' data-tip="${esc(r.hint)}">
+      <span class="nm">${esc(TYPE_LABEL[r.t])} · ${esc(r.label)} <small>${SEV[ruleSev(r)][0]}</small></span><span class="tr"><i style="width:${Math.round(100 * n / of)}%"></i></span><b>${n}</b></button>`).join('') || '<div class="muted">Nothing is missing.</div>';
+  // owners: keep the chosen one
+  const owners = {}; all.forEach(n => { if (DQ[n.key].level !== 'green') owners[ownerOf(n)] = (owners[ownerOf(n)] || 0) + 1; });
+  const sel = $('dqOwner'), want = dqF.owner;
+  sel.innerHTML = '<option value="">All owners</option>' + Object.keys(owners).sort(natural).map(o => `<option value="${esc(o)}">${esc(o)} (${owners[o]})</option>`).join('') + (want && !owners[want] ? `<option value="${esc(want)}">${esc(want)}</option>` : '');
+  sel.value = want; $('dqType').value = dqF.type; if ($('dqQ').value !== dqF.q) $('dqQ').value = dqF.q;
+  $('dqLvl').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.l === dqF.lvl));
+  const rr = DQ_RULES.find(r => r.id === dqF.rule);
+  $('dqRuleChip').innerHTML = rr ? `<span class="mchip ${ruleSev(rr)}">${esc(TYPE_LABEL[rr.t])} · ${esc(rr.label)} <a href="#" data-dqf='{"rule":""}' title="Clear this filter">✕</a></span>` : '';
+  const rows = dqRows();
+  $('dqCount').textContent = `${rows.length} listed`;
+  $('dqList').innerHTML = rows.length ? `<table class="dqtab"><thead><tr><th>Health</th><th>Issue</th><th>Level</th><th>Summary</th><th>Owner</th><th>What is missing</th><th>Status</th></tr></thead><tbody>${rows.slice(0, 300).map(n =>
+    `<tr class="dqrow ${n.key === selected ? 'sel' : ''}" data-key="${esc(n.key)}"><td>${dqPill(n.key)}</td><td><a href="#" data-jump="${esc(n.key)}" title="Show in the view above">${esc(n.key)}</a></td><td>${esc(TYPE_LABEL[n.type])}</td>
+     <td class="sm" title="${esc(n.summary)}">${esc(n.summary)}</td><td>${esc(ownerOf(n))}</td><td>${dqChips(n.key)}</td><td><span class="st ${statusClass(n.status)}">${esc(n.status || '–')}</span></td></tr>`).join('')}</tbody></table>${rows.length > 300 ? `<div class="muted" style="padding:8px 14px">first 300 of ${rows.length} shown – narrow the filters or export the CSV</div>` : ''}`
+    : '<div class="muted" style="padding:14px">Nothing matches – nice, or loosen the filters.</div>';
+}
+function renderRules() {
+  if (!sim) { $('rules').innerHTML = ''; return; }
+  $('rules').innerHTML = TYPE_ORDER.map(t => `<div class="muted" style="margin:8px 0 2px;font-weight:700">${TYPE_LABEL[t]}</div>` + DQ_RULES.filter(r => r.t === t).map(r => {
+    const ok = ruleApplies(r, sim);
+    return `<div class="row" style="${ok ? '' : 'opacity:.45'}" title="${esc(ok ? r.hint : 'The column for this rule is not in the imported file')}"><span style="flex:1;min-width:120px">${esc(r.label)}${r.skipDone ? ' <span class="muted">· open only</span>' : ''}${ok ? '' : ' <span class="muted">· no column</span>'}</span>
+      <select data-rule="${r.id}" ${ok ? '' : 'disabled'}>${['high', 'med', 'low', 'off'].map(v => `<option value="${v}" ${ruleSev(r) === v ? 'selected' : ''}>${SEV[v][0]}</option>`).join('')}</select></div>`;
+  }).join('')).join('') + '<div class="row"><button id="rulesReset">Reset to defaults</button></div>';
+}
+function exportDQ() {
+  if (!sim) return;
+  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const lines = [['Issue', 'Level', 'Summary', 'Owner', 'Status', 'Health', 'Missing', 'How to fix'].map(q).join(',')];
+  dqRows().forEach(n => lines.push([n.key, TYPE_LABEL[n.type], n.summary, ownerOf(n), n.status, DQ[n.key].level, DQ[n.key].gaps.map(g => g.label).join('; '), DQ[n.key].gaps.map(g => g.hint).join(' ')].map(q).join(',')));
+  download('data-quality-backlog.csv', lines.join('\n'));
+}
+// one shared tooltip for anything carrying data-tip (text only – never HTML)
+document.addEventListener('pointermove', ev => {
+  const t = ev.target.closest && ev.target.closest('[data-tip]'), tip = $('tip');
+  if (!t) { tip.hidden = true; return; }
+  tip.textContent = t.dataset.tip; tip.hidden = false;
+  tip.style.left = Math.min(ev.clientX + 14, window.innerWidth - tip.offsetWidth - 8) + 'px'; tip.style.top = Math.min(ev.clientY + 16, window.innerHeight - tip.offsetHeight - 8) + 'px';
+});
+
+/* ---------- dashboard: every element filters everything else ---------- */
+let dash = { pop: 'epic', f: {} };
+const SCK = [['done', 'Done'], ['prog', 'In progress'], ['todo', 'To do'], ['hold', 'On hold']], DQK = [['red', 'Red'], ['yellow', 'Yellow'], ['green', 'Green']];
+const JA = o => esc(JSON.stringify(o));
+function dashRecs() {
+  const vis = k => !sim.nodes[k] || epicVisible(sim.nodes[k]);   // the header filters (status / objective / search) scope the dashboard too
+  const nodes = dash.pop === 'epic' ? epicsOf(sim).filter(epicVisible) : Object.values(sim.nodes).filter(n => n.type === 'story' && vis(n.parent));
+  return nodes.map(n => {
+    const spr = n.sprints.length ? Math.max(...n.sprints) : null;
+    return { n, key: n.key, sc: statusClass(n.status), pi: n.type === 'epic' ? n.pi : (spr != null && piOfSprint(spr)) || sim.nodes[n.parent]?.pi || 'No PI', du: n.du, owner: ownerOf(n),
+      dq: DQ[n.key].level, gaps: DQ[n.key].gaps.map(g => g.id), sprint: spr != null ? String(spr) : 'Backlog', w: n.sp || 0 };
+  });
+}
+const dMatch = (r, except) => Object.entries(dash.f).every(([k, v]) => k === except || (k === 'gap' ? r.gaps.includes(v) : r[k] === v));
+const tally = (rs, keyFn, dim) => { const o = {}; rs.forEach(r => { const k = keyFn(r), c = o[k] = o[k] || {}; c[r[dim]] = (c[r[dim]] || 0) + 1; }); return o; };
+const tot = (c, keys) => keys.reduce((a, [k]) => a + (c[k] || 0), 0);
+function hRows(rows, keys, cls, dim) {   // horizontal stacked bars: label, segments, total at the tip
+  const max = Math.max(1, ...rows.map(r => tot(r.counts, keys)));
+  return rows.map(r => { const t = tot(r.counts, keys);
+    return `<div class="hrow ${r.dim ? 'dim' : ''}"><button class="hl ${r.on ? 'on' : ''}" data-set="${JA(r.set)}" data-tip="${esc(r.label)}">${esc(r.label)}</button>
+      <div class="htrack"><div class="hwrap"><div class="hbar ${cls === 'one' ? 'one' : ''}" style="width:${(88 * t / max).toFixed(1)}%">${keys.filter(([k]) => r.counts[k]).map(([k, lab]) =>
+        `<button class="${cls}-${k}" style="flex:${r.counts[k]} 1 0" data-set="${JA({ ...r.set, [dim]: k })}" data-tip="${esc(r.label)} · ${lab}: ${r.counts[k]}">${88 * r.counts[k] / max >= 12 ? r.counts[k] : ''}</button>`).join('')}<span class="hv">${t}</span></div></div></div></div>`; }).join('');
+}
+function vCols(cols, keys, cls, dim, H = 140) {   // stacked columns, total on the cap
+  const max = Math.max(1, ...cols.map(c => tot(c.counts, keys)));
+  return `<div class="vch">${cols.map(c => { const t = tot(c.counts, keys);
+    return `<div class="vcol ${c.dim ? 'dim' : ''}"><span class="vv">${t}</span><div class="vbar" style="height:${Math.max(4, Math.round(H * t / max))}px">${keys.filter(([k]) => c.counts[k]).map(([k, lab]) =>
+      `<button class="${cls}-${k}" style="flex:${c.counts[k]} 1 0" data-set="${JA({ ...c.set, [dim]: k })}" data-tip="${esc(c.label)} · ${lab}: ${c.counts[k]}">${H * c.counts[k] / max >= 16 ? c.counts[k] : ''}</button>`).join('')}</div>
+      <button class="vl ${c.on ? 'on' : ''}" data-set="${JA(c.set)}" data-tip="${esc(c.label)}">${esc(c.label)}</button></div>`; }).join('')}</div>`;
+}
+function renderDash() {
+  const wrap = $('boardWrap'), sl = wrap.scrollLeft, st = wrap.scrollTop;
+  const isEp = dash.pop === 'epic', noun = isEp ? 'epics' : 'work items', f = dash.f, R = dashRecs(), all = R.filter(r => dMatch(r));
+  const dimOf = (dim, v) => f[dim] != null && f[dim] !== v;
+  // hero + status tiles (the tiles are also the legend of every status colour below)
+  let pct, heroTxt;
+  if (isEp) { pct = aggregate(sim, all.map(r => r.key)); heroTxt = `of the work items in these ${all.length} epics are done`; }
+  else { const W = r => r.w || 1, T = all.reduce((a, r) => a + W(r), 0); pct = T ? all.filter(r => r.sc === 'done').reduce((a, r) => a + W(r), 0) / T : 0; heroTxt = `of these ${all.length} work items are done${all.some(r => r.w) ? ' (by story points)' : ''}`; }
+  const sBase = R.filter(r => dMatch(r, 'sc')), sc = {}; sBase.forEach(r => sc[r.sc] = (sc[r.sc] || 0) + 1);
+  const tiles = SCK.map(([k, t]) => `<button class="tile ${f.sc === k ? 'on' : dimOf('sc', k) ? 'dim' : ''}" data-set="${JA({ sc: k })}" data-tip="Show only ${t.toLowerCase()} ${noun}"><span class="l"><i class="sw sw-${k}"></i>${t}</span><span class="v">${sc[k] || 0}</span></button>`).join('');
+  const dqBase = R.filter(r => dMatch(r, 'dq')), dqc = {}; dqBase.forEach(r => dqc[r.dq] = (dqc[r.dq] || 0) + 1);
+  const tileDq = `<button class="tile ${f.dq === 'red' ? 'on' : ''}" data-set="${JA({ dq: 'red' })}" data-tip="Show only ${noun} with a red data-quality level"><span class="l"><i class="sw dq-red"></i>Data red</span><span class="v">${dqc.red || 0}</span></button>`;
+  // objective strip: due date against forecast
+  const objs = sim.order.filter(o => !$('fObj').value || o === $('fObj').value).map(o => {
+    const n = sim.nodes[o], eps = [...new Set([...sisOfObjective(sim, o).flatMap(s => epicsOfSi(sim, s)), ...directEpicsOfObjective(sim, o)])];
+    const span = spanOf(sim, eps), late = n.due && span && span.end > D(n.due), p = aggregate(sim, eps);
+    return `<button class="orw ${o === selected ? 'sel' : ''}" data-key="${esc(o)}"><span><b>${esc(o)}</b> ${esc(n.summary)}<br><span class="muted">${esc(n.status || '')}${n.assignee ? ' · ' + esc(n.assignee) : ''}</span></span>
+      <span style="display:flex;gap:8px;align-items:center"><span class="pb" style="flex:1"><i style="width:${Math.round(p * 100)}%"></i></span><b>${Math.round(p * 100)}%</b></span>
+      <span>${n.due ? `due <b>${fmt(D(n.due))}</b>` : '<span class="muted">no due date</span>'}${span ? ` · forecast <b class="${late ? 'bad' : 'ok'}">${fmt(span.end)}</b>${late ? ` <span class="badge late">+${Math.round((span.end - D(n.due)) / DAY)} d</span>` : ''}` : ''}</span>${dqPill(o)}</button>`; }).join('');
+  // chart data (each chart ignores its own filter, so you can switch between values)
+  const piB = R.filter(r => dMatch(r, 'pi')), pis = [...new Set(piB.map(r => r.pi))].sort((a, b) => (piNum(a) ?? 1e9) - (piNum(b) ?? 1e9) || natural(a, b)), byPi = tally(piB, r => r.pi, 'sc');
+  const duB = R.filter(r => dMatch(r, 'du')), byDu = tally(duB, r => r.du, 'sc'), dus = Object.keys(byDu).sort((a, b) => tot(byDu[b], SCK) - tot(byDu[a], SCK) || natural(a, b)).slice(0, 10);
+  const owB = R.filter(r => dMatch(r, 'owner') && r.sc !== 'done'), byOw = {}; owB.forEach(r => byOw[r.owner] = (byOw[r.owner] || 0) + 1);
+  const ows = Object.keys(byOw).sort((a, b) => byOw[b] - byOw[a] || natural(a, b)).slice(0, 8);
+  const hB = R.filter(r => dMatch(r, 'dq') && dMatch(r, 'gap')), hc = {}; hB.forEach(r => hc[r.dq] = (hc[r.dq] || 0) + 1);
+  const gB = R.filter(r => dMatch(r, 'gap')), gc = {}; gB.forEach(r => r.gaps.forEach(g => gc[g] = (gc[g] || 0) + 1));
+  const gaps = DQ_RULES.filter(r => gc[r.id] && r.t === (isEp ? 'epic' : 'story')).sort((a, b) => SEV[ruleSev(b)][1] - SEV[ruleSev(a)][1] || gc[b.id] - gc[a.id]).slice(0, 6);
+  const gmax = Math.max(1, ...gaps.map(r => gc[r.id]));
+  // timeline (epics) / sprint load (work items)
+  let wide = '';
+  if (isEp) {
+    const rows = all.map(r => ({ r, w: winOf(sim, r.key) })).filter(x => x.w).sort((a, b) => a.w.start - b.w.start || natural(a.r.key, b.r.key)).slice(0, 60);
+    if (rows.length) {
+      const lo = Math.min(...rows.map(x => x.w.start)), hi = Math.max(...rows.map(x => x.w.end)), pad = (hi - lo) * .02, a = lo - pad, b = hi + pad, X = t => (100 * (t - a) / (b - a)).toFixed(2);
+      const ticks = []; for (let d = new Date(a); ; ) { d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1)); if (+d > b) break; ticks.push(+d); }
+      const step = ticks.length > 14 ? 3 : 1, mk = [];
+      sim.order.forEach(o => { const n = sim.nodes[o], t = n.due && D(n.due); if (t && t >= a && t <= b && (!$('fObj').value || o === $('fObj').value)) mk.push(`<div class="tlmk" style="left:${X(t)}%;background:var(--dq-r)" data-tip="${esc(o)} due ${fmt(t)}"><i style="color:var(--dq-r)">due ${esc(o)}</i></div>`); });
+      const now = Date.now(); if (now >= a && now <= b) mk.push(`<div class="tlmk" style="left:${X(now)}%;background:var(--accent);width:1px" data-tip="Today"><i style="color:var(--accent);top:auto;bottom:-14px">today</i></div>`);
+      wide = `<div class="dcard wide"><h4>Roadmap – when each epic runs</h4><div class="sub">Bars span the epic's planned window (its stories' sprints, or the whole PI when there are none). Click a bar to inspect the epic. The red line is an Objective due date.${rows.length === 60 ? ' First 60 shown.' : ''}</div>
+        <div class="tlax">${ticks.filter((_, i) => i % step === 0).map(t => `<span style="left:${X(t)}%">${new Date(t).toLocaleDateString('en-GB', { month: 'short', year: '2-digit', timeZone: 'UTC' })}</span>`).join('')}</div>
+        <div class="tl">${rows.map(({ r, w }) => `<div class="tlrow"><button class="nm ${r.key === selected ? 'on' : ''}" data-key="${esc(r.key)}" title="${esc(r.n.summary)}"><b>${esc(r.key)}</b> ${esc(r.n.summary)}</button>
+          <div class="tlt"><button class="seg-${r.sc} ${r.key === selected ? 'on' : ''}" style="left:${X(w.start)}%;width:${Math.max(.4, X(w.end) - X(w.start))}%" data-key="${esc(r.key)}" data-tip="${esc(r.key + ' ' + r.n.summary + '\n' + r.n.status + ' · ' + fmtS(w.start) + ' – ' + fmt(w.end) + (w.src === 'pi' ? ' (whole PI)' : ''))}"></button></div></div>`).join('')}
+          <div style="position:absolute;left:238px;right:0;top:0;bottom:0;pointer-events:none">${mk.join('')}</div></div></div>`;
+    }
+  } else {
+    const sB = R.filter(r => dMatch(r, 'sprint')), anySp = sB.some(r => r.w), byS = {};
+    sB.forEach(r => { const c = byS[r.sprint] = byS[r.sprint] || {}; c[r.sc] = (c[r.sc] || 0) + (anySp ? r.w || 0 : 1); });
+    const ss = Object.keys(byS).sort((x, y) => x === 'Backlog' ? 1 : y === 'Backlog' ? -1 : x - y);
+    wide = `<div class="dcard wide"><h4>Sprint load – ${anySp ? 'story points' : 'work items'} per sprint</h4><div class="sub">Click a column to list that sprint. “Backlog” = not planned in a sprint.</div>
+      ${vCols(ss.map(x => ({ label: x === 'Backlog' ? x : 'S' + x, counts: byS[x], set: { sprint: x }, on: f.sprint === x, dim: dimOf('sprint', x) })), SCK, 'seg', 'sc')}</div>`;
+  }
+  const chips = Object.entries(f).map(([k, v]) => `<span class="mchip high" style="border-left-color:var(--accent)">${{ sc: 'Status', pi: 'PI', du: 'Unit', owner: 'Owner', dq: 'Health', gap: 'Missing', sprint: 'Sprint' }[k]}: <b>${esc(k === 'sc' ? SCK.find(x => x[0] === v)[1] : k === 'gap' ? (DQ_RULES.find(r => r.id === v) || {}).label : v)}</b> <a href="#" data-unset="${k}" title="Remove this filter">✕</a></span>`).join('');
+  const list = all.slice().sort((a, b) => LVL_RANK[a.dq] - LVL_RANK[b.dq] || natural(a.pi, b.pi) || natural(a.key, b.key));
+  wrap.innerHTML = `<div class="dash">
+    <div class="dbar"><span class="seg"><button data-pop="epic" class="${isEp ? 'on' : ''}">Epics</button><button data-pop="story" class="${isEp ? '' : 'on'}">Work items</button></span>
+      ${chips || '<span class="muted">Click any tile, bar, column or row below to filter – filters combine.</span>'}${chips ? '<a href="#" data-unset="*">Clear all</a>' : ''}<span class="sp"></span><span class="muted">${all.length} of ${R.length} ${noun} · header filters (status / objective / search) also apply</span></div>
+    <div class="dtop"><div class="hero"><div class="n">${Math.round(pct * 100)}<small>%</small></div><div class="t">${esc(heroTxt)}</div></div><div class="tiles">${tiles}${tileDq}</div></div>
+    <div class="dcard objs"><h4>Objectives – due date against forecast</h4><div class="sub">Forecast = the latest planned end among the epics that deliver the objective.</div>${objs || '<div class="muted">No objectives.</div>'}</div>
+    <div class="dgrid">
+      <div class="dcard"><h4>${isEp ? 'Epics' : 'Work items'} by PI</h4><div class="sub">Colour = status (legend: the tiles above). Click a column for the PI, a segment for PI + status.</div>${pis.length ? vCols(pis.map(p => ({ label: p, counts: byPi[p], set: { pi: p }, on: f.pi === p })), SCK, 'seg', 'sc') : '<div class="muted">–</div>'}</div>
+      <div class="dcard"><h4>By delivery unit</h4><div class="sub">Jira project prefix. Top 10 by volume.</div>${hRows(dus.map(d => ({ label: d, counts: byDu[d], set: { du: d }, on: f.du === d, dim: dimOf('du', d) })), SCK, 'seg', 'sc') || '<div class="muted">–</div>'}</div>
+      <div class="dcard"><h4>Open ${noun} per owner</h4><div class="sub">Not done yet. Top 8. Click to see one person's list.</div>${hRows(ows.map(o => ({ label: o, counts: { x: byOw[o] }, set: { owner: o }, on: f.owner === o, dim: dimOf('owner', o) })), [['x', 'Open']], 'one', 'owner') || '<div class="muted">Nothing open.</div>'}</div>
+      <div class="dcard"><h4>Data health</h4><div class="sub"><span class="dq red"><i></i>Red</span> <span class="dq yellow"><i></i>Yellow</span> <span class="dq green"><i></i>Green</span> – click a segment, or a missing field below.</div>
+        ${hRows([{ label: isEp ? 'Epics' : 'Work items', counts: hc, set: {}, on: false }], DQK, 'dq', 'dq')}
+        <div style="margin-top:8px">${gaps.map(r => `<button class="dqrule ${ruleSev(r)} ${f.gap === r.id ? 'on' : ''}" data-set="${JA({ gap: r.id })}" data-tip="${esc(r.hint)}"><span class="nm">${esc(r.label)} <small>${SEV[ruleSev(r)][0]}</small></span><span class="tr"><i style="width:${Math.round(100 * gc[r.id] / gmax)}%"></i></span><b>${gc[r.id]}</b></button>`).join('') || '<div class="muted">Nothing missing in this selection.</div>'}</div></div>
+      ${wide}
+    </div>
+    <div class="dcard"><h4>${all.length} matching ${noun}</h4><div class="sub">Worst data health first. Click a row to inspect it in the side panel.</div>
+      <div class="dqscroll" style="max-height:340px">${list.length ? `<table class="dqtab"><thead><tr><th>Health</th><th>Issue</th><th>Summary</th><th>Status</th><th>PI</th><th>Unit</th><th>Owner</th></tr></thead><tbody>${list.slice(0, 150).map(r => `<tr class="dqrow ${r.key === selected ? 'sel' : ''}" data-key="${esc(r.key)}"><td>${dqPill(r.key)}</td><td><b>${esc(r.key)}</b></td><td class="sm" title="${esc(r.n.summary)}">${esc(r.n.summary)}</td><td><span class="st ${r.sc}">${esc(r.n.status || '–')}</span></td><td>${esc(r.pi)}</td><td>${esc(r.du)}</td><td>${esc(r.owner)}</td></tr>`).join('')}</tbody></table>` : '<div class="muted" style="padding:10px">Nothing matches these filters.</div>'}</div></div>
+  </div>`;
+  wrap.scrollLeft = sl; wrap.scrollTop = st;
+  const crit = $('cCrit').checked ? criticalPath(sim, epicsOf(sim).filter(epicVisible).map(e => e.key)) : null;
+  renderStats(crit); renderCrit(crit); renderViols(); renderDetail();
+}
+function dashClick(ev) {
+  const un = ev.target.closest('[data-unset]');
+  if (un) { ev.preventDefault(); un.dataset.unset === '*' ? dash.f = {} : delete dash.f[un.dataset.unset]; render(); return; }
+  const pop = ev.target.closest('[data-pop]');
+  if (pop) { dash.pop = pop.dataset.pop; delete dash.f.gap; delete dash.f.sprint; render(); return; }
+  const set = ev.target.closest('[data-set]');
+  if (set) {
+    const o = JSON.parse(set.dataset.set), same = Object.keys(o).length && Object.entries(o).every(([k, v]) => dash.f[k] === v);
+    Object.keys(o).forEach(k => same ? delete dash.f[k] : dash.f[k] = o[k]);
+    if (!same && o.gap) dash.pop = (DQ_RULES.find(r => r.id === o.gap) || {}).t === 'story' ? 'story' : 'epic';
+    render(); return;
+  }
+  const row = ev.target.closest('[data-key]');
+  if (row) { selected = row.dataset.key === selected ? null : row.dataset.key; render(); }
 }
 
 /* ---------- scenario actions ---------- */
@@ -1160,7 +1550,7 @@ async function importFile(f) {
 
 /* ---------- wiring ---------- */
 function clearAll() {
-  base = sim = null; rawRows = null; selected = null; collapsed.clear(); olOpen.clear(); savedApplied = 0; $('mapping').textContent = 'Load data first.';
+  base = sim = null; DQ = {}; rawRows = null; selected = null; collapsed.clear(); olOpen.clear(); renderBacklog(); renderRules(); savedApplied = 0; $('mapping').textContent = 'Load data first.';
   $('boardWrap').innerHTML = '<div id="empty">Import a JIRA export (Word .doc / .docx, or CSV) or click <b>Load sample</b>.</div>';
   $('stats').innerHTML = ''; $('viols').textContent = '–'; $('critp').textContent = '–';
   $('detail').innerHTML = '<div class="muted">Click a line (outline) or an epic card (board).</div>';
@@ -1171,7 +1561,7 @@ function loadRows(rows) {
   try {
     rawRows = rows; base = buildModel(rows); savedApplied = 0;
     try { savedApplied = mergeDeps(JSON.parse(localStorage.getItem(depKey) || '[]'), base); } catch (e) {}
-    sim = clone(base); selected = null; collapsed.clear(); olApplyDepth(3); $('depthSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.d === '3')); render(); renderMapping();
+    sim = clone(base); selected = null; collapsed.clear(); dash.f = {}; olApplyDepth(3); $('depthSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.d === '3')); render(); renderMapping();
   } catch (err) { alert('Could not read the file: ' + err.message); }
 }
 $('btnImport').onclick = () => $('file').click();
@@ -1187,11 +1577,11 @@ $('btnCal').onclick = applyCal;
 ['fStatus', 'fObj', 'cRel', 'cCrit'].forEach(id => $(id).onchange = render);
 $('fSearch').oninput = render;
 function syncMode() {
-  [['mOL', 'outline'], ['mSI', 'si'], ['mDU', 'du']].forEach(([id, m]) => $(id).classList.toggle('on', mode === m));
-  document.querySelectorAll('.boardonly').forEach(x => x.hidden = mode === 'outline');
-  $('olbar').hidden = mode !== 'outline';
+  [['mOL', 'outline'], ['mDB', 'dash'], ['mSI', 'si'], ['mDU', 'du']].forEach(([id, m]) => $(id).classList.toggle('on', mode === m));
+  document.querySelectorAll('.boardonly').forEach(x => x.hidden = mode === 'outline' || mode === 'dash');
+  $('olbar').hidden = mode !== 'outline'; document.body.classList.toggle('m-dash', mode === 'dash');
 }
-[['mOL', 'outline'], ['mSI', 'si'], ['mDU', 'du']].forEach(([id, m]) => $(id).onclick = () => { mode = m; syncMode(); render(); });
+[['mOL', 'outline'], ['mDB', 'dash'], ['mSI', 'si'], ['mDU', 'du']].forEach(([id, m]) => $(id).onclick = () => { mode = m; syncMode(); render(); });
 $('depthSeg').onclick = ev => { const b = ev.target.closest('button'); if (!b || !sim) return;
   $('depthSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); olApplyDepth(+b.dataset.d); render(); };
 $('cAttn').onchange = () => { if (sim) { olApplyDepth(3); $('depthSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.d === '3')); } render(); };
@@ -1207,6 +1597,7 @@ function applyPanel() {
   document.documentElement.style.setProperty('--aw', panelSt.w + 'px');
   document.body.classList.toggle('panel-off', panelSt.off);
   secs().forEach(x => x.classList.toggle('shut', panelSt.shut.includes(x.dataset.k)));
+  $('dq').classList.toggle('shut', !!panelSt.dqShut); $('dqToggle').textContent = panelSt.dqShut ? '▸' : '▾';
   $('btnPanel').classList.toggle('on', !panelSt.off);
 }
 function setShut(keys) { panelSt.shut = keys; applyPanel(); savePanel(); }
@@ -1228,13 +1619,33 @@ $('resizer').addEventListener('pointerdown', ev => {
 $('resizer').ondblclick = () => { panelSt.w = 340; applyPanel(); savePanel(); };
 panelSt.w = clampW(panelSt.w); applyPanel();
 
+$('dq').addEventListener('click', ev => {
+  const f = ev.target.closest('[data-dqf]');
+  if (f) { ev.preventDefault(); Object.assign(dqF, JSON.parse(f.dataset.dqf)); render(); return; }
+  const lv = ev.target.closest('#dqLvl button'); if (lv) { dqF.lvl = lv.dataset.l; render(); return; }
+  if (ev.target.closest('[data-jump]')) return;
+  const row = ev.target.closest('tr.dqrow'); if (row) { selected = row.dataset.key; render(); }
+});
+$('dqType').onchange = e => { dqF.type = e.target.value; render(); };
+$('dqOwner').onchange = e => { dqF.owner = e.target.value; render(); };
+$('dqQ').oninput = e => { dqF.q = e.target.value; renderBacklog(); };
+$('dqCsv').onclick = exportDQ;
+$('dqToggle').onclick = () => { panelSt.dqShut = !panelSt.dqShut; applyPanel(); savePanel(); };
+$('rules').addEventListener('change', ev => {
+  const sel = ev.target.closest('select[data-rule]'); if (!sel) return;
+  dqSev[sel.dataset.rule] = sel.value; try { localStorage.setItem(DQ_KEY, JSON.stringify(dqSev)); } catch (e) {} render();
+});
+$('rules').addEventListener('click', ev => { if (ev.target.id === 'rulesReset') { dqSev = {}; try { localStorage.removeItem(DQ_KEY); } catch (e) {} render(); } });
+
 const wrap = $('boardWrap');
 document.addEventListener('click', ev => {   // chips / links that jump to another line
   const j = ev.target.closest('[data-jump]'); if (!j || !sim) return;
   ev.preventDefault();
   if (mode === 'outline') olJump(j.dataset.jump); else if (sim.nodes[j.dataset.jump]) { selected = j.dataset.jump; render(); }
+  if (j.closest('#dq')) window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 wrap.addEventListener('click', ev => {
+  if (mode === 'dash') { dashClick(ev); return; }
   if (mode === 'outline') {
     if (ev.target.closest('[data-jump]')) return;
     const tg = ev.target.closest('[data-open]');

@@ -103,6 +103,19 @@ Nothing is written back to JIRA.
 
 **Right-hand panel:** drag its left edge to make it wider or narrower (double-click the edge to reset), hide it with **Hide ✕** / **Panel ⇥** to give the list the full width, fold each section by clicking its header, or use **Expand all / Collapse all**. Width, hidden state and folded sections are remembered in this browser.
 
+### Data quality – what is missing, and how bad
+
+Every issue gets a **Red / Yellow / Green** health pill (always with a text label: `2 gaps` / `OK`). It shows in the outline's *Data* column, on board cards and in the side panel (which also explains *how to fix* each gap). Parent lines show a roll-up of the issues below them (red · yellow · green counts).
+
+- **Rules per level:** Objective (due date, owner, RAG, global priority, anything linked), SI (solves an objective, has epics, owner), Epic (linked to SI/objective, due date, PI, priority, owner, has work items, a dependency recorded), Work item (in an epic, assignee, priority, sprint, estimate, due date). Finished issues are exempt from the "open only" rules; rules whose column is missing from the export are skipped.
+- **Colour:** Red = any *High* gap or 3+ *Medium*; Yellow = 1–2 *Medium* (or 3+ *Low*); Green = otherwise (Low gaps stay visible as hints).
+- **Tune it:** side panel → *Data-quality rules* – set each rule High / Medium / Low / Off (e.g. switch "No dependency recorded" off). Saved in this browser.
+- **Backlog at the bottom of the page:** health bars per level, "what is missing most", and a filterable list (level, type, owner, search) with an **Export CSV** to hand to the owners.
+
+### Dashboard
+
+**Dashboard** view: one hero number (% done), clickable status tiles, Objectives (due vs forecast), charts by PI / delivery unit / owner / data health, a roadmap timeline (epics) or sprint load (work items), and a table of what matches. **Everything is clickable and filters everything else**; filters combine and show as removable chips. Switch between *Epics* and *Work items*; the header filters (status / objective / search) scope it too.
+
 The two **Board** views (PI columns, arrows, what-if drag & drop) are still there for planning conversations.
 
 Importer notes (real JIRA "all fields" exports): the *Objectives Panel* / *Requirements Panel* columns are read as child lists (Objective → epics, Epic → stories/tasks); an epic that *solves* an SI counts as part of that SI; with several Fix Version columns the latest PI wins (`PI85A` / `PI86plan` → PI85 / PI86); *Implemented* counts as done; RAG / priority columns holding junk are ignored (re-point them in the Data mapping panel if the export has shifted headers).
