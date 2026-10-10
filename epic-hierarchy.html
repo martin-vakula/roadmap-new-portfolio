@@ -72,9 +72,22 @@
   path.e.dep.crit { stroke:var(--crit); stroke-width:4; }
   path.e.rel { stroke:var(--rel); stroke-width:1.8; stroke-dasharray:2 5; stroke-linecap:round; }
   path.e.dim { opacity:.08; }
-  aside { width:340px; flex:none; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; max-height:calc(100vh - 190px); overflow:auto; }
+  aside { width:var(--aw,340px); flex:none; min-width:0; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; max-height:calc(100vh - 190px); overflow:auto; }
   aside h3 { margin:0 0 6px; font-size:13px; }
   aside section { margin-bottom:14px; }
+  aside section.acc { margin-bottom:6px; border:1px solid var(--line); border-radius:7px; }
+  .sh { display:flex; gap:7px; align-items:center; padding:7px 10px; cursor:pointer; user-select:none; background:color-mix(in srgb, var(--banner) 55%, var(--panel)); border-radius:7px; font-size:13px; }
+  .sh:hover { background:var(--banner); }
+  .sh .car { width:12px; color:var(--muted); font-size:11px; transition:transform .12s; }
+  section.acc.shut .car { transform:rotate(-90deg); }
+  .sb { padding:8px 10px; overflow-wrap:anywhere; }
+  section.acc.shut .sb { display:none; } section.acc.shut .sh { border-radius:7px; }
+  .atool { display:flex; gap:6px; align-items:center; margin-bottom:8px; position:sticky; top:-12px; z-index:2; background:var(--panel); padding:6px 0; }
+  .atool button { font-size:11.5px; padding:3px 8px; }
+  #resizer { width:7px; flex:none; align-self:stretch; cursor:col-resize; border-radius:4px; margin:0 -3px; position:relative; z-index:5; }
+  #resizer:hover, #resizer.drag { background:color-mix(in srgb, var(--accent) 35%, transparent); }
+  body.panel-off aside, body.panel-off #resizer { display:none; }
+  body.dragging { user-select:none; cursor:col-resize; }
   .row { display:flex; gap:6px; align-items:center; margin:4px 0; flex-wrap:wrap; }
   .row select { max-width:170px; }
   .row input { width:110px; }
@@ -123,7 +136,7 @@
   .chip.dep.bad { border-color:var(--bad); color:var(--bad); } .chip.dep.warn { border-color:var(--warn); color:var(--warn); } .chip.dep.ok { border-color:var(--ok); color:var(--ok); }
   .chip.rel { cursor:pointer; border-style:dotted; border-color:var(--rel); color:var(--rel); }
   .chip.plain { color:var(--muted); }
-  @media (max-width:900px){ main{flex-direction:column;} aside{width:100%;max-height:none;} }
+  @media (max-width:900px){ main{flex-direction:column;} aside{width:100%;max-height:none;} #resizer{display:none;} }
 </style>
 </head>
 <body>
@@ -142,6 +155,7 @@
   <button id="btnReset" title="Undo what-if changes, keep the data">Reset scenario</button>
   <button id="btnClear" title="Remove all data and start over">Clear all</button>
   <button id="btnExport">Export scenario CSV</button>
+  <button id="btnPanel" title="Show / hide the right-hand panel">Panel ⇥</button>
 </header>
 <div class="stats" id="stats"></div>
 <div id="olbar">
@@ -160,30 +174,32 @@
 </div>
 <main>
   <div id="boardWrap"><div id="empty">Import a JIRA export (Word .doc / .docx, or CSV) or click <b>Load sample</b>.</div></div>
-  <aside>
-    <section id="detail"><h3>Selection</h3><div class="muted">Click a line (outline) or an epic card (board).</div></section>
-    <section><h3>Critical path</h3><div id="critp" class="muted">–</div></section>
-    <section><h3>Issues to resolve</h3><div id="viols" class="muted">–</div></section>
-    <section>
-      <h3>Epic dependencies</h3>
+  <div id="resizer" title="Drag to resize the panel (double-click to reset)"></div>
+  <aside id="aside">
+    <div class="atool">
+      <button id="aExp" title="Expand every section">Expand all</button><button id="aCol" title="Collapse every section">Collapse all</button>
+      <span class="sp"></span><button id="aHide" title="Hide the panel">Hide ✕</button>
+    </div>
+    <section class="acc" data-k="detail"><div class="sh"><span class="car">▾</span><b>Selection</b></div><div class="sb" id="detail"><div class="muted">Click a line (outline) or an epic card (board).</div></div></section>
+    <section class="acc" data-k="crit"><div class="sh"><span class="car">▾</span><b>Critical path</b></div><div class="sb"><div id="critp" class="muted">–</div></div></section>
+    <section class="acc" data-k="viols"><div class="sh"><span class="car">▾</span><b>Issues to resolve</b></div><div class="sb"><div id="viols" class="muted">–</div></div></section>
+    <section class="acc" data-k="deps"><div class="sh"><span class="car">▾</span><b>Epic dependencies</b></div><div class="sb">
       <div class="muted">JIRA has none yet – add them on an epic ("blocks"), then save so they survive the next import.</div>
       <div class="row"><button id="btnSaveDeps">Save in browser</button><button id="btnExpDeps">Export CSV</button><button id="btnImpDeps">Import CSV</button></div>
       <input type="file" id="depFile" accept=".csv,text/csv" hidden>
-    </section>
-    <section>
-      <h3>Sprint / PI calendar</h3>
+    </div></section>
+    <section class="acc" data-k="cal"><div class="sh"><span class="car">▾</span><b>Sprint / PI calendar</b></div><div class="sb">
       <div class="muted">Sprint N starts at anchor + (N − anchor) × days. Defaults come from the sprint calculator (sprint 292 = 1 Oct 2026, PI85 = sprints 291–298).</div>
       <div class="row">Anchor sprint <input id="calN" type="number" style="width:70px"> start <input id="calS" type="date"></div>
       <div class="row">Days / sprint <input id="calD" type="number" style="width:60px"> Sprints / PI (default) <input id="calL" type="number" style="width:60px"></div>
       <div class="muted">Known PIs: PI, first sprint, last sprint (others are extrapolated)</div>
       <textarea id="calP"></textarea>
       <div class="row"><button id="btnCal">Apply calendar (resets scenario)</button></div>
-    </section>
-    <section>
-      <h3>Data mapping</h3>
+    </div></section>
+    <section class="acc" data-k="map"><div class="sh"><span class="car">▾</span><b>Data mapping</b></div><div class="sb">
       <div class="muted">Detected automatically from the CSV – change whatever is wrong or missing.</div>
       <div id="mapping" class="muted">Load data first.</div>
-    </section>
+    </div></section>
   </aside>
 </main>
 
@@ -880,7 +896,7 @@ function renderDetail() {
   const e = selected && sim.nodes[selected];
   if (e && e.type === 'si') { renderSiDetail(e); return; }
   if (e && e.type !== 'epic') { renderGenericDetail(e); return; }
-  if (!e) { $('detail').innerHTML = '<h3>Selection</h3><div class="muted">Click a line (outline) or an epic card (board).</div>'; return; }
+  if (!e) { $('detail').innerHTML = '<div class="muted">Click a line (outline) or an epic card (board).</div>'; return; }
   const b0 = base.nodes[e.key], p = progress(sim, e.key), w = winOf(sim, e.key);
   const mine = sim.links.filter(l => l.a === e.key || l.b === e.key);
   const li = l => {
@@ -1147,7 +1163,7 @@ function clearAll() {
   base = sim = null; rawRows = null; selected = null; collapsed.clear(); olOpen.clear(); savedApplied = 0; $('mapping').textContent = 'Load data first.';
   $('boardWrap').innerHTML = '<div id="empty">Import a JIRA export (Word .doc / .docx, or CSV) or click <b>Load sample</b>.</div>';
   $('stats').innerHTML = ''; $('viols').textContent = '–'; $('critp').textContent = '–';
-  $('detail').innerHTML = '<h3>Selection</h3><div class="muted">Click a line (outline) or an epic card (board).</div>';
+  $('detail').innerHTML = '<div class="muted">Click a line (outline) or an epic card (board).</div>';
   $('fObj').innerHTML = '<option value="">All objectives</option>';
 }
 function load(csv) { loadRows(parseCSV(csv)); }
@@ -1181,6 +1197,36 @@ $('depthSeg').onclick = ev => { const b = ev.target.closest('button'); if (!b ||
 $('cAttn').onchange = () => { if (sim) { olApplyDepth(3); $('depthSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.d === '3')); } render(); };
 syncMode();
 calToForm();
+
+/* ---------- right-hand panel: resize, hide, fold sections (remembered in this browser) ---------- */
+const PANEL_KEY = 'epic-hierarchy-panel';
+const panelSt = (() => { try { return Object.assign({ w: 340, off: false, shut: [] }, JSON.parse(localStorage.getItem(PANEL_KEY) || '{}')); } catch (e) { return { w: 340, off: false, shut: [] }; } })();
+const savePanel = () => { try { localStorage.setItem(PANEL_KEY, JSON.stringify(panelSt)); } catch (e) {} };
+const secs = () => [...document.querySelectorAll('#aside .acc')];
+function applyPanel() {
+  document.documentElement.style.setProperty('--aw', panelSt.w + 'px');
+  document.body.classList.toggle('panel-off', panelSt.off);
+  secs().forEach(x => x.classList.toggle('shut', panelSt.shut.includes(x.dataset.k)));
+  $('btnPanel').classList.toggle('on', !panelSt.off);
+}
+function setShut(keys) { panelSt.shut = keys; applyPanel(); savePanel(); }
+$('aside').addEventListener('click', ev => {
+  const h = ev.target.closest('.sh'); if (!h) return;
+  const k = h.parentElement.dataset.k;
+  setShut(panelSt.shut.includes(k) ? panelSt.shut.filter(x => x !== k) : [...panelSt.shut, k]);
+});
+$('aExp').onclick = () => setShut([]);
+$('aCol').onclick = () => setShut(secs().map(x => x.dataset.k));
+$('aHide').onclick = $('btnPanel').onclick = () => { panelSt.off = !panelSt.off; applyPanel(); savePanel(); };
+const clampW = w => Math.max(240, Math.min(w, Math.round(window.innerWidth * 0.75)));
+$('resizer').addEventListener('pointerdown', ev => {
+  ev.preventDefault(); const r = $('resizer'); r.setPointerCapture(ev.pointerId); r.classList.add('drag'); document.body.classList.add('dragging');
+  const move = e => { panelSt.w = clampW(window.innerWidth - e.clientX - 16); document.documentElement.style.setProperty('--aw', panelSt.w + 'px'); };
+  const up = () => { r.classList.remove('drag'); document.body.classList.remove('dragging'); r.removeEventListener('pointermove', move); r.removeEventListener('pointerup', up); r.removeEventListener('pointercancel', up); savePanel(); };
+  r.addEventListener('pointermove', move); r.addEventListener('pointerup', up); r.addEventListener('pointercancel', up);
+});
+$('resizer').ondblclick = () => { panelSt.w = 340; applyPanel(); savePanel(); };
+panelSt.w = clampW(panelSt.w); applyPanel();
 
 const wrap = $('boardWrap');
 document.addEventListener('click', ev => {   // chips / links that jump to another line

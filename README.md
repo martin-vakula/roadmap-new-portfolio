@@ -101,6 +101,8 @@ Nothing is written back to JIRA.
 - Epics linked straight to an Objective (no SI) sit in *"Epics not assigned to a Solution Increment"*.
 - The grouped *Issues to resolve* panel lists each problem once (e.g. "8 epics end after objective …") instead of once per epic.
 
+**Right-hand panel:** drag its left edge to make it wider or narrower (double-click the edge to reset), hide it with **Hide ✕** / **Panel ⇥** to give the list the full width, fold each section by clicking its header, or use **Expand all / Collapse all**. Width, hidden state and folded sections are remembered in this browser.
+
 The two **Board** views (PI columns, arrows, what-if drag & drop) are still there for planning conversations.
 
 Importer notes (real JIRA "all fields" exports): the *Objectives Panel* / *Requirements Panel* columns are read as child lists (Objective → epics, Epic → stories/tasks); an epic that *solves* an SI counts as part of that SI; with several Fix Version columns the latest PI wins (`PI85A` / `PI86plan` → PI85 / PI86); *Implemented* counts as done; RAG / priority columns holding junk are ignored (re-point them in the Data mapping panel if the export has shifted headers).
