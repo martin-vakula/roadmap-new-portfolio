@@ -241,7 +241,6 @@
   <h1>Epic Hierarchy Map</h1>
   <button id="btnImport">Import JIRA export (Word / CSV)</button>
   <input type="file" id="file" accept=".doc,.docx,.htm,.html,.csv,text/csv" hidden>
-  <button id="btnSample">Load sample</button>
   <span class="seg"><button id="mOL" class="on" title="Simple collapsible tree: Objective → Solution Increment → Epic → Work items">Outline</button><button id="mDB" title="Interactive dashboard: click anything to filter everything">Dashboard</button><button id="mSI" title="Board: rows = Solution Increments grouped under Objectives, columns = PI">Board: by SI</button><button id="mDU" title="Board: rows = Delivery Units (Jira projects)">Board: by Delivery Unit</button></span>
   <select id="fStatus" title="Status filter"><option value="">All statuses</option><option value="open">Not done</option><option value="done">Done only</option></select>
   <select id="fObj" title="Objective filter"><option value="">All objectives</option></select>
@@ -270,7 +269,7 @@
   <span><i style="border-color:var(--crit)"></i>critical path</span>
 </div>
 <main>
-  <div id="boardWrap"><div id="empty">Import a JIRA export (Word .doc / .docx, or CSV) or click <b>Load sample</b>.</div></div>
+  <div id="boardWrap"><div id="empty">Import a JIRA export (Word .doc / .docx, or CSV) to begin.</div></div>
   <div id="resizer" title="Drag to resize the panel (double-click to reset)"></div>
   <aside id="aside">
     <div class="atool">
@@ -327,37 +326,6 @@
 <div id="tip" hidden></div>
 
 <script>
-const SAMPLE_CSV = `Issue key,Issue Type,Summary,Status,Assignee,PI,Due date,Story Points,Sprint,Sprint,Epic Link,RAG Status,Objective Manager,Global Priority,Outward issue link (Solves),Outward issue link (Solves),Outward issue link (Relates),Outward issue link (Relates),Outward issue link (Blocks)
-ESET-138,Objective,Create XDR monetization model,In Analysis,Igor Hula,,2026-11-30,,,,,Attention,Martin Vakula,993,,,,,
-ESET-150,Objective,Monetization: partner and billing readiness,In Analysis,Igor Hula,,2027-03-31,,,,,Green,Martin Vakula,870,,,,,
-SOLINC-3,Solution Increment,Pilot 138 - C&F SI1,In Analysis,Pavol Korvas,,,,,,,,,,ESET-138,,,,
-SOLINC-18,Solution Increment,Pilot 138 - C&F SI2,In Analysis,Pavol Korvas,,,,,,,,,,ESET-138,ESET-150,,,
-SOLINC-21,Solution Increment,Partner billing front-end,Open,Pavol Korvas,,,,,,,,,,ESET-150,,,,
-D_UX-2583,Epic,UX XDR monetization model (H2/2026),In Progress,Veronika Slovakova,PI84,2026-09-16,,,,,,,,,,SOLINC-3,,DU_EPP-2157
-DU_EPP-2077,Epic,Data retention configuration service Phase 1,In Progress,Martin Stano,PI85,2027-01-06,,,,,,,,,,SOLINC-3,SOLINC-18,DU_EPP-2157
-DU_EPP-2157,Epic,XDR Monetization: Retention of Incidents,Open,Martin Antal,PI85,2027-01-06,,,,,,,,,,SOLINC-18,,DU_API-410
-DU_API-410,Epic,Billing and entitlement API,Open,Marek Hrabovsky,PI86,2027-03-31,,,,,,,,,,SOLINC-18,SOLINC-21,DU_FE-77
-DU_FE-77,Epic,Console: plans and billing UI,Open,Anna Kovacova,PI86,2027-03-31,,,,,,,,,,SOLINC-21,,
-D_EPP-3183,Task,Analyse costs over auditlog mechanism for auditing changes in data retention configuration,Closed,Martin Stano,,,,EPC_292,,DU_EPP-2077,,,,,,,,
-D_EPP-3180,Task,Implement synchronization of quotas via GetLinkedLocations,On Hold,EP CERBERUS TEAM,,,5,EPC_292,,DU_EPP-2077,,,,,,,,
-D_EPP-3178,Task,Implement Frontend for Data retention service,On Hold,David Kubik,,,5,EPC_292,,DU_EPP-2077,,,,,,,,
-D_EPP-3175,Task,Bootstrap data retention management microservice with API and staisy constraints,Closed,Filip Mikula,,,5,EPC_291,,DU_EPP-2077,,,,,,,,
-D_EPP-3185,Story,Implement audit logging for Data Retention Management domain (mirroring Incidents pattern),Open,Michal Fabis,,,3,EPC_291,EPC_292,DU_EPP-2077,,,,,,,,
-D_EPP-3181,Task,Create eventhubs for emmiting of the data retention quotas for recieving services,Closed,Filip Mikula,,,2,EPC_291,,DU_EPP-2077,,,,,,,,
-D_EPP-3179,Story,Implement API from ARCH into Data retention configuration service,In Review,Filip Mikula,,,3,EPC_291,EPC_292,DU_EPP-2077,,,,,,,,
-D_EPP-3182,Task,E2E testing of the Data retention configuration service,Open,EP CERBERUS TEAM,,,5,EPC_293,,DU_EPP-2077,,,,,,,,
-D_UX-2601,Story,Monetization model wireframes,Closed,Veronika Slovakova,,,3,EPC_289,,D_UX-2583,,,,,,,,
-D_UX-2602,Story,Plans and pricing screens,Closed,Veronika Slovakova,,,5,EPC_290,,D_UX-2583,,,,,,,,
-D_UX-2603,Story,Usability test of upsell flow,In Progress,Veronika Slovakova,,,2,EPC_291,,D_UX-2583,,,,,,,,
-DU_EPP-2201,Story,Define incident retention tiers,Open,Martin Antal,,,3,EPC_295,,DU_EPP-2157,,,,,,,,
-DU_EPP-2202,Story,Retention cost model per tier,Open,Martin Antal,,,5,EPC_296,EPC_297,DU_EPP-2157,,,,,,,,
-DU_EPP-2203,Story,Retention of incidents - API integration,Open,Martin Antal,,,5,EPC_298,,DU_EPP-2157,,,,,,,,
-DU_API-4101,Story,Entitlement data model,Open,Marek Hrabovsky,,,5,EPC_299,,DU_API-410,,,,,,,,
-DU_API-4102,Story,Billing events endpoint,Open,Marek Hrabovsky,,,8,EPC_300,EPC_301,DU_API-410,,,,,,,,
-DU_FE-771,Story,Plans page,Open,Anna Kovacova,,,5,EPC_302,,DU_FE-77,,,,,,,,
-DU_FE-772,Story,Upgrade flow,Open,Anna Kovacova,,,5,EPC_303,,DU_FE-77,,,,,,,,
-`;
-
 /* ---------- state ---------- */
 let base = null, sim = null, selected = null, mode = 'outline', savedApplied = 0, rawRows = null;
 const collapsed = new Set();
@@ -1548,7 +1516,7 @@ async function importFile(f) {
 /* ---------- wiring ---------- */
 function clearAll() {
   base = sim = null; DQ = {}; rawRows = null; selected = null; collapsed.clear(); olOpen.clear(); renderBacklog(); renderRules(); savedApplied = 0; $('mapping').textContent = 'Load data first.';
-  $('boardWrap').innerHTML = '<div id="empty">Import a JIRA export (Word .doc / .docx, or CSV) or click <b>Load sample</b>.</div>';
+  $('boardWrap').innerHTML = '<div id="empty">Import a JIRA export (Word .doc / .docx, or CSV) to begin.</div>';
   $('stats').innerHTML = ''; $('viols').textContent = '–'; $('critp').textContent = '–';
   $('detail').innerHTML = '<div class="muted">Click a line (outline) or an epic card (board).</div>';
   $('fObj').innerHTML = '<option value="">All objectives</option>';
@@ -1563,7 +1531,6 @@ function loadRows(rows) {
 }
 $('btnImport').onclick = () => $('file').click();
 $('file').onchange = ev => { const f = ev.target.files[0]; if (f) importFile(f); ev.target.value = ''; };
-$('btnSample').onclick = () => load(SAMPLE_CSV);
 $('btnReset').onclick = () => { if (base) { sim = clone(base); render(); } };
 $('btnClear').onclick = clearAll;
 $('btnExport').onclick = exportCSV;

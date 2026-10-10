@@ -120,7 +120,7 @@ The two **Board** views (PI columns, arrows, what-if drag & drop) are still ther
 
 Importer notes (real JIRA "all fields" exports): the *Objectives Panel* / *Requirements Panel* columns are read as child lists (Objective → epics, Epic → stories/tasks); an epic that *solves* an SI counts as part of that SI; with several Fix Version columns the latest PI wins (`PI85A` / `PI86plan` → PI85 / PI86); *Implemented* counts as done; RAG / priority columns holding junk are ignored (re-point them in the Data mapping panel if the export has shifted headers).
 
-Open `epic-hierarchy.html` → **Import JIRA CSV** (or **Load sample**).
+Open `epic-hierarchy.html` → **Import JIRA export** (the `sample-hierarchy.csv` file in this repo is an illustrative example you can import).
 
 **Model**: Objective ← *Solves* ← Solution Increment (SI) ← *Relates to* ← Epic (lives in a Delivery Unit = Jira project) → Stories.
 Many-to-many on both links: an SI can feed several Objectives, an epic can serve several SIs (shown under each, joined by a dotted line).
