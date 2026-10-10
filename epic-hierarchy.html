@@ -92,6 +92,37 @@
   .legend { display:flex; gap:12px; flex-wrap:wrap; padding:0 16px 8px; color:var(--muted); font-size:12px; }
   .legend i { display:inline-block; width:26px; height:0; border-top:3px solid; vertical-align:middle; margin-right:4px; }
   #empty { padding:40px; text-align:center; color:var(--muted); }
+  [hidden] { display:none !important; }
+  /* outline view */
+  #olbar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; padding:0 16px 8px; color:var(--muted); font-size:12px; }
+  .ol { min-width:1000px; }
+  .ohead, .orow { display:grid; grid-template-columns:minmax(340px,1fr) 100px 150px 165px minmax(220px,1.1fr); gap:10px; align-items:center; padding:5px 12px; border-bottom:1px solid var(--line); }
+  .ohead { position:sticky; top:0; z-index:3; background:var(--panel); font-weight:700; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.04em; border-bottom:2px solid var(--line); }
+  .orow { cursor:pointer; min-height:32px; }
+  .orow:hover { background:color-mix(in srgb, var(--accent) 6%, transparent); }
+  .orow.sel { background:color-mix(in srgb, var(--accent) 14%, transparent); box-shadow:inset 3px 0 0 var(--accent); }
+  .orow.k-obj { background:var(--banner); font-size:13.5px; padding-top:9px; padding-bottom:9px; border-top:2px solid var(--line); }
+  .orow.k-si, .orow.k-bucket { background:color-mix(in srgb, var(--banner) 45%, var(--panel)); font-weight:600; }
+  .orow.k-group { color:var(--muted); font-style:italic; }
+  .orow.k-item { font-size:12px; }
+  .orow.copy .oname { opacity:.6; }
+  .orow.dim { opacity:.25; }
+  .oname { display:flex; gap:6px; align-items:baseline; min-width:0; }
+  .oname .tx { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+  .oname .tx small { color:var(--muted); font-weight:400; }
+  .tg { width:14px; flex:none; color:var(--muted); cursor:pointer; user-select:none; text-align:center; }
+  .tg.none { visibility:hidden; cursor:default; }
+  .tp { font-size:10px; font-weight:700; padding:0 5px; border-radius:3px; background:var(--line); color:var(--ink); flex:none; font-style:normal; }
+  .opg { display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--muted); font-weight:400; }
+  .opg .pb { flex:1; height:6px; border-radius:3px; background:var(--line); overflow:hidden; min-width:36px; }
+  .opg .pb i { display:block; height:100%; background:var(--ok); }
+  .owh { font-size:11.5px; color:var(--muted); font-weight:400; line-height:1.3; }
+  .olk { display:flex; flex-wrap:wrap; gap:3px 4px; align-items:center; font-weight:400; font-style:normal; }
+  .olk .chip { margin:0; }
+  .chip.dep { cursor:pointer; color:var(--ink); border-color:var(--ext); }
+  .chip.dep.bad { border-color:var(--bad); color:var(--bad); } .chip.dep.warn { border-color:var(--warn); color:var(--warn); } .chip.dep.ok { border-color:var(--ok); color:var(--ok); }
+  .chip.rel { cursor:pointer; border-style:dotted; border-color:var(--rel); color:var(--rel); }
+  .chip.plain { color:var(--muted); }
   @media (max-width:900px){ main{flex-direction:column;} aside{width:100%;max-height:none;} }
 </style>
 </head>
@@ -101,19 +132,25 @@
   <button id="btnImport">Import JIRA export (Word / CSV)</button>
   <input type="file" id="file" accept=".doc,.docx,.htm,.html,.csv,text/csv" hidden>
   <button id="btnSample">Load sample</button>
-  <span class="seg"><button id="mSI" class="on" title="Rows = Solution Increments grouped under Objectives">By Solution Increment</button><button id="mDU" title="Rows = Delivery Units (Jira projects)">By Delivery Unit</button></span>
+  <span class="seg"><button id="mOL" class="on" title="Simple collapsible tree: Objective → Solution Increment → Epic → Work items">Outline</button><button id="mSI" title="Board: rows = Solution Increments grouped under Objectives, columns = PI">Board: by SI</button><button id="mDU" title="Board: rows = Delivery Units (Jira projects)">Board: by Delivery Unit</button></span>
   <select id="fStatus" title="Status filter"><option value="">All statuses</option><option value="open">Not done</option><option value="done">Done only</option></select>
   <select id="fObj" title="Objective filter"><option value="">All objectives</option></select>
   <input type="search" id="fSearch" placeholder="Search key / summary">
-  <label class="chk"><input type="checkbox" id="cCrit" checked> critical path</label>
-  <label class="chk"><input type="checkbox" id="cRel" checked> dotted "relates" links</label>
+  <label class="chk boardonly" hidden><input type="checkbox" id="cCrit" checked> critical path</label>
+  <label class="chk boardonly" hidden><input type="checkbox" id="cRel" checked> dotted "relates" links</label>
   <span class="sp"></span>
   <button id="btnReset" title="Undo what-if changes, keep the data">Reset scenario</button>
   <button id="btnClear" title="Remove all data and start over">Clear all</button>
   <button id="btnExport">Export scenario CSV</button>
 </header>
 <div class="stats" id="stats"></div>
-<div class="legend">
+<div id="olbar">
+  <span>Show down to</span>
+  <span class="seg" id="depthSeg"><button data-d="1">Objective</button><button data-d="2">Solution Increment</button><button data-d="3" class="on">Epic</button><button data-d="4">Work items</button></span>
+  <label class="chk"><input type="checkbox" id="cAttn"> only what needs attention</label>
+  <span>⛔ blocked by · → blocks · <span style="color:var(--rel)">↔ relates</span> · ↺ epic also sits under another SI · closed epics are folded into one line</span>
+</div>
+<div class="legend boardonly" hidden>
   <span><i style="border-color:var(--ink)"></i>Solid rail = SI <b>solves</b> Objective</span>
   <span><i style="border-color:var(--rel);border-top-style:dotted"></i>Dotted = same epic <b>relates</b> to several SIs</span>
   <span><i style="border-color:var(--ok)"></i>Epic <b>blocks</b> epic: OK</span>
@@ -124,7 +161,7 @@
 <main>
   <div id="boardWrap"><div id="empty">Import a JIRA export (Word .doc / .docx, or CSV) or click <b>Load sample</b>.</div></div>
   <aside>
-    <section id="detail"><h3>Selected epic</h3><div class="muted">Click an epic card.</div></section>
+    <section id="detail"><h3>Selection</h3><div class="muted">Click a line (outline) or an epic card (board).</div></section>
     <section><h3>Critical path</h3><div id="critp" class="muted">–</div></section>
     <section><h3>Issues to resolve</h3><div id="viols" class="muted">–</div></section>
     <section>
@@ -183,7 +220,7 @@ DU_FE-772,Story,Upgrade flow,Open,Anna Kovacova,,,5,EPC_303,,DU_FE-77,,,,,,,,
 `;
 
 /* ---------- state ---------- */
-let base = null, sim = null, selected = null, mode = 'si', savedApplied = 0, rawRows = null;
+let base = null, sim = null, selected = null, mode = 'outline', savedApplied = 0, rawRows = null;
 const collapsed = new Set();
 function $(id) { return document.getElementById(id); }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
@@ -255,8 +292,8 @@ const KEY_RE = /[A-Z][A-Z0-9_]+-\d+/g;
 function statusClass(s) {
   const n = norm(s);
   if (/hold|block|impediment/.test(n)) return 'hold';
-  if (/done|closed|resolved|complete|released/.test(n)) return 'done';
-  if (/progress|review|test|develop|implement|doing/.test(n)) return 'prog';
+  if (/done|closed|resolved|complete|released|implemented/.test(n)) return 'done';
+  if (/progress|review|test|develop|implement|doing|analy/.test(n)) return 'prog';
   return 'todo';
 }
 function parseDate(d) {
@@ -270,7 +307,8 @@ const FIELD_DEFS = [
   ['sp', 'Story points', ['story points', 'story point estimate']], ['parent', 'Epic link / parent', ['epic link', 'parent link', 'parent', 'parent id']],
   ['rag', 'RAG status', ['rag status', 'rag']], ['mgr', 'Objective manager', ['objective manager']], ['gp', 'Global priority', ['global priority']],
   ['pi', 'PI', ['pi', 'program increment', 'fix version s', 'fix version']], ['project', 'Project (Delivery Unit)', ['project key', 'project']],
-  ['links', 'Linked issues (text, e.g. from Word)', ['linked issues', 'issue links', 'links']]];
+  ['links', 'Linked issues (text, e.g. from Word)', ['linked issues', 'issue links', 'links']],
+  ['panelA', 'Children list 1 (Objectives Panel)', ['objectives panel']], ['panelB', 'Children list 2 (Requirements Panel)', ['requirements panel']]];
 const PHRASES = { 'solves': ['solves', true], 'is solved by': ['solves', false], 'relates to': ['relates', true], 'blocks': ['blocks', true], 'is blocked by': ['blocks', false], 'depends on': ['depends', true], 'is depended on by': ['depends', false] };
 const LINK_KINDS = [['solves', 'solves'], ['relates', 'relates to'], ['blocks', 'blocks (dependency)'], ['depends', 'depends on (dependency)'], ['ignore', 'ignore']];
 const TYPE_KINDS = [['objective', 'Objective'], ['si', 'Solution Increment'], ['epic', 'Epic'], ['story', 'Story / task']];
@@ -300,7 +338,7 @@ function buildModel(src, S) {
   const c = S.cols;
   if (c.key < 0) throw new Error('Column "Issue key" not found – choose it in the data mapping panel');
   const sprintCols = findCols(H, [norm(S.sprintPrefix || 'sprint')]);
-  const nodes = {}, seen = new Set(), links = []; let ignored = 0;
+  const nodes = {}, seen = new Set(), links = [], panels = []; let ignored = 0;
   const get = (r, f) => c[f] >= 0 ? (r[c[f]] || '') : '';
   const addLink = (self, other, kind, outward) => {
     let a = self, b = other, t = kind;
@@ -317,15 +355,21 @@ function buildModel(src, S) {
     const parent = (get(r, 'parent').match(KEY_RE) || [''])[0];
     const tt = get(r, 'type').trim();
     const type = c.type >= 0 && tt ? (S.types[tt] || guessType(tt, key, !!parent)) : guessType('', key, !!parent);
-    const pi = get(r, 'pi').split(/[;,]/)[0].trim();
+    // PI may sit in several same-named columns (e.g. two "Fix Version/s"): take the latest one, and fold "PI85A" / "PI86plan" into PI85 / PI86
+    const pis = (c.pi >= 0 ? H.reduce((a, h, i) => h === H[c.pi] ? a.concat(i) : a, []) : []).flatMap(i => (r[i] || '').split(/[;,]/).map(x => x.trim()).filter(Boolean));
+    const piBest = pis.filter(x => piNum(x) != null).sort((x, y) => piNum(y) - piNum(x))[0];
+    const pi = piBest ? 'PI' + piNum(piBest) : (pis[0] || '');
     const prj = get(r, 'project').trim();
+    const ragRaw = get(r, 'rag').trim();
     nodes[key] = {
       key, type, summary: get(r, 'summary') || key, status: get(r, 'status'), assignee: get(r, 'assignee'),
       due: parseDate(get(r, 'due')), sp: Number(get(r, 'sp')) || 0,
       sprints: sprintCols.flatMap(i => (r[i] || '').split(/[,;\n]+/).map(sprintNum)).filter(x => x != null), parent,
-      rag: get(r, 'rag'), mgr: get(r, 'mgr'), gp: get(r, 'gp'), pi, piGiven: !!pi,
+      rag: /^(green|amber|yellow|orange|red|blue|attention|ok|on track|at risk|off track|critical)$/i.test(ragRaw) ? ragRaw : '',   // junk in a mislabeled column is ignored
+      mgr: get(r, 'mgr'), gp: /^\d+(\.\d+)?$/.test(get(r, 'gp').trim()) ? get(r, 'gp').trim() : '', pi, piGiven: !!pi,
       du: S.duMode === 'prefix' ? key.replace(/-\d+$/, '') : (prj || key.replace(/-\d+$/, ''))
     };
+    ['panelA', 'panelB'].forEach(f => { const ks = (get(r, f).match(KEY_RE) || []).filter(x => x !== key); if (ks.length) panels.push({ key, ks }); });
     if (c.links >= 0 && r[c.links]) {   // links written as text: "relates to DU_EPP-2077 ... is solved by ESET-138"
       const names = Object.keys(S.phrases || {}).sort((x, y) => y.length - x.length).map(x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
       const re = new RegExp('(' + names.join('|') + ')|([A-Z][A-Z0-9_]+-\\d+)', 'gi'); let ph = null, mm;
@@ -342,6 +386,15 @@ function buildModel(src, S) {
       if (!vals) return;
       if (kind === 'ignore') { ignored += vals.length; return; }
       vals.forEach(o => addLink(key, o, kind, /^outward/.test(norm(H[i]))));
+    });
+  });
+  // "panel" columns list children: on an Objective they are the epics that deliver it, on an epic they are its stories / tasks
+  panels.forEach(({ key, ks }) => {
+    const n = nodes[key];
+    ks.forEach(k => {
+      if (!nodes[k]) return;
+      if (n.type === 'objective' && nodes[k].type === 'epic') addLink(k, key, 'solves', true);
+      else if (n.type === 'epic' && nodes[k].type === 'story' && !nodes[k].parent) nodes[k].parent = key;
     });
   });
   const m = { nodes, links, order: [], periods: [], ignored, settings: S, headers: H };
@@ -373,8 +426,10 @@ const other = (l, k) => l.a === k ? l.b : l.b === k ? l.a : null;
 const sisOfObjective = (m, o) => [...new Set(m.links.filter(l => l.t === 'solves').map(l => other(l, o)).filter(x => x && isType(m, x, 'si')))].sort(natural);
 const objectivesOfSi = (m, s) => m.order.filter(o => m.links.some(l => l.t === 'solves' && other(l, o) === s));
 const directEpicsOfObjective = (m, o) => m.links.filter(l => l.t === 'solves').map(l => other(l, o)).filter(x => x && isType(m, x, 'epic'));
-const epicsOfSi = (m, s) => [...new Set(m.links.filter(l => l.t === 'relates').map(l => other(l, s)).filter(x => x && isType(m, x, 'epic')))].sort(natural);
-const sisOfEpic = (m, e) => [...new Set(m.links.filter(l => l.t === 'relates').map(l => other(l, e)).filter(x => x && isType(m, x, 'si')))].sort(natural);
+// an epic belongs to an SI when they are linked by "relates", or when the epic "solves" the SI
+const memberLink = l => l.t === 'relates' || l.t === 'solves';
+const epicsOfSi = (m, s) => [...new Set(m.links.filter(memberLink).map(l => other(l, s)).filter(x => x && isType(m, x, 'epic')))].sort(natural);
+const sisOfEpic = (m, e) => [...new Set(m.links.filter(memberLink).map(l => other(l, e)).filter(x => x && isType(m, x, 'si')))].sort(natural);
 function objectivesOfEpic(m, e) {
   const set = new Set();
   sisOfEpic(m, e).forEach(s => objectivesOfSi(m, s).forEach(o => set.add(o)));
@@ -515,6 +570,7 @@ function render() {
   const cur = $('fObj').value;
   $('fObj').innerHTML = '<option value="">All objectives</option>' +
     sim.order.map(k => `<option value="${esc(k)}" ${k === cur ? 'selected' : ''}>${esc(k)} – ${esc(sim.nodes[k].summary.slice(0, 40))}</option>`).join('');
+  if (mode === 'outline') { renderOutline(); return; }
   const per = sim.periods, sections = buildSections();
   const crit = $('cCrit').checked ? criticalPath(sim, epicsOf(sim).filter(epicVisible).map(e => e.key)) : null;
   const critSet = new Set(crit ? crit.chain : []);
@@ -604,6 +660,145 @@ function drawArrows(board, hl, crit) {
   }
 }
 
+/* ---------- outline (tree) view: Objective > SI > Epic > work items, one line each, folded by default ---------- */
+const olOpen = new Set();   // ids of expanded rows (an id is the path of keys, so the same epic under two SIs folds independently)
+let depth = 3;
+const isDone = k => statusClass(sim.nodes[k].status) === 'done';
+const fOf = k => {   // what makes a line worth a look
+  const n = sim.nodes[k], blocks = sim.links.filter(l => l.t === 'blocks');
+  const open = n.type === 'epic' ? progress(sim, k).hold : 0;
+  return { late: n.type === 'epic' && !!lateObjective(sim, k), hold: statusClass(n.status) === 'hold' || open > 0,
+    blocked: blocks.some(l => l.b === k), blocking: blocks.some(l => l.a === k) };
+};
+function olTree() {
+  const ob = $('fObj').value, filtering = !!($('fStatus').value || $('fSearch').value);
+  const seen = new Set(), pinum = k => piNum(sim.nodes[k].pi) ?? 1e9;
+  const itemNodes = (k, id) => storiesOf(sim, k).sort((a, b) => natural(a.key, b.key)).map(s => ({ id: id + '/' + s.key, key: s.key, kind: 'item', lvl: 4, kids: [] }));
+  const epicNode = (k, id, si) => { const nid = id + '/' + k, copy = seen.has(k); seen.add(k);
+    return { id: nid, key: k, kind: 'epic', lvl: 3, copy, si, kids: itemNodes(k, nid) }; };
+  const epicList = (keys, id, si) => {   // open epics as lines, closed ones folded into one "N closed epics" line
+    const vis = keys.filter(k => epicVisible(sim.nodes[k])).sort((a, b) => pinum(a) - pinum(b) || natural(a, b));
+    const done = vis.filter(isDone), act = vis.filter(k => !isDone(k));
+    const out = act.map(k => epicNode(k, id, si));
+    if (done.length && !$('fStatus').value) out.push({ id: id + '/closed', kind: 'group', lvl: 3, label: `${done.length} closed epic${done.length > 1 ? 's' : ''}`, kids: done.map(k => epicNode(k, id + '/closed', si)) });
+    else done.forEach(k => out.push(epicNode(k, id, si)));
+    return out;
+  };
+  const siNode = (s, id) => { const eps = epicsOfSi(sim, s), sid = id + '/' + s; return { id: sid, key: s, kind: 'si', lvl: 2, kids: epicList(eps, sid, s), n: eps.length }; };
+  const roots = [];
+  sim.order.filter(o => !ob || o === ob).forEach(o => {
+    const sis = sisOfObjective(sim, o), inSi = new Set(sis.flatMap(s => epicsOfSi(sim, s)));
+    const kids = sis.filter(s => epicsOfSi(sim, s).length).map(s => siNode(s, o)).filter(s => !filtering || s.kids.length);
+    const direct = [...new Set(directEpicsOfObjective(sim, o))].filter(k => !inSi.has(k));
+    const dl = epicList(direct, o + '/direct', null);
+    if (dl.length) kids.push({ id: o + '/direct', kind: 'bucket', lvl: 2, label: 'Epics not assigned to a Solution Increment', hint: 'linked straight to the objective', kids: dl });
+    const empty = sis.filter(s => !epicsOfSi(sim, s).length);
+    if (empty.length && !filtering) kids.push({ id: o + '/emptysi', kind: 'group', lvl: 3, label: `${empty.length} solution increment${empty.length > 1 ? 's' : ''} without any epic yet`, kids: empty.map(s => siNode(s, o + '/emptysi')) });
+    roots.push({ id: o, key: o, kind: 'obj', lvl: 1, kids });
+  });
+  if (!ob) {
+    const orphan = Object.values(sim.nodes).filter(n => n.type === 'si' && !objectivesOfSi(sim, n.key).length).map(n => n.key).sort(natural);
+    if (orphan.length) roots.push({ id: 'noobj', kind: 'bucket', lvl: 1, label: 'Solution increments without an objective', kids: orphan.map(s => siNode(s, 'noobj')) });
+    const loose = epicsOf(sim).map(e => e.key).filter(k => !sisOfEpic(sim, k).length && !objectivesOfEpic(sim, k).length);
+    const ll = epicList(loose, 'loose', null);
+    if (ll.length) roots.push({ id: 'loose', kind: 'bucket', lvl: 1, label: 'Epics not related to any objective or solution increment', kids: ll });
+  }
+  if (!$('cAttn').checked) return roots;
+  const prune = n => {   // keep a line only if it, or something below it, needs attention
+    n.kids = n.kids.map(prune).filter(Boolean);
+    const f = n.key && sim.nodes[n.key] ? fOf(n.key) : {};
+    const self = n.kind === 'si' ? !n.n : n.kind === 'obj' ? false : (f.late || f.hold || f.blocked || f.blocking);
+    return self || n.kids.length ? n : null;
+  };
+  return roots.map(prune).filter(Boolean);
+}
+function olWalk(nodes, fn, path = []) { nodes.forEach(n => { fn(n, path); olWalk(n.kids || [], fn, [...path, n]); }); }
+function olApplyDepth(d) { depth = d; olOpen.clear(); olWalk(olTree(), n => { if (n.lvl < d && n.kids.length) olOpen.add(n.id); }); }
+function olKeys(n) { const s = new Set(); olWalk([n], x => { if (x.kind === 'epic') s.add(x.key); }); return [...s]; }
+function olChips(n) {
+  const k = n.key, nd = sim.nodes[k], out = [];
+  const jump = (x, cls, txt, title) => sim.nodes[x] ? `<span class="chip ${cls}" data-jump="${esc(x)}" title="${esc(title)}">${txt}</span>` : `<span class="chip plain" title="${esc(title)} (outside this filter)">${txt}</span>`;
+  const f = nd && fOf(k);
+  if (f && f.hold) out.push('<span class="badge hold">on hold</span>');
+  if (f && f.late) { const w = winOf(sim, k), o = lateObjective(sim, k);
+    out.push(`<span class="badge late" title="ends ${fmt(w.end)}, objective ${esc(o.key)} is due ${fmt(D(o.due))}">late +${Math.round((w.end - D(o.due)) / DAY)} d</span>`); }
+  if (n.kind === 'si' && !n.n) out.push('<span class="badge">no epics</span>');
+  sim.links.filter(l => l.t === 'blocks' && (l.a === k || l.b === k)).forEach(l => {
+    const x = l.a === k ? l.b : l.a, st = isType(sim, l.a, 'epic') && isType(sim, l.b, 'epic') ? depState(sim, l).s : '';
+    out.push(jump(x, 'dep ' + st, l.b === k ? `⛔ blocked by ${esc(x)}` : `→ blocks ${esc(x)}`, `${l.a} blocks ${l.b}${sim.nodes[x] ? ' – ' + sim.nodes[x].summary : ''}`));
+  });
+  if (nd && nd.type === 'epic') sisOfEpic(sim, k).filter(s => s !== n.si).slice(0, 2).forEach(s => out.push(jump(s, 'rel', `↺ also ${esc(s)}`, `also sits under ${s}`)));
+  if (nd && (nd.type === 'si' || nd.type === 'epic')) {   // "relates" between peers (SI–SI, epic–epic, epic–external); SI↔epic is already the tree
+    const rel = [...new Set(sim.links.filter(l => l.t === 'relates' && (l.a === k || l.b === k)).map(l => other(l, k))
+      .filter(x => !(sim.nodes[x] && ((nd.type === 'si' && sim.nodes[x].type === 'epic') || (nd.type === 'epic' && sim.nodes[x].type === 'si')))))];
+    rel.slice(0, 3).forEach(x => out.push(jump(x, 'rel', `↔ ${esc(x)}`, `relates to ${x}${sim.nodes[x] ? ' – ' + sim.nodes[x].summary : ''}`)));
+    if (rel.length > 3) out.push(`<span class="chip plain" title="${esc(rel.slice(3).join(', '))}">+${rel.length - 3} more</span>`);
+  }
+  return out.join('');
+}
+function olRow(n, ind, open, hl, critSet, ctx) {
+  const k = n.key, nd = k && sim.nodes[k], sc = nd ? statusClass(nd.status) : '';
+  const toggle = n.kids.length ? `<span class="tg" data-open="${esc(n.id)}">${open ? '▾' : '▸'}</span>` : '<span class="tg none">▸</span>';
+  const bar = pct => `<div class="pb"><i style="width:${Math.round(pct * 100)}%"></i></div>`;
+  let name = '', st = '', pg = '', wh = '', lk = olChips(n);
+  if (n.kind === 'obj') {
+    const keys = olKeys(n), span = spanOf(sim, keys), late = nd.due && span && span.end > D(nd.due), pct = aggregate(sim, keys);
+    name = `<span class="tp">OBJ</span><span class="tx"><b>${esc(k)}</b> ${esc(nd.summary)}<small> · ${[nd.assignee && 'owner ' + nd.assignee, nd.mgr && 'manager ' + nd.mgr].filter(Boolean).map(esc).join(' · ')}</small></span>`;
+    st = `<span class="st ${sc}">${esc(nd.status || '–')}</span>${nd.rag ? `<span class="dot ${RAG(nd.rag)}" style="margin-left:6px" title="RAG: ${esc(nd.rag)}"></span>` : ''}`;
+    pg = bar(pct) + `<span>${Math.round(pct * 100)}%</span>`;
+    wh = `${nd.due ? 'due <b>' + fmt(D(nd.due)) + '</b>' : 'no due date'}${span ? `<br>forecast <b class="${late ? 'bad' : 'ok'}">${fmt(span.end)}</b>${late ? ` <span class="badge late">+${Math.round((span.end - D(nd.due)) / DAY)} d</span>` : ''}` : ''}`;
+    lk = `<span class="chip plain">${sisOfObjective(sim, k).length} SI</span><span class="chip plain">${keys.length} epics</span><span class="chip plain">${keys.reduce((a, e) => a + storiesOf(sim, e).length, 0)} items</span>` + lk;
+  } else if (n.kind === 'si') {
+    const keys = olKeys(n), span = spanOf(sim, keys), pct = aggregate(sim, keys), objs = objectivesOfSi(sim, k);
+    name = `<span class="tp">SI</span><span class="tx"><b>${esc(k)}</b> ${esc(nd.summary)}</span>`;
+    st = `<span class="st ${sc}">${esc(nd.status || '–')}</span>`;
+    pg = keys.length ? bar(pct) + `<span>${Math.round(pct * 100)}%</span>` : '<span>–</span>';
+    wh = span ? `${fmtS(span.start)} – ${fmt(span.end)}` : '';
+    lk += objs.length > 1 ? `<span class="chip plain" title="solves ${esc(objs.join(', '))}">solves ${objs.length} objectives</span>` : '';
+  } else if (n.kind === 'bucket' || n.kind === 'group') {
+    const keys = olKeys(n), span = spanOf(sim, keys), pct = aggregate(sim, keys);
+    name = `<span class="tx">${esc(n.label)}${n.hint ? `<small> · ${esc(n.hint)}</small>` : ''}</span>`;
+    pg = keys.length ? bar(pct) + `<span>${Math.round(pct * 100)}%</span>` : '';
+    wh = span ? `${fmtS(span.start)} – ${fmt(span.end)}` : '';
+  } else if (n.kind === 'epic') {
+    const p = progress(sim, k), w = winOf(sim, k);
+    name = `<span class="tp" style="background:${duColor(nd.du)}">${esc(nd.du)}</span><span class="tx"><b>${esc(k.replace(/^.*-/, '#'))}</b>${n.copy ? ' ↺' : ''} ${esc(nd.summary)}</span>`;
+    st = `<span class="st ${sc}">${esc(nd.status || '–')}</span>`;
+    pg = p.total ? bar(p.pct) + `<span title="${p.spDone}/${p.sp} SP">${p.done}/${p.total}</span>` : '<span>no items</span>';
+    wh = `${esc(nd.pi)}${w ? `<br>${fmtS(w.start)} – ${fmtS(w.end)}${w.src === 'pi' ? ' (PI)' : ''}` : ''}`;
+    if (critSet.has(k)) lk = '<span class="badge crit">critical path</span>' + lk;
+  } else {   // work item
+    name = `<span class="tx"><b>${esc(k)}</b> ${esc(nd.summary)}</span>`;
+    st = `<span class="st ${sc}">${esc(nd.status || '–')}</span>`;
+    pg = `<span>${nd.sp ? nd.sp + ' SP' : ''}</span>`;
+    wh = nd.sprints.length ? `sprint ${Math.max(...nd.sprints)}` : 'backlog';
+    lk = (nd.assignee ? `<span class="chip plain">${esc(nd.assignee)}</span>` : '') + lk;
+  }
+  const dim = hl && n.kind === 'epic' && !hl.has(k);
+  return `<div class="orow k-${n.kind} ${n.copy ? 'copy' : ''} ${k && k === selected ? 'sel' : ''} ${dim ? 'dim' : ''}" data-row="${esc(n.id)}" ${k ? `data-key="${esc(k)}"` : ''} ${nd ? `title="${esc(k + ' – ' + nd.summary)}"` : ''}>
+    <div class="oname" style="padding-left:${ind * 20}px">${toggle}${name}</div><div>${st}</div><div class="opg">${pg}</div><div class="owh">${wh}</div><div class="olk">${lk}</div></div>`;
+}
+function renderOutline() {
+  const wrap = $('boardWrap'), sl = wrap.scrollLeft, st = wrap.scrollTop;
+  const crit = $('cCrit').checked ? criticalPath(sim, epicsOf(sim).filter(epicVisible).map(e => e.key)) : null;
+  const critSet = new Set(crit ? crit.chain : []);
+  const hl = selected && isType(sim, selected, 'epic') && depsOf(sim).some(l => l.a === selected || l.b === selected) ? neighbourhood(selected) : null;
+  const rows = [], tree = olTree();
+  const go = (nodes, ind) => nodes.forEach(n => { const o = olOpen.has(n.id); rows.push(olRow(n, ind, o, hl, critSet)); if (o && n.kids.length) go(n.kids, ind + 1); });
+  go(tree, 0);
+  wrap.innerHTML = `<div class="ol"><div class="ohead"><div>Objective › Solution Increment › Epic › Work item</div><div>Status</div><div>Progress</div><div>When</div><div>Flags &amp; relations</div></div>${rows.join('') || '<div id="empty">Nothing to show with these filters.</div>'}</div>`;
+  wrap.scrollLeft = sl; wrap.scrollTop = st;
+  renderStats(crit); renderCrit(crit); renderViols(); renderDetail();
+}
+function olJump(key) {
+  if (!sim.nodes[key]) return;
+  selected = key;
+  let path = null; olWalk(olTree(), (n, p) => { if (!path && n.key === key) path = p; });
+  (path || []).forEach(p => olOpen.add(p.id));
+  render();
+  const el = $('boardWrap').querySelector(`.orow[data-key="${CSS.escape(key)}"]`); if (el) el.scrollIntoView({ block: 'center' });
+}
+
 function renderStats(crit) {
   const eps = epicsOf(sim), deps = depsOf(sim), st = { ok: 0, warn: 0, bad: 0 };
   deps.forEach(l => st[depState(sim, l).s]++);
@@ -642,11 +837,12 @@ function renderViols() {
       return `<div class="viol ${s.s === 'warn' ? 'warn' : ''}"><b>${esc(l.a)}</b> blocks <b>${esc(l.b)}</b><br><span class="muted">${s.slack == null ? 'same PI – needs a sprint plan' : s.slack < 0 ? 'overlap of ' + (-s.slack) + ' days' : 'only ' + s.slack + ' days slack'}</span><br>
         <button onclick="setPI('${esc(l.b)}','${esc(pushB)}')">Move ${esc(l.b)} → ${esc(pushB)}</button></div>`;
     }).join('');
-  const seen = new Set();
-  epicsOf(sim).forEach(e => { const o = lateObjective(sim, e.key); if (o && !seen.has(e.key + o.key)) { seen.add(e.key + o.key);
-    html += `<div class="viol warn"><b>${esc(e.key)}</b> ends ${fmt(winOf(sim, e.key).end)}, after objective <b>${esc(o.key)}</b> due ${fmt(D(o.due))}</div>`; } });
-  Object.values(sim.nodes).filter(n => n.type === 'si' && !epicsOfSi(sim, n.key).length).forEach(s => {
-    html += `<div class="viol warn"><b>${esc(s.key)}</b> has no related epics – nobody delivers it</div>`; });
+  const J = k => `<a href="#" data-jump="${esc(k)}">${esc(k)}</a>`, lateBy = {};   // one entry per objective / per problem, not one per epic
+  epicsOf(sim).forEach(e => { const o = lateObjective(sim, e.key); if (o) (lateBy[o.key] = lateBy[o.key] || []).push(e.key); });
+  Object.keys(lateBy).forEach(o => { const ks = lateBy[o];
+    html += `<div class="viol warn"><b>${ks.length} epic${ks.length > 1 ? 's' : ''}</b> end after objective <b>${esc(o)}</b> due ${fmt(D(sim.nodes[o].due))}<br><span class="muted">${ks.map(J).join(', ')}</span></div>`; });
+  const noEpic = Object.values(sim.nodes).filter(n => n.type === 'si' && !epicsOfSi(sim, n.key).length).map(n => n.key);
+  if (noEpic.length) html += `<div class="viol warn"><b>${noEpic.length} solution increment${noEpic.length > 1 ? 's' : ''}</b> without any related epic – nobody delivers ${noEpic.length > 1 ? 'them' : 'it'}<br><span class="muted">${noEpic.map(J).join(', ')}</span></div>`;
   sim.order.filter(o => !sisOfObjective(sim, o).length && !directEpicsOfObjective(sim, o).length).forEach(o => {
     html += `<div class="viol warn"><b>${esc(o)}</b> has no solution increment</div>`; });
   $('viols').innerHTML = html || '<span class="ok">No conflicts.</span>';
@@ -665,6 +861,15 @@ function renderSiDetail(e) {
     <div class="row"><select id="siObj"><option value="">solves objective…</option>${objs}</select><button onclick="addSiLink('solves')">+</button></div>
     <div class="row"><select id="siEpic"><option value="">related epic…</option>${eps}</select><button onclick="addSiLink('relates')">+</button></div>`;
 }
+function renderGenericDetail(e) {   // objective or work item: read-only facts + its links
+  const mine = sim.links.filter(l => l.a === e.key || l.b === e.key), par = e.parent && sim.nodes[e.parent];
+  const label = l => l.t === 'solves' ? (l.a === e.key ? 'solves' : 'is solved by') : l.t === 'blocks' ? (l.a === e.key ? 'blocks' : 'is blocked by') : 'relates to';
+  $('detail').innerHTML = `<h3>${esc(e.key)} <span class="muted">${e.type === 'story' ? 'work item' : esc(e.type)}</span></h3><div>${esc(e.summary)}</div>
+    <div class="muted">${esc(e.assignee || 'no owner')} · ${esc(e.status || 'no status')}${e.sp ? ' · ' + e.sp + ' SP' : ''}${e.due ? ' · due ' + fmt(D(e.due)) : ''}</div>
+    ${par ? `<div class="muted">in epic <a href="#" data-jump="${esc(par.key)}">${esc(par.key)}</a> ${esc(par.summary)}</div>` : ''}
+    ${e.sprints.length ? `<div class="muted">sprints ${e.sprints.map(s => piOfSprint(s) ? s + ' (' + piOfSprint(s) + ')' : s).join(', ')}</div>` : ''}
+    <h3 style="margin-top:10px">Links (${mine.length})</h3>${mine.map(l => `<div class="link"><span><span class="muted">${label(l)}</span> ${esc(other(l, e.key))} <span class="muted">${esc((sim.nodes[other(l, e.key)]?.summary || '').slice(0, 30))}</span></span></div>`).join('') || '<div class="muted">none</div>'}`;
+}
 function addSiLink(kind) {
   const o = $(kind === 'solves' ? 'siObj' : 'siEpic').value; if (!o) return;
   const l = kind === 'solves' ? { a: selected, b: o, t: 'solves' } : { a: [selected, o].sort()[0], b: [selected, o].sort()[1], t: 'relates' };
@@ -674,7 +879,8 @@ function addSiLink(kind) {
 function renderDetail() {
   const e = selected && sim.nodes[selected];
   if (e && e.type === 'si') { renderSiDetail(e); return; }
-  if (!e || e.type !== 'epic') { $('detail').innerHTML = '<h3>Selected epic</h3><div class="muted">Click an epic card.</div>'; return; }
+  if (e && e.type !== 'epic') { renderGenericDetail(e); return; }
+  if (!e) { $('detail').innerHTML = '<h3>Selection</h3><div class="muted">Click a line (outline) or an epic card (board).</div>'; return; }
   const b0 = base.nodes[e.key], p = progress(sim, e.key), w = winOf(sim, e.key);
   const mine = sim.links.filter(l => l.a === e.key || l.b === e.key);
   const li = l => {
@@ -835,7 +1041,7 @@ function applyMapping() {
   try {
     base = buildModel(rawRows, S); savedApplied = 0;
     try { savedApplied = mergeDeps(JSON.parse(localStorage.getItem(depKey) || '[]'), base); } catch (e) {}
-    sim = clone(base); selected = null; render(); renderMapping();
+    sim = clone(base); selected = null; olApplyDepth(depth); render(); renderMapping();
   } catch (err) { alert('Mapping problem: ' + err.message); }
 }
 
@@ -938,10 +1144,10 @@ async function importFile(f) {
 
 /* ---------- wiring ---------- */
 function clearAll() {
-  base = sim = null; rawRows = null; selected = null; collapsed.clear(); savedApplied = 0; $('mapping').textContent = 'Load data first.';
+  base = sim = null; rawRows = null; selected = null; collapsed.clear(); olOpen.clear(); savedApplied = 0; $('mapping').textContent = 'Load data first.';
   $('boardWrap').innerHTML = '<div id="empty">Import a JIRA export (Word .doc / .docx, or CSV) or click <b>Load sample</b>.</div>';
   $('stats').innerHTML = ''; $('viols').textContent = '–'; $('critp').textContent = '–';
-  $('detail').innerHTML = '<h3>Selected epic</h3><div class="muted">Click an epic card.</div>';
+  $('detail').innerHTML = '<h3>Selection</h3><div class="muted">Click a line (outline) or an epic card (board).</div>';
   $('fObj').innerHTML = '<option value="">All objectives</option>';
 }
 function load(csv) { loadRows(parseCSV(csv)); }
@@ -949,7 +1155,7 @@ function loadRows(rows) {
   try {
     rawRows = rows; base = buildModel(rows); savedApplied = 0;
     try { savedApplied = mergeDeps(JSON.parse(localStorage.getItem(depKey) || '[]'), base); } catch (e) {}
-    sim = clone(base); selected = null; collapsed.clear(); render(); renderMapping();
+    sim = clone(base); selected = null; collapsed.clear(); olApplyDepth(3); $('depthSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.d === '3')); render(); renderMapping();
   } catch (err) { alert('Could not read the file: ' + err.message); }
 }
 $('btnImport').onclick = () => $('file').click();
@@ -964,12 +1170,33 @@ $('depFile').onchange = ev => { const f = ev.target.files[0]; if (f) f.text().th
 $('btnCal').onclick = applyCal;
 ['fStatus', 'fObj', 'cRel', 'cCrit'].forEach(id => $(id).onchange = render);
 $('fSearch').oninput = render;
-[['mSI', 'si'], ['mDU', 'du']].forEach(([id, m]) => $(id).onclick = () => {
-  mode = m; $('mSI').classList.toggle('on', m === 'si'); $('mDU').classList.toggle('on', m === 'du'); render(); });
+function syncMode() {
+  [['mOL', 'outline'], ['mSI', 'si'], ['mDU', 'du']].forEach(([id, m]) => $(id).classList.toggle('on', mode === m));
+  document.querySelectorAll('.boardonly').forEach(x => x.hidden = mode === 'outline');
+  $('olbar').hidden = mode !== 'outline';
+}
+[['mOL', 'outline'], ['mSI', 'si'], ['mDU', 'du']].forEach(([id, m]) => $(id).onclick = () => { mode = m; syncMode(); render(); });
+$('depthSeg').onclick = ev => { const b = ev.target.closest('button'); if (!b || !sim) return;
+  $('depthSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); olApplyDepth(+b.dataset.d); render(); };
+$('cAttn').onchange = () => { if (sim) { olApplyDepth(3); $('depthSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.d === '3')); } render(); };
+syncMode();
 calToForm();
 
 const wrap = $('boardWrap');
+document.addEventListener('click', ev => {   // chips / links that jump to another line
+  const j = ev.target.closest('[data-jump]'); if (!j || !sim) return;
+  ev.preventDefault();
+  if (mode === 'outline') olJump(j.dataset.jump); else if (sim.nodes[j.dataset.jump]) { selected = j.dataset.jump; render(); }
+});
 wrap.addEventListener('click', ev => {
+  if (mode === 'outline') {
+    if (ev.target.closest('[data-jump]')) return;
+    const tg = ev.target.closest('[data-open]');
+    if (tg) { const id = tg.dataset.open; olOpen.has(id) ? olOpen.delete(id) : olOpen.add(id); render(); return; }
+    const row = ev.target.closest('.orow');
+    selected = row && row.dataset.key && row.dataset.key !== selected ? row.dataset.key : null;
+    render(); return;
+  }
   const t = ev.target.closest('[data-toggle]');
   if (t) { const k = t.dataset.toggle; collapsed.has(k) ? collapsed.delete(k) : collapsed.add(k); render(); return; }
   if (ev.target.closest('.mv')) return;

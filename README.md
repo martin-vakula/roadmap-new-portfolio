@@ -20,7 +20,7 @@ The goal is a single visual layer that communicates delivery plans clearly — r
 | `roadmap-drilldown_4.html` | Main app — open directly in browser, no install needed |
 | `epic-dependencies.html` | Epic dependency map + what-if simulation (import JIRA CSV export) |
 | `sample-epics.csv` | Sample Monetization epics in JIRA CSV export format |
-| `epic-hierarchy.html` | v2: Objective → Solution Increment → Epic → Stories view (solid = Solves, dotted = Relates, columns = PI) |
+| `epic-hierarchy.html` | v2: Objective → Solution Increment → Epic → Stories. Default **Outline** (folded tree, chips for dependencies) + Board views (solid = Solves, dotted = Relates, columns = PI) |
 | `sample-hierarchy.csv` | Illustrative sample modelled on ESET-138 / SOLINC / DU_EPP structure |
 
 ---
@@ -90,6 +90,20 @@ Nothing is written back to JIRA.
 ---
 
 ## 🧭 Epic Hierarchy Map (v2)
+
+**Start with the Outline view (default).** It shows the same hierarchy as a folded tree – one line per item, no arrows:
+
+- **Show down to** Objective / Solution Increment / Epic / Work items – start at the top and open only what you need. Click ▸/▾ to fold one branch.
+- **One line = status, rolled-up progress, when, flags.** Objective and SI lines roll up their epics (forecast end vs. Objective due date, % done).
+- **Dependencies and relations are chips on the line instead of arrows:** `⛔ blocked by X`, `→ blocks Y`, `↔ relates`, `↺ also SOLINC-n` (epic shared by several SIs). Click a chip to jump to that line; the side panel shows details and lets you edit links / PI.
+- **Closed epics fold into one line** ("7 closed epics") so history does not bury current work; empty SIs fold into one line too.
+- **"only what needs attention"** keeps just the branches with something late, on hold, blocked/blocking, or an SI without epics.
+- Epics linked straight to an Objective (no SI) sit in *"Epics not assigned to a Solution Increment"*.
+- The grouped *Issues to resolve* panel lists each problem once (e.g. "8 epics end after objective …") instead of once per epic.
+
+The two **Board** views (PI columns, arrows, what-if drag & drop) are still there for planning conversations.
+
+Importer notes (real JIRA "all fields" exports): the *Objectives Panel* / *Requirements Panel* columns are read as child lists (Objective → epics, Epic → stories/tasks); an epic that *solves* an SI counts as part of that SI; with several Fix Version columns the latest PI wins (`PI85A` / `PI86plan` → PI85 / PI86); *Implemented* counts as done; RAG / priority columns holding junk are ignored (re-point them in the Data mapping panel if the export has shifted headers).
 
 Open `epic-hierarchy.html` → **Import JIRA CSV** (or **Load sample**).
 
