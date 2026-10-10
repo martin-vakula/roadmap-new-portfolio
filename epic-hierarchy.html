@@ -1526,7 +1526,10 @@ function loadRows(rows) {
   try {
     rawRows = rows; base = buildModel(rows); savedApplied = 0;
     try { savedApplied = mergeDeps(JSON.parse(localStorage.getItem(depKey) || '[]'), base); } catch (e) {}
-    sim = clone(base); selected = null; collapsed.clear(); dash.f = {}; olApplyDepth(3); $('depthSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.d === '3')); render(); renderMapping();
+    sim = clone(base); selected = null; collapsed.clear(); dash.f = {};
+    // a fresh upload always opens the same way: Outline, folded to the Objective level, backlog folded
+    mode = 'outline'; syncMode(); olApplyDepth(1); $('depthSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.d === '1'));
+    panelSt.dqShut = true; applyPanel(); render(); renderMapping();
   } catch (err) { alert('Could not read the file: ' + err.message); }
 }
 $('btnImport').onclick = () => $('file').click();

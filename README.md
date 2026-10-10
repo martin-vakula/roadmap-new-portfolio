@@ -91,7 +91,7 @@ Nothing is written back to JIRA.
 
 ## 🧭 Epic Hierarchy Map (v2)
 
-**Start with the Outline view (default).** It shows the same hierarchy as a folded tree – one line per item, no arrows:
+**Start with the Outline view (default).** Every upload opens it folded to the Objective level with the data-quality backlog folded; open what you need. It shows the same hierarchy as a folded tree – one line per item, no arrows:
 
 - **Show down to** Objective / Solution Increment / Epic / Work items – start at the top and open only what you need. Click ▸/▾ to fold one branch.
 - **One line = status, rolled-up progress, when, flags.** Objective and SI lines roll up their epics (forecast end vs. Objective due date, % done).
