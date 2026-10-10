@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Epic Hierarchy Map</title>
+<style>
+  :root {
+    --bg:#f6f7f9; --panel:#fff; --ink:#1f2937; --muted:#6b7280; --line:#d9dde3;
+    --ok:#16a34a; --warn:#d97706; --bad:#dc2626; --ext:#9ca3af; --accent:#2563eb; --rel:#7c3aed; --crit:#111827;
+    --done:#dcfce7; --prog:#dbeafe; --todo:#f3f4f6; --hold:#fef3c7; --banner:#eef2ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#111418; --panel:#1b2027; --ink:#e5e7eb; --muted:#9aa3b0; --line:#303846; --crit:#f9fafb;
+            --done:#1b3a2a; --prog:#1e3550; --todo:#262c36; --hold:#3b3220; --banner:#222a3d; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font:13px/1.35 system-ui,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+  header { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:10px 16px; background:var(--panel); border-bottom:1px solid var(--line); }
+  header h1 { font-size:16px; margin:0 12px 0 0; }
+  button, select, input, textarea { font:inherit; padding:5px 9px; border:1px solid var(--line); border-radius:6px; background:var(--panel); color:var(--ink); }
+  button, select { cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  button:disabled { opacity:.4; cursor:default; }
+  label.chk { display:flex; gap:5px; align-items:center; color:var(--muted); cursor:pointer; }
+  label.chk input { padding:0; }
+  .seg button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .sp { flex:1; }
+  .stats { display:flex; gap:8px; padding:8px 16px; flex-wrap:wrap; }
+  .pill { padding:3px 10px; border-radius:99px; border:1px solid var(--line); background:var(--panel); }
+  .pill b { font-weight:700; }
+  .bad { color:var(--bad); } .warn { color:var(--warn); } .ok { color:var(--ok); }
+  main { display:flex; gap:12px; padding:0 16px 16px; align-items:flex-start; }
+  #boardWrap { flex:1; min-width:0; overflow:auto; background:var(--panel); border:1px solid var(--line); border-radius:8px; max-height:calc(100vh - 190px); }
+  #board { position:relative; display:grid; min-width:max-content; }
+  #arrows { position:absolute; left:0; top:0; pointer-events:none; overflow:visible; z-index:0; }
+  .colhead { position:sticky; top:0; z-index:3; background:var(--panel); padding:6px 10px; font-weight:700; border-bottom:2px solid var(--line); text-align:center; }
+  .colhead small { display:block; font-weight:400; color:var(--muted); font-size:11px; }
+  .lanehead { position:sticky; left:0; z-index:2; background:var(--panel); padding:8px 10px; border-right:2px solid var(--line); border-bottom:1px solid var(--line); border-left:5px solid var(--ink); font-size:12px; }
+  .lanehead b { display:block; }
+  .lanehead.empty { border-left-style:dashed; }
+  .corner { position:sticky; left:0; top:0; z-index:4; background:var(--panel); border-bottom:2px solid var(--line); border-right:2px solid var(--line); }
+  .banner { grid-column:1 / -1; position:sticky; left:0; z-index:2; background:var(--banner); border-bottom:1px solid var(--line); border-top:2px solid var(--line); padding:8px 12px; display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+  .banner .ttl { font-weight:700; cursor:pointer; }
+  .banner .meta { color:var(--muted); font-size:12px; }
+  .banner .mv button { padding:0 6px; font-size:11px; }
+  .dot { display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--ext); vertical-align:middle; margin-right:3px; }
+  .dot.ok { background:var(--ok); } .dot.warn { background:var(--warn); } .dot.bad { background:var(--bad); }
+  .cell { border-bottom:1px solid var(--line); border-right:1px dashed var(--line); padding:8px 25px; display:flex; flex-direction:column; gap:14px; min-height:84px; }
+  .cell.over { background:color-mix(in srgb, var(--accent) 12%, transparent); }
+  .card { position:relative; z-index:1; width:190px; padding:7px 9px; border:1.5px solid var(--line); border-left-width:5px; border-radius:7px; background:var(--todo); cursor:grab; user-select:none; }
+  .card.s-done { background:var(--done); border-left-color:var(--ok); }
+  .card.s-prog { background:var(--prog); border-left-color:var(--accent); }
+  .card.s-todo { border-left-color:var(--ext); }
+  .card.s-hold { background:var(--hold); border-left-color:var(--warn); }
+  .card.sel { outline:2.5px solid var(--accent); }
+  .card.dim { opacity:.2; }
+  .card.moved { box-shadow:0 0 0 2px var(--warn); }
+  .card.crit { border-color:var(--crit); border-width:2px 2px 2px 5px; }
+  .card .k { font-weight:700; font-size:11px; color:var(--muted); display:flex; justify-content:space-between; gap:4px; }
+  .card .t { font-weight:600; max-height:2.7em; overflow:hidden; }
+  .card .pb { height:6px; border-radius:3px; background:var(--line); margin-top:5px; overflow:hidden; }
+  .card .pb i { display:block; height:100%; background:var(--ok); }
+  .card .pt { font-size:10.5px; color:var(--muted); margin-top:2px; }
+  .card .du { font-size:10px; font-weight:700; padding:0 4px; border-radius:3px; background:var(--line); color:var(--ink); }
+  .badge { font-size:10px; padding:0 5px; border-radius:4px; color:#fff; background:var(--warn); margin-left:3px; }
+  .badge.hold { background:#b45309; } .badge.late { background:var(--bad); } .badge.crit { background:var(--crit); color:var(--bg); }
+  .chip { display:inline-block; font-size:10px; padding:0 5px; margin:3px 3px 0 0; border:1px solid var(--line); border-radius:4px; color:var(--muted); }
+  path.e { fill:none; }
+  path.e.dep { stroke-width:2.6; }
+  path.e.dep.ok { stroke:var(--ok); } path.e.dep.warn { stroke:var(--warn); } path.e.dep.bad { stroke:var(--bad); }
+  path.e.dep.crit { stroke:var(--crit); stroke-width:4; }
+  path.e.rel { stroke:var(--rel); stroke-width:1.8; stroke-dasharray:2 5; stroke-linecap:round; }
+  path.e.dim { opacity:.08; }
+  aside { width:340px; flex:none; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; max-height:calc(100vh - 190px); overflow:auto; }
+  aside h3 { margin:0 0 6px; font-size:13px; }
+  aside section { margin-bottom:14px; }
+  .row { display:flex; gap:6px; align-items:center; margin:4px 0; flex-wrap:wrap; }
+  .row select { max-width:170px; }
+  .row input { width:110px; }
+  textarea { width:100%; height:64px; font-family:monospace; font-size:12px; }
+  .viol { padding:6px 8px; border:1px solid var(--line); border-left:4px solid var(--bad); border-radius:6px; margin:5px 0; font-size:12px; }
+  .viol.warn { border-left-color:var(--warn); }
+  .viol button, .link button { font-size:11px; padding:2px 6px; margin:4px 4px 0 0; }
+  .link { display:flex; justify-content:space-between; align-items:center; font-size:12px; }
+  .stories table { width:100%; border-collapse:collapse; font-size:11.5px; }
+  .stories td { padding:3px 4px; border-top:1px solid var(--line); vertical-align:top; }
+  .stories .sph { font-weight:700; padding-top:7px; color:var(--muted); }
+  .st { font-size:10px; padding:0 5px; border-radius:4px; background:var(--todo); white-space:nowrap; }
+  .st.done { background:var(--done); } .st.prog { background:var(--prog); } .st.hold { background:var(--hold); }
+  .muted { color:var(--muted); }
+  .legend { display:flex; gap:12px; flex-wrap:wrap; padding:0 16px 8px; color:var(--muted); font-size:12px; }
+  .legend i { display:inline-block; width:26px; height:0; border-top:3px solid; vertical-align:middle; margin-right:4px; }
+  #empty { padding:40px; text-align:center; color:var(--muted); }
+  [hidden] { display:none !important; }
+  /* outline view */
+  #olbar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; padding:0 16px 8px; color:var(--muted); font-size:12px; }
+  .ol { min-width:1000px; }
+  .ohead, .orow { display:grid; grid-template-columns:minmax(340px,1fr) 100px 150px 165px minmax(220px,1.1fr); gap:10px; align-items:center; padding:5px 12px; border-bottom:1px solid var(--line); }
+  .ohead { position:sticky; top:0; z-index:3; background:var(--panel); font-weight:700; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.04em; border-bottom:2px solid var(--line); }
+  .orow { cursor:pointer; min-height:32px; }
+  .orow:hover { background:color-mix(in srgb, var(--accent) 6%, transparent); }
+  .orow.sel { background:color-mix(in srgb, var(--accent) 14%, transparent); box-shadow:inset 3px 0 0 var(--accent); }
+  .orow.k-obj { background:var(--banner); font-size:13.5px; padding-top:9px; padding-bottom:9px; border-top:2px solid var(--line); }
+  .orow.k-si, .orow.k-bucket { background:color-mix(in srgb, var(--banner) 45%, var(--panel)); font-weight:600; }
+  .orow.k-group { color:var(--muted); font-style:italic; }
+  .orow.k-item { font-size:12px; }
+  .orow.copy .oname { opacity:.6; }
+  .orow.dim { opacity:.25; }
+  .oname { display:flex; gap:6px; align-items:baseline; min-width:0; }
+  .oname .tx { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+  .oname .tx small { color:var(--muted); font-weight:400; }
+  .tg { width:14px; flex:none; color:var(--muted); cursor:pointer; user-select:none; text-align:center; }
+  .tg.none { visibility:hidden; cursor:default; }
+  .tp { font-size:10px; font-weight:700; padding:0 5px; border-radius:3px; background:var(--line); color:var(--ink); flex:none; font-style:normal; }
+  .opg { display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--muted); font-weight:400; }
+  .opg .pb { flex:1; height:6px; border-radius:3px; background:var(--line); overflow:hidden; min-width:36px; }
+  .opg .pb i { display:block; height:100%; background:var(--ok); }
+  .owh { font-size:11.5px; color:var(--muted); font-weight:400; line-height:1.3; }
+  .olk { display:flex; flex-wrap:wrap; gap:3px 4px; align-items:center; font-weight:400; font-style:normal; }
+  .olk .chip { margin:0; }
+  .chip.dep { cursor:pointer; color:var(--ink); border-color:var(--ext); }
+  .chip.dep.bad { border-color:var(--bad); color:var(--bad); } .chip.dep.warn { border-color:var(--warn); color:var(--warn); } .chip.dep.ok { border-color:var(--ok); color:var(--ok); }
+  .chip.rel { cursor:pointer; border-style:dotted; border-color:var(--rel); color:var(--rel); }
+  .chip.plain { color:var(--muted); }
+  @media (max-width:900px){ main{flex-direction:column;} aside{width:100%;max-height:none;} }
+</style>
+</head>
+<body>
+<header>
+  <h1>Epic Hierarchy Map</h1>
+  <button id="btnImport">Import JIRA export (Word / CSV)</button>
+  <input type="file" id="file" accept=".doc,.docx,.htm,.html,.csv,text/csv" hidden>
+  <button id="btnSample">Load sample</button>
+  <span class="seg"><button id="mOL" class="on" title="Simple collapsible tree: Objective → Solution Increment → Epic → Work items">Outline</button><button id="mSI" title="Board: rows = Solution Increments grouped under Objectives, columns = PI">Board: by SI</button><button id="mDU" title="Board: rows = Delivery Units (Jira projects)">Board: by Delivery Unit</button></span>
+  <select id="fStatus" title="Status filter"><option value="">All statuses</option><option value="open">Not done</option><option value="done">Done only</option></select>
+  <select id="fObj" title="Objective filter"><option value="">All objectives</option></select>
+  <input type="search" id="fSearch" placeholder="Search key / summary">
+  <label class="chk boardonly" hidden><input type="checkbox" id="cCrit" checked> critical path</label>
+  <label class="chk boardonly" hidden><input type="checkbox" id="cRel" checked> dotted "relates" links</label>
+  <span class="sp"></span>
+  <button id="btnReset" title="Undo what-if changes, keep the data">Reset scenario</button>
+  <button id="btnClear" title="Remove all data and start over">Clear all</button>
+  <button id="btnExport">Export scenario CSV</button>
+</header>
+<div class="stats" id="stats"></div>
+<div id="olbar">
+  <span>Show down to</span>
+  <span class="seg" id="depthSeg"><button data-d="1">Objective</button><button data-d="2">Solution Increment</button><button data-d="3" class="on">Epic</button><button data-d="4">Work items</button></span>
+  <label class="chk"><input type="checkbox" id="cAttn"> only what needs attention</label>
+  <span>⛔ blocked by · → blocks · <span style="color:var(--rel)">↔ relates</span> · ↺ epic also sits under another SI · closed epics are folded into one line</span>
+</div>
+<div class="legend boardonly" hidden>
+  <span><i style="border-color:var(--ink)"></i>Solid rail = SI <b>solves</b> Objective</span>
+  <span><i style="border-color:var(--rel);border-top-style:dotted"></i>Dotted = same epic <b>relates</b> to several SIs</span>
+  <span><i style="border-color:var(--ok)"></i>Epic <b>blocks</b> epic: OK</span>
+  <span><i style="border-color:var(--warn)"></i>tight (≤ 1 sprint slack)</span>
+  <span><i style="border-color:var(--bad)"></i>violation (overlap)</span>
+  <span><i style="border-color:var(--crit)"></i>critical path</span>
+</div>
+<main>
+  <div id="boardWrap"><div id="empty">Import a JIRA export (Word .doc / .docx, or CSV) or click <b>Load sample</b>.</div></div>
+  <aside>
+    <section id="detail"><h3>Selection</h3><div class="muted">Click a line (outline) or an epic card (board).</div></section>
+    <section><h3>Critical path</h3><div id="critp" class="muted">–</div></section>
+    <section><h3>Issues to resolve</h3><div id="viols" class="muted">–</div></section>
+    <section>
+      <h3>Epic dependencies</h3>
+      <div class="muted">JIRA has none yet – add them on an epic ("blocks"), then save so they survive the next import.</div>
+      <div class="row"><button id="btnSaveDeps">Save in browser</button><button id="btnExpDeps">Export CSV</button><button id="btnImpDeps">Import CSV</button></div>
+      <input type="file" id="depFile" accept=".csv,text/csv" hidden>
+    </section>
+    <section>
+      <h3>Sprint / PI calendar</h3>
+      <div class="muted">Sprint N starts at anchor + (N − anchor) × days. Defaults come from the sprint calculator (sprint 292 = 1 Oct 2026, PI85 = sprints 291–298).</div>
+      <div class="row">Anchor sprint <input id="calN" type="number" style="width:70px"> start <input id="calS" type="date"></div>
+      <div class="row">Days / sprint <input id="calD" type="number" style="width:60px"> Sprints / PI (default) <input id="calL" type="number" style="width:60px"></div>
+      <div class="muted">Known PIs: PI, first sprint, last sprint (others are extrapolated)</div>
+      <textarea id="calP"></textarea>
+      <div class="row"><button id="btnCal">Apply calendar (resets scenario)</button></div>
+    </section>
+    <section>
+      <h3>Data mapping</h3>
+      <div class="muted">Detected automatically from the CSV – change whatever is wrong or missing.</div>
+      <div id="mapping" class="muted">Load data first.</div>
+    </section>
+  </aside>
+</main>
+
+<script>
+const SAMPLE_CSV = `Issue key,Issue Type,Summary,Status,Assignee,PI,Due date,Story Points,Sprint,Sprint,Epic Link,RAG Status,Objective Manager,Global Priority,Outward issue link (Solves),Outward issue link (Solves),Outward issue link (Relates),Outward issue link (Relates),Outward issue link (Blocks)
+ESET-138,Objective,Create XDR monetization model,In Analysis,Igor Hula,,2026-11-30,,,,,Attention,Martin Vakula,993,,,,,
+ESET-150,Objective,Monetization: partner and billing readiness,In Analysis,Igor Hula,,2027-03-31,,,,,Green,Martin Vakula,870,,,,,
+SOLINC-3,Solution Increment,Pilot 138 - C&F SI1,In Analysis,Pavol Korvas,,,,,,,,,,ESET-138,,,,
+SOLINC-18,Solution Increment,Pilot 138 - C&F SI2,In Analysis,Pavol Korvas,,,,,,,,,,ESET-138,ESET-150,,,
+SOLINC-21,Solution Increment,Partner billing front-end,Open,Pavol Korvas,,,,,,,,,,ESET-150,,,,
+D_UX-2583,Epic,UX XDR monetization model (H2/2026),In Progress,Veronika Slovakova,PI84,2026-09-16,,,,,,,,,,SOLINC-3,,DU_EPP-2157
+DU_EPP-2077,Epic,Data retention configuration service Phase 1,In Progress,Martin Stano,PI85,2027-01-06,,,,,,,,,,SOLINC-3,SOLINC-18,DU_EPP-2157
+DU_EPP-2157,Epic,XDR Monetization: Retention of Incidents,Open,Martin Antal,PI85,2027-01-06,,,,,,,,,,SOLINC-18,,DU_API-410
+DU_API-410,Epic,Billing and entitlement API,Open,Marek Hrabovsky,PI86,2027-03-31,,,,,,,,,,SOLINC-18,SOLINC-21,DU_FE-77
+DU_FE-77,Epic,Console: plans and billing UI,Open,Anna Kovacova,PI86,2027-03-31,,,,,,,,,,SOLINC-21,,
+D_EPP-3183,Task,Analyse costs over auditlog mechanism for auditing changes in data retention configuration,Closed,Martin Stano,,,,EPC_292,,DU_EPP-2077,,,,,,,,
+D_EPP-3180,Task,Implement synchronization of quotas via GetLinkedLocations,On Hold,EP CERBERUS TEAM,,,5,EPC_292,,DU_EPP-2077,,,,,,,,
+D_EPP-3178,Task,Implement Frontend for Data retention service,On Hold,David Kubik,,,5,EPC_292,,DU_EPP-2077,,,,,,,,
+D_EPP-3175,Task,Bootstrap data retention management microservice with API and staisy constraints,Closed,Filip Mikula,,,5,EPC_291,,DU_EPP-2077,,,,,,,,
+D_EPP-3185,Story,Implement audit logging for Data Retention Management domain (mirroring Incidents pattern),Open,Michal Fabis,,,3,EPC_291,EPC_292,DU_EPP-2077,,,,,,,,
+D_EPP-3181,Task,Create eventhubs for emmiting of the data retention quotas for recieving services,Closed,Filip Mikula,,,2,EPC_291,,DU_EPP-2077,,,,,,,,
+D_EPP-3179,Story,Implement API from ARCH into Data retention configuration service,In Review,Filip Mikula,,,3,EPC_291,EPC_292,DU_EPP-2077,,,,,,,,
+D_EPP-3182,Task,E2E testing of the Data retention configuration service,Open,EP CERBERUS TEAM,,,5,EPC_293,,DU_EPP-2077,,,,,,,,
+D_UX-2601,Story,Monetization model wireframes,Closed,Veronika Slovakova,,,3,EPC_289,,D_UX-2583,,,,,,,,
+D_UX-2602,Story,Plans and pricing screens,Closed,Veronika Slovakova,,,5,EPC_290,,D_UX-2583,,,,,,,,
+D_UX-2603,Story,Usability test of upsell flow,In Progress,Veronika Slovakova,,,2,EPC_291,,D_UX-2583,,,,,,,,
+DU_EPP-2201,Story,Define incident retention tiers,Open,Martin Antal,,,3,EPC_295,,DU_EPP-2157,,,,,,,,
+DU_EPP-2202,Story,Retention cost model per tier,Open,Martin Antal,,,5,EPC_296,EPC_297,DU_EPP-2157,,,,,,,,
+DU_EPP-2203,Story,Retention of incidents - API integration,Open,Martin Antal,,,5,EPC_298,,DU_EPP-2157,,,,,,,,
+DU_API-4101,Story,Entitlement data model,Open,Marek Hrabovsky,,,5,EPC_299,,DU_API-410,,,,,,,,
+DU_API-4102,Story,Billing events endpoint,Open,Marek Hrabovsky,,,8,EPC_300,EPC_301,DU_API-410,,,,,,,,
+DU_FE-771,Story,Plans page,Open,Anna Kovacova,,,5,EPC_302,,DU_FE-77,,,,,,,,
+DU_FE-772,Story,Upgrade flow,Open,Anna Kovacova,,,5,EPC_303,,DU_FE-77,,,,,,,,
+`;
+
+/* ---------- state ---------- */
+let base = null, sim = null, selected = null, mode = 'outline', savedApplied = 0, rawRows = null;
+const collapsed = new Set();
+function $(id) { return document.getElementById(id); }
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const clone = o => JSON.parse(JSON.stringify(o));
+const natural = (a, b) => String(a).localeCompare(String(b), undefined, { numeric: true });
+
+/* ---------- calendar (sprints / PIs) ---------- */
+const DAY = 864e5;
+let CAL = { aN: 292, aS: '2026-10-01', days: 14, len: 6, rows: [{ n: 85, first: 291, last: 298 }] };
+const D = s => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || ''); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : NaN; };
+const fmt = ms => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+const fmtS = ms => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+const sprintStart = n => D(CAL.aS) + (n - CAL.aN) * CAL.days * DAY;
+const sprintEnd = n => sprintStart(n) + (CAL.days - 1) * DAY;
+const sprintNum = s => { const m = /(\d{2,4})\D*$/.exec(s || ''); return m ? +m[1] : null; };
+const piNum = name => { const m = /(?:^|\D)PI\s*_?(\d+)/i.exec(name || ''); return m ? +m[1] : null; };
+function piRange(name) {
+  const n = piNum(name); if (n == null) return null;
+  const rows = [...CAL.rows].sort((a, b) => a.n - b.n);
+  let first, last;
+  const hit = rows.find(r => r.n === n);
+  if (hit) { first = hit.first; last = hit.last; }
+  else {
+    const below = [...rows].reverse().find(r => r.n < n), above = rows.find(r => r.n > n);
+    if (below) { first = below.last + 1 + (n - below.n - 1) * CAL.len; last = first + CAL.len - 1; }
+    else if (above) { last = above.first - 1 - (above.n - n - 1) * CAL.len; first = last - CAL.len + 1; }
+    else return null;
+  }
+  return { first, last, start: sprintStart(first), end: sprintEnd(last) };
+}
+function piOfSprint(sn) {
+  const ns = CAL.rows.map(r => r.n); if (!ns.length) return null;
+  for (let p = Math.min(...ns) - 40; p <= Math.max(...ns) + 40; p++) {
+    const r = p > 0 && piRange('PI' + p); if (r && sn >= r.first && sn <= r.last) return 'PI' + p;
+  }
+  return null;
+}
+const sprintOfDate = ms => CAL.aN + Math.floor((ms - D(CAL.aS)) / (CAL.days * DAY));
+
+/* ---------- CSV ---------- */
+function parseCSV(text) {
+  const rows = []; let row = [], cell = '', q = false;
+  text = text.replace(/^﻿/, '');
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; }
+      else cell += c;
+    } else if (c === '"') q = true;
+    else if (c === ',') { row.push(cell); cell = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++;
+      row.push(cell); cell = '';
+      if (row.some(x => x !== '')) rows.push(row);
+      row = [];
+    } else cell += c;
+  }
+  if (cell !== '' || row.length) { row.push(cell); if (row.some(x => x !== '')) rows.push(row); }
+  return rows;
+}
+const norm = s => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+function findCols(headers, cands) {
+  const out = [];
+  headers.forEach((h, i) => { const n = norm(h).replace(/^custom field /, ''); if (cands.some(c => n === c || n.startsWith(c + ' '))) out.push(i); });
+  return out;
+}
+const KEY_RE = /[A-Z][A-Z0-9_]+-\d+/g;
+
+function statusClass(s) {
+  const n = norm(s);
+  if (/hold|block|impediment/.test(n)) return 'hold';
+  if (/done|closed|resolved|complete|released|implemented/.test(n)) return 'done';
+  if (/progress|review|test|develop|implement|doing|analy/.test(n)) return 'prog';
+  return 'todo';
+}
+function parseDate(d) {
+  d = (d || '').trim(); if (!d) return '';
+  const t = Date.parse(/^\d{4}-\d{2}-\d{2}/.test(d) ? d + 'T00:00:00Z' : d.replace(/\//g, ' ') + ' UTC');
+  return isNaN(t) ? '' : new Date(t).toISOString().slice(0, 10);
+}
+const FIELD_DEFS = [
+  ['key', 'Issue key', ['issue key', 'key']], ['type', 'Issue type', ['issue type', 'type']], ['summary', 'Summary', ['summary']],
+  ['status', 'Status', ['status']], ['assignee', 'Assignee / owner', ['assignee', 'owner']], ['due', 'Due date', ['due date', 'target end', 'end date']],
+  ['sp', 'Story points', ['story points', 'story point estimate']], ['parent', 'Epic link / parent', ['epic link', 'parent link', 'parent', 'parent id']],
+  ['rag', 'RAG status', ['rag status', 'rag']], ['mgr', 'Objective manager', ['objective manager']], ['gp', 'Global priority', ['global priority']],
+  ['pi', 'PI', ['pi', 'program increment', 'fix version s', 'fix version']], ['project', 'Project (Delivery Unit)', ['project key', 'project']],
+  ['links', 'Linked issues (text, e.g. from Word)', ['linked issues', 'issue links', 'links']],
+  ['panelA', 'Children list 1 (Objectives Panel)', ['objectives panel']], ['panelB', 'Children list 2 (Requirements Panel)', ['requirements panel']]];
+const PHRASES = { 'solves': ['solves', true], 'is solved by': ['solves', false], 'relates to': ['relates', true], 'blocks': ['blocks', true], 'is blocked by': ['blocks', false], 'depends on': ['depends', true], 'is depended on by': ['depends', false] };
+const LINK_KINDS = [['solves', 'solves'], ['relates', 'relates to'], ['blocks', 'blocks (dependency)'], ['depends', 'depends on (dependency)'], ['ignore', 'ignore']];
+const TYPE_KINDS = [['objective', 'Objective'], ['si', 'Solution Increment'], ['epic', 'Epic'], ['story', 'Story / task']];
+const guessLink = h => { const n = norm(h); return /solve/.test(n) ? 'solves' : /relat/.test(n) ? 'relates' : /depend/.test(n) ? 'depends' : /block/.test(n) ? 'blocks' : 'ignore'; };
+function guessType(typeText, key, hasParent) {
+  const t = norm(typeText);
+  if (t) return /objective/.test(t) ? 'objective' : /solution increment|solinc/.test(t) ? 'si' : /epic/.test(t) ? 'epic' : 'story';
+  if (/^SOLINC-/.test(key)) return 'si';
+  if (/^ESET-/.test(key)) return 'objective';
+  return hasParent ? 'story' : 'epic';
+}
+function detect(rows) {   // automatic mapping of CSV columns, link types and issue types; the user may override all of it
+  const H = rows[0], cols = {};
+  FIELD_DEFS.forEach(([f, , c]) => { const r = findCols(H, c); cols[f] = r.length ? r[0] : -1; });
+  const linkCols = {};
+  H.forEach((h, i) => { const n = norm(h); if (/^(outward|inward) issue link/.test(n)) linkCols[i] = guessLink(h); });
+  const types = {};
+  if (cols.type >= 0) rows.slice(1).forEach(r => { const t = (r[cols.type] || '').trim(); if (t && !types[t]) types[t] = guessType(t, '', false); });
+  const phrases = {}; Object.keys(PHRASES).forEach(k => phrases[k] = PHRASES[k][0]);
+  return { cols, sprintPrefix: 'sprint', linkCols, types, phrases, prioDesc: true, duMode: 'auto' };
+}
+
+function buildModel(src, S) {
+  const rows = typeof src === 'string' ? parseCSV(src) : src;
+  if (rows.length < 2) throw new Error('CSV has no data rows');
+  const H = rows[0]; S = S || detect(rows);
+  const c = S.cols;
+  if (c.key < 0) throw new Error('Column "Issue key" not found – choose it in the data mapping panel');
+  const sprintCols = findCols(H, [norm(S.sprintPrefix || 'sprint')]);
+  const nodes = {}, seen = new Set(), links = [], panels = []; let ignored = 0;
+  const get = (r, f) => c[f] >= 0 ? (r[c[f]] || '') : '';
+  const addLink = (self, other, kind, outward) => {
+    let a = self, b = other, t = kind;
+    if (kind === 'depends') { t = 'blocks'; if (outward) { a = other; b = self; } }      // "depends on" = the other blocks me
+    else if (kind === 'blocks') { if (!outward) { a = other; b = self; } }
+    else if (kind === 'solves') { if (!outward) { a = other; b = self; } }
+    else if (kind === 'relates') [a, b] = [a, b].sort();
+    const id = a + '>' + b + t;
+    if (seen.has(id) || a === b) return;
+    seen.add(id); links.push({ a, b, t });
+  };
+  rows.slice(1).forEach(r => {
+    const key = (get(r, 'key') || '').trim(); if (!key) return;
+    const parent = (get(r, 'parent').match(KEY_RE) || [''])[0];
+    const tt = get(r, 'type').trim();
+    const type = c.type >= 0 && tt ? (S.types[tt] || guessType(tt, key, !!parent)) : guessType('', key, !!parent);
+    // PI may sit in several same-named columns (e.g. two "Fix Version/s"): take the latest one, and fold "PI85A" / "PI86plan" into PI85 / PI86
+    const pis = (c.pi >= 0 ? H.reduce((a, h, i) => h === H[c.pi] ? a.concat(i) : a, []) : []).flatMap(i => (r[i] || '').split(/[;,]/).map(x => x.trim()).filter(Boolean));
+    const piBest = pis.filter(x => piNum(x) != null).sort((x, y) => piNum(y) - piNum(x))[0];
+    const pi = piBest ? 'PI' + piNum(piBest) : (pis[0] || '');
+    const prj = get(r, 'project').trim();
+    const ragRaw = get(r, 'rag').trim();
+    nodes[key] = {
+      key, type, summary: get(r, 'summary') || key, status: get(r, 'status'), assignee: get(r, 'assignee'),
+      due: parseDate(get(r, 'due')), sp: Number(get(r, 'sp')) || 0,
+      sprints: sprintCols.flatMap(i => (r[i] || '').split(/[,;\n]+/).map(sprintNum)).filter(x => x != null), parent,
+      rag: /^(green|amber|yellow|orange|red|blue|attention|ok|on track|at risk|off track|critical)$/i.test(ragRaw) ? ragRaw : '',   // junk in a mislabeled column is ignored
+      mgr: get(r, 'mgr'), gp: /^\d+(\.\d+)?$/.test(get(r, 'gp').trim()) ? get(r, 'gp').trim() : '', pi, piGiven: !!pi,
+      du: S.duMode === 'prefix' ? key.replace(/-\d+$/, '') : (prj || key.replace(/-\d+$/, ''))
+    };
+    ['panelA', 'panelB'].forEach(f => { const ks = (get(r, f).match(KEY_RE) || []).filter(x => x !== key); if (ks.length) panels.push({ key, ks }); });
+    if (c.links >= 0 && r[c.links]) {   // links written as text: "relates to DU_EPP-2077 ... is solved by ESET-138"
+      const names = Object.keys(S.phrases || {}).sort((x, y) => y.length - x.length).map(x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+      const re = new RegExp('(' + names.join('|') + ')|([A-Z][A-Z0-9_]+-\\d+)', 'gi'); let ph = null, mm;
+      while ((mm = re.exec(r[c.links]))) {
+        if (mm[1]) ph = mm[1].toLowerCase();
+        else if (ph && mm[2] !== key) {
+          const kind = S.phrases[ph];
+          if (kind === 'ignore') ignored++; else addLink(key, mm[2], kind, PHRASES[ph][1]);
+        }
+      }
+    }
+    Object.keys(S.linkCols).forEach(i => {
+      const kind = S.linkCols[i], vals = (r[i] || '').match(KEY_RE);
+      if (!vals) return;
+      if (kind === 'ignore') { ignored += vals.length; return; }
+      vals.forEach(o => addLink(key, o, kind, /^outward/.test(norm(H[i]))));
+    });
+  });
+  // "panel" columns list children: on an Objective they are the epics that deliver it, on an epic they are its stories / tasks
+  panels.forEach(({ key, ks }) => {
+    const n = nodes[key];
+    ks.forEach(k => {
+      if (!nodes[k]) return;
+      if (n.type === 'objective' && nodes[k].type === 'epic') addLink(k, key, 'solves', true);
+      else if (n.type === 'epic' && nodes[k].type === 'story' && !nodes[k].parent) nodes[k].parent = key;
+    });
+  });
+  const m = { nodes, links, order: [], periods: [], ignored, settings: S, headers: H };
+  m.order = Object.values(nodes).filter(n => n.type === 'objective')
+    .sort((x, y) => (S.prioDesc ? -1 : 1) * ((Number(x.gp) || 0) - (Number(y.gp) || 0)) || natural(x.key, y.key)).map(n => n.key);
+  derivePIs(m); refreshPeriods(m);
+  return m;
+}
+function derivePIs(m) {   // epics without a PI field: take it from their latest sprint, else due date
+  Object.values(m.nodes).filter(n => n.type === 'epic' && !n.piGiven).forEach(e => {
+    const sp = storiesOf(m, e.key).flatMap(s => s.sprints);
+    let pi = sp.length ? piOfSprint(Math.max(...sp)) : null;
+    if (!pi && e.due) pi = piOfSprint(sprintOfDate(D(e.due)));
+    e.pi = pi || 'No PI';
+  });
+}
+function refreshPeriods(m) {
+  const names = new Set(Object.values(m.nodes).filter(n => n.type === 'epic').map(n => n.pi));
+  const nums = [...names].map(piNum).filter(x => x != null);
+  if (nums.length) { for (let p = Math.min(...nums); p <= Math.max(...nums) + 1; p++) names.add('PI' + p); }
+  m.periods = [...names].sort((a, b) => a === 'No PI' ? 1 : b === 'No PI' ? -1 : (piNum(a) ?? 1e9) - (piNum(b) ?? 1e9) || natural(a, b));
+}
+
+/* ---------- model queries ---------- */
+const epicsOf = m => Object.values(m.nodes).filter(n => n.type === 'epic');
+const storiesOf = (m, ek) => Object.values(m.nodes).filter(n => n.type === 'story' && n.parent === ek);
+const isType = (m, k, t) => m.nodes[k]?.type === t;
+const other = (l, k) => l.a === k ? l.b : l.b === k ? l.a : null;
+const sisOfObjective = (m, o) => [...new Set(m.links.filter(l => l.t === 'solves').map(l => other(l, o)).filter(x => x && isType(m, x, 'si')))].sort(natural);
+const objectivesOfSi = (m, s) => m.order.filter(o => m.links.some(l => l.t === 'solves' && other(l, o) === s));
+const directEpicsOfObjective = (m, o) => m.links.filter(l => l.t === 'solves').map(l => other(l, o)).filter(x => x && isType(m, x, 'epic'));
+// an epic belongs to an SI when they are linked by "relates", or when the epic "solves" the SI
+const memberLink = l => l.t === 'relates' || l.t === 'solves';
+const epicsOfSi = (m, s) => [...new Set(m.links.filter(memberLink).map(l => other(l, s)).filter(x => x && isType(m, x, 'epic')))].sort(natural);
+const sisOfEpic = (m, e) => [...new Set(m.links.filter(memberLink).map(l => other(l, e)).filter(x => x && isType(m, x, 'si')))].sort(natural);
+function objectivesOfEpic(m, e) {
+  const set = new Set();
+  sisOfEpic(m, e).forEach(s => objectivesOfSi(m, s).forEach(o => set.add(o)));
+  m.order.forEach(o => { if (directEpicsOfObjective(m, o).includes(e)) set.add(o); });
+  return m.order.filter(o => set.has(o));
+}
+function progress(m, ek) {
+  const st = storiesOf(m, ek), done = st.filter(s => statusClass(s.status) === 'done');
+  const sp = st.reduce((a, s) => a + s.sp, 0), spDone = done.reduce((a, s) => a + s.sp, 0);
+  return { total: st.length, done: done.length, hold: st.filter(s => statusClass(s.status) === 'hold').length, sp, spDone,
+    pct: sp ? spDone / sp : st.length ? done.length / st.length : 0 };
+}
+function aggregate(m, keys) {
+  let w = 0, d = 0;
+  keys.forEach(k => { const p = progress(m, k); w += p.sp || p.total; d += p.sp ? p.spDone : p.done; });
+  return w ? d / w : 0;
+}
+// planned window of an epic: real sprint span of its stories, or the whole PI when moved / no sprint info
+function winOf(m, e) {
+  const n = m.nodes[e], moved = base && base.nodes[e] && base.nodes[e].pi !== n.pi;
+  const sp = storiesOf(m, e).flatMap(s => s.sprints);
+  if (!moved && sp.length) return { start: sprintStart(Math.min(...sp)), end: sprintEnd(Math.max(...sp)), src: 'sprints' };
+  const r = piRange(n.pi);
+  return r ? { start: r.start, end: r.end, src: 'pi' } : null;
+}
+function spanOf(m, keys) {
+  const w = keys.map(k => winOf(m, k)).filter(Boolean); if (!w.length) return null;
+  return { start: Math.min(...w.map(x => x.start)), end: Math.max(...w.map(x => x.end)) };
+}
+function depState(m, l) {   // l: a blocks b
+  const wa = winOf(m, l.a), wb = winOf(m, l.b);
+  if (!wa || !wb) return { s: 'warn', slack: null };
+  if (wa.src === 'pi' && wb.src === 'pi' && m.nodes[l.a].pi === m.nodes[l.b].pi) return { s: 'warn', slack: null };
+  const slack = Math.round((wb.start - wa.end) / DAY) - 1;
+  return { s: slack < 0 ? 'bad' : slack <= CAL.days ? 'warn' : 'ok', slack };
+}
+const depsOf = m => m.links.filter(l => l.t === 'blocks' && isType(m, l.a, 'epic') && isType(m, l.b, 'epic'));
+function lateObjective(m, e) {   // objective due date earlier than the epic's end
+  const w = winOf(m, e); if (!w) return null;
+  return objectivesOfEpic(m, e).map(o => m.nodes[o]).find(o => o.due && w.end > D(o.due)) || null;
+}
+function reaches(from, to) {
+  const seen = new Set([from]), st = [from];
+  while (st.length) {
+    const x = st.pop(); if (x === to) return true;
+    depsOf(sim).forEach(l => { if (l.a === x && !seen.has(l.b)) { seen.add(l.b); st.push(l.b); } });
+  }
+  return false;
+}
+// critical path = longest chain of dependencies whose slack is at most one sprint
+function criticalPath(m, keys) {
+  const set = new Set(keys), edges = depsOf(m).filter(l => set.has(l.a) && set.has(l.b));
+  const memo = {}, busy = new Set();
+  const best = k => {
+    if (memo[k]) return memo[k];
+    if (busy.has(k)) return { chain: [k], start: winOf(m, k)?.start ?? 0 };
+    busy.add(k);
+    let res = { chain: [k], start: winOf(m, k)?.start ?? 0 };
+    edges.filter(l => l.b === k && depState(m, l).slack != null && depState(m, l).slack <= CAL.days).forEach(l => {
+      const c = best(l.a); if (c.start < res.start || res.chain.length === 1) res = { chain: [...c.chain, k], start: Math.min(c.start, res.start) };
+    });
+    busy.delete(k); return memo[k] = res;
+  };
+  let top = null;
+  keys.forEach(k => {
+    const c = best(k); if (c.chain.length < 2) return;
+    const dur = (winOf(m, k)?.end ?? 0) - c.start;
+    if (!top || dur > top.dur) top = { ...c, dur, end: winOf(m, k)?.end };
+  });
+  return top;
+}
+
+/* ---------- rendering ---------- */
+const NS = 'http://www.w3.org/2000/svg';
+const RAG = r => { const n = norm(r); return /green|ok|on track/.test(n) ? 'ok' : /red|critical|off track/.test(n) ? 'bad' : n ? 'warn' : ''; };
+const duColor = du => { let h = 0; for (const c of du) h = (h * 31 + c.charCodeAt(0)) % 360; return `hsl(${h} 55% 55% / .35)`; };
+
+function epicVisible(e) {
+  const st = $('fStatus').value, ob = $('fObj').value, q = $('fSearch').value.toLowerCase();
+  const sc = statusClass(e.status);
+  if (st === 'done' && sc !== 'done') return false;
+  if (st === 'open' && sc === 'done') return false;
+  if (ob && !objectivesOfEpic(sim, e.key).includes(ob)) return false;
+  if (q && !(e.key + ' ' + e.summary).toLowerCase().includes(q)) return false;
+  return true;
+}
+
+function buildSections() {
+  const sections = [], epicOk = k => epicVisible(sim.nodes[k]);
+  const ob = $('fObj').value, usedEpics = new Set();
+  if (mode === 'du') {
+    const eps = epicsOf(sim).filter(e => epicVisible(e)), dus = [...new Set(eps.map(e => e.du))].sort(natural);
+    dus.forEach(du => {
+      const list = eps.filter(e => e.du === du).map(e => e.key);
+      sections.push({ id: 'du:' + du, banner: `<span class="ttl" data-toggle="du:${esc(du)}">${collapsed.has('du:' + du) ? '▸' : '▾'} ${esc(du)} <span class="muted">Delivery Unit</span></span>
+        <span class="meta">${list.length} epics · ${Math.round(100 * aggregate(sim, list))}% done</span>`,
+        lanes: [{ head: `<b>${esc(du)}</b><span class="muted">${list.length} epics</span>`, epics: list }] });
+    });
+    return sections;
+  }
+  sim.order.filter(o => !ob || o === ob).forEach(o => {
+    const sis = sisOfObjective(sim, o), lanes = sis.map(s => ({
+      si: s, head: siHead(s, o), epics: epicsOfSi(sim, s).filter(epicOk), empty: !epicsOfSi(sim, s).length }));
+    const direct = directEpicsOfObjective(sim, o).filter(epicOk);
+    if (direct.length) lanes.push({ head: '<b>Direct to objective</b><span class="muted">epics linked by "solves"</span>', epics: direct });
+    const all = [...new Set(lanes.flatMap(l => l.epics))];
+    all.forEach(k => usedEpics.add(k));
+    sections.push({ id: o, obj: o, banner: objBanner(o, all), lanes });
+  });
+  if (!ob) {
+    const orphanSis = Object.values(sim.nodes).filter(n => n.type === 'si' && !objectivesOfSi(sim, n.key).length).map(n => n.key).sort(natural);
+    if (orphanSis.length) sections.push({ id: 'noobj', banner: '<span class="ttl">Solution increments without an objective</span>',
+      lanes: orphanSis.map(s => ({ si: s, head: siHead(s, null), epics: epicsOfSi(sim, s).filter(epicOk), empty: !epicsOfSi(sim, s).length })) });
+    const loose = epicsOf(sim).filter(e => epicVisible(e) && !sisOfEpic(sim, e.key).length && !objectivesOfEpic(sim, e.key).length).map(e => e.key);
+    if (loose.length) sections.push({ id: 'loose', banner: '<span class="ttl">Epics not related to any solution increment</span>',
+      lanes: [{ head: '<b>Unlinked</b><span class="muted">no "relates to" SI</span>', epics: loose }] });
+  }
+  return sections;
+}
+function siHead(s, o) {
+  const n = sim.nodes[s], eps = epicsOfSi(sim, s), span = spanOf(sim, eps), objs = objectivesOfSi(sim, s);
+  const late = o && sim.nodes[o].due && span && span.end > D(sim.nodes[o].due);
+  return `<b>${esc(s)}</b><span class="muted">${esc(n.summary)}</span>
+    <div class="muted">${eps.length} epics · ${Math.round(100 * aggregate(sim, eps))}% done${span ? ` · ${fmtS(span.start)} – ${fmt(span.end)}` : ''}</div>
+    ${late ? '<span class="badge late">ends after objective due</span>' : ''}${!eps.length ? '<span class="badge">no epics</span>' : ''}
+    ${objs.length > 1 ? `<div class="muted">solves ${objs.map(esc).join(', ')}</div>` : ''}`;
+}
+function objBanner(g, epicKeys) {
+  const o = sim.nodes[g], span = spanOf(sim, epicKeys), idx = sim.order.indexOf(g);
+  const late = o.due && span && span.end > D(o.due);
+  return `<span class="ttl" data-toggle="${esc(g)}">${collapsed.has(g) ? '▸' : '▾'} ${esc(g)} · ${esc(o.summary)}</span>
+    <span class="meta"><span class="dot ${RAG(o.rag)}"></span>${esc(o.rag || 'no RAG')} · ${esc(o.status)} · Owner ${esc(o.assignee || '–')} · Manager ${esc(o.mgr || '–')} · Global priority <b>${esc(o.gp || '–')}</b> · Due <b>${esc(o.due ? fmt(D(o.due)) : '–')}</b> · ${Math.round(100 * aggregate(sim, epicKeys))}% done · forecast end ${span ? `<b class="${late ? 'bad' : 'ok'}">${fmt(span.end)}</b>` : '–'}${late ? ` <span class="badge late">+${Math.round((span.end - D(o.due)) / DAY)} days</span>` : ''}</span>
+    <span class="mv"><button title="Raise priority (scenario)" onclick="moveObj('${esc(g)}',-1)" ${idx === 0 ? 'disabled' : ''}>▲</button><button title="Lower priority (scenario)" onclick="moveObj('${esc(g)}',1)" ${idx === sim.order.length - 1 ? 'disabled' : ''}>▼</button></span>`;
+}
+
+function render() {
+  if (!sim) return;
+  const cur = $('fObj').value;
+  $('fObj').innerHTML = '<option value="">All objectives</option>' +
+    sim.order.map(k => `<option value="${esc(k)}" ${k === cur ? 'selected' : ''}>${esc(k)} – ${esc(sim.nodes[k].summary.slice(0, 40))}</option>`).join('');
+  if (mode === 'outline') { renderOutline(); return; }
+  const per = sim.periods, sections = buildSections();
+  const crit = $('cCrit').checked ? criticalPath(sim, epicsOf(sim).filter(epicVisible).map(e => e.key)) : null;
+  const critSet = new Set(crit ? crit.chain : []);
+  const hl = selected && isType(sim, selected, 'epic') ? neighbourhood(selected) : null;
+  const inHl = k => !hl || hl.has(k);
+  let html = '<div class="corner"></div>' + per.map(p => { const r = piRange(p);
+    return `<div class="colhead">${esc(p)}${r ? `<small>${fmtS(r.start)} – ${fmtS(r.end)}</small>` : ''}</div>`; }).join('');
+  const placed = new Set();
+  sections.forEach(sec => {
+    html += `<div class="banner">${sec.banner}</div>`;
+    if (collapsed.has(sec.id)) return;
+    sec.lanes.forEach(l => {
+      html += `<div class="lanehead ${l.empty ? 'empty' : ''}" ${l.si ? `data-si="${esc(l.si)}" style="cursor:pointer;${l.si === selected ? 'background:var(--banner)' : ''}" title="Click to edit this solution increment"` : ''}>${l.head}</div>`;
+      per.forEach(p => {
+        const cards = l.epics.filter(k => sim.nodes[k].pi === p).sort(natural).map(k => {
+          const copy = placed.has(k); placed.add(k); return cardHtml(sim.nodes[k], inHl, critSet, copy, l.si); }).join('');
+        html += `<div class="cell" data-per="${esc(p)}">${cards}</div>`;
+      });
+    });
+  });
+  const board = document.createElement('div');
+  board.id = 'board';
+  board.style.gridTemplateColumns = `210px repeat(${per.length}, 240px)`;
+  board.innerHTML = html;
+  const wrap = $('boardWrap'), sl = wrap.scrollLeft, st = wrap.scrollTop;
+  wrap.innerHTML = ''; wrap.appendChild(board); wrap.scrollLeft = sl; wrap.scrollTop = st;
+  drawArrows(board, hl, crit);
+  renderStats(crit); renderCrit(crit); renderViols(); renderDetail();
+}
+function neighbourhood(k) {   // the epic plus everything upstream/downstream through "blocks"
+  const up = new Set([k]), down = new Set([k]), E = depsOf(sim); let grow = true;
+  while (grow) {
+    grow = false;
+    E.forEach(l => {
+      if (down.has(l.a) && !down.has(l.b)) { down.add(l.b); grow = true; }
+      if (up.has(l.b) && !up.has(l.a)) { up.add(l.a); grow = true; }
+    });
+  }
+  return new Set([...up, ...down]);
+}
+function cardHtml(e, inHl, critSet, copy, si) {
+  const b0 = base.nodes[e.key], p = progress(sim, e.key), w = winOf(sim, e.key);
+  const moved = b0 && b0.pi !== e.pi, late = lateObjective(sim, e.key), isCrit = critSet.has(e.key);
+  const others = sisOfEpic(sim, e.key).filter(s => s !== si);
+  return `<div class="card s-${statusClass(e.status)} ${e.key === selected ? 'sel' : ''} ${moved ? 'moved' : ''} ${isCrit ? 'crit' : ''} ${inHl(e.key) ? '' : 'dim'}" draggable="true" data-key="${esc(e.key)}" title="${esc(e.key + ' – ' + e.summary + ' (' + e.status + ')')}">
+    <div class="k"><span><span class="du" style="background:${duColor(e.du)}">${esc(e.du)}</span> ${esc(e.key.replace(/^.*-/, '#'))}${copy ? ' ↺' : ''}</span><span>${isCrit ? '<span class="badge crit">critical</span>' : ''}${p.hold ? `<span class="badge hold">${p.hold} on hold</span>` : ''}${late ? '<span class="badge late">late</span>' : ''}</span></div>
+    <div class="t">${esc(e.summary)}</div>
+    <div class="pb"><i style="width:${Math.round(p.pct * 100)}%"></i></div>
+    <div class="pt">${p.total ? `${p.done}/${p.total} stories${p.sp ? ` · ${p.spDone}/${p.sp} SP` : ''}` : 'no stories'}${w ? ` · ${fmtS(w.start)}–${fmtS(w.end)}${w.src === 'pi' ? ' (PI)' : ''}` : ''}</div>
+    ${others.map(s => `<span class="chip">also ${esc(s)}</span>`).join('')}</div>`;
+}
+
+function drawArrows(board, hl, crit) {
+  const svg = document.createElementNS(NS, 'svg');
+  svg.id = 'arrows';
+  svg.setAttribute('width', board.scrollWidth); svg.setAttribute('height', board.scrollHeight);
+  const colors = { ok: 'var(--ok)', warn: 'var(--warn)', bad: 'var(--bad)', crit: 'var(--crit)' };
+  svg.innerHTML = '<defs>' + Object.keys(colors).map(s =>
+    `<marker id="ah-${s}" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${colors[s]}"/></marker>`).join('') + '</defs>';
+  board.appendChild(svg);
+  const br = board.getBoundingClientRect();
+  const inst = k => [...board.querySelectorAll(`.card[data-key="${CSS.escape(k)}"]`)];
+  const critEdges = new Set(crit ? crit.chain.slice(1).map((k, i) => crit.chain[i] + '>' + k) : []);
+  depsOf(sim).forEach(l => {
+    const A = inst(l.a), B = inst(l.b); if (!A.length || !B.length) return;
+    const ra = A[0].getBoundingClientRect(), rb = B[0].getBoundingClientRect();
+    const x1 = ra.right - br.left, y1 = (ra.top + ra.bottom) / 2 - br.top, x2 = rb.left - br.left, y2 = (rb.top + rb.bottom) / 2 - br.top;
+    const dx = Math.max(40, Math.abs(x2 - x1) / 2), s = depState(sim, l).s, isCrit = critEdges.has(l.a + '>' + l.b);
+    const p = document.createElementNS(NS, 'path');
+    p.setAttribute('d', `M${x1} ${y1} C${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`);
+    p.setAttribute('class', `e dep ${isCrit ? 'crit' : s} ${(!hl || (hl.has(l.a) && hl.has(l.b))) ? '' : 'dim'}`);
+    p.setAttribute('marker-end', `url(#ah-${isCrit ? 'crit' : s})`);
+    svg.appendChild(p);
+  });
+  if ($('cRel').checked) {   // dotted connectors between the copies of an epic that relates to several SIs
+    const keys = new Set([...board.querySelectorAll('.card')].map(c => c.dataset.key));
+    keys.forEach(k => {
+      const c = inst(k); for (let i = 0; i + 1 < c.length; i++) {
+        const r1 = c[i].getBoundingClientRect(), r2 = c[i + 1].getBoundingClientRect();
+        const x = r1.left - br.left + 12, y1 = r1.bottom - br.top, y2 = r2.top - br.top;
+        const p = document.createElementNS(NS, 'path');
+        p.setAttribute('d', `M${x} ${y1} L${x} ${y2}`);
+        p.setAttribute('class', `e rel ${(!hl || hl.has(k)) ? '' : 'dim'}`);
+        svg.appendChild(p);
+      }
+    });
+  }
+}
+
+/* ---------- outline (tree) view: Objective > SI > Epic > work items, one line each, folded by default ---------- */
+const olOpen = new Set();   // ids of expanded rows (an id is the path of keys, so the same epic under two SIs folds independently)
+let depth = 3;
+const isDone = k => statusClass(sim.nodes[k].status) === 'done';
+const fOf = k => {   // what makes a line worth a look
+  const n = sim.nodes[k], blocks = sim.links.filter(l => l.t === 'blocks');
+  const open = n.type === 'epic' ? progress(sim, k).hold : 0;
+  return { late: n.type === 'epic' && !!lateObjective(sim, k), hold: statusClass(n.status) === 'hold' || open > 0,
+    blocked: blocks.some(l => l.b === k), blocking: blocks.some(l => l.a === k) };
+};
+function olTree() {
+  const ob = $('fObj').value, filtering = !!($('fStatus').value || $('fSearch').value);
+  const seen = new Set(), pinum = k => piNum(sim.nodes[k].pi) ?? 1e9;
+  const itemNodes = (k, id) => storiesOf(sim, k).sort((a, b) => natural(a.key, b.key)).map(s => ({ id: id + '/' + s.key, key: s.key, kind: 'item', lvl: 4, kids: [] }));
+  const epicNode = (k, id, si) => { const nid = id + '/' + k, copy = seen.has(k); seen.add(k);
+    return { id: nid, key: k, kind: 'epic', lvl: 3, copy, si, kids: itemNodes(k, nid) }; };
+  const epicList = (keys, id, si) => {   // open epics as lines, closed ones folded into one "N closed epics" line
+    const vis = keys.filter(k => epicVisible(sim.nodes[k])).sort((a, b) => pinum(a) - pinum(b) || natural(a, b));
+    const done = vis.filter(isDone), act = vis.filter(k => !isDone(k));
+    const out = act.map(k => epicNode(k, id, si));
+    if (done.length && !$('fStatus').value) out.push({ id: id + '/closed', kind: 'group', lvl: 3, label: `${done.length} closed epic${done.length > 1 ? 's' : ''}`, kids: done.map(k => epicNode(k, id + '/closed', si)) });
+    else done.forEach(k => out.push(epicNode(k, id, si)));
+    return out;
+  };
+  const siNode = (s, id) => { const eps = epicsOfSi(sim, s), sid = id + '/' + s; return { id: sid, key: s, kind: 'si', lvl: 2, kids: epicList(eps, sid, s), n: eps.length }; };
+  const roots = [];
+  sim.order.filter(o => !ob || o === ob).forEach(o => {
+    const sis = sisOfObjective(sim, o), inSi = new Set(sis.flatMap(s => epicsOfSi(sim, s)));
+    const kids = sis.filter(s => epicsOfSi(sim, s).length).map(s => siNode(s, o)).filter(s => !filtering || s.kids.length);
+    const direct = [...new Set(directEpicsOfObjective(sim, o))].filter(k => !inSi.has(k));
+    const dl = epicList(direct, o + '/direct', null);
+    if (dl.length) kids.push({ id: o + '/direct', kind: 'bucket', lvl: 2, label: 'Epics not assigned to a Solution Increment', hint: 'linked straight to the objective', kids: dl });
+    const empty = sis.filter(s => !epicsOfSi(sim, s).length);
+    if (empty.length && !filtering) kids.push({ id: o + '/emptysi', kind: 'group', lvl: 3, label: `${empty.length} solution increment${empty.length > 1 ? 's' : ''} without any epic yet`, kids: empty.map(s => siNode(s, o + '/emptysi')) });
+    roots.push({ id: o, key: o, kind: 'obj', lvl: 1, kids });
+  });
+  if (!ob) {
+    const orphan = Object.values(sim.nodes).filter(n => n.type === 'si' && !objectivesOfSi(sim, n.key).length).map(n => n.key).sort(natural);
+    if (orphan.length) roots.push({ id: 'noobj', kind: 'bucket', lvl: 1, label: 'Solution increments without an objective', kids: orphan.map(s => siNode(s, 'noobj')) });
+    const loose = epicsOf(sim).map(e => e.key).filter(k => !sisOfEpic(sim, k).length && !objectivesOfEpic(sim, k).length);
+    const ll = epicList(loose, 'loose', null);
+    if (ll.length) roots.push({ id: 'loose', kind: 'bucket', lvl: 1, label: 'Epics not related to any objective or solution increment', kids: ll });
+  }
+  if (!$('cAttn').checked) return roots;
+  const prune = n => {   // keep a line only if it, or something below it, needs attention
+    n.kids = n.kids.map(prune).filter(Boolean);
+    const f = n.key && sim.nodes[n.key] ? fOf(n.key) : {};
+    const self = n.kind === 'si' ? !n.n : n.kind === 'obj' ? false : (f.late || f.hold || f.blocked || f.blocking);
+    return self || n.kids.length ? n : null;
+  };
+  return roots.map(prune).filter(Boolean);
+}
+function olWalk(nodes, fn, path = []) { nodes.forEach(n => { fn(n, path); olWalk(n.kids || [], fn, [...path, n]); }); }
+function olApplyDepth(d) { depth = d; olOpen.clear(); olWalk(olTree(), n => { if (n.lvl < d && n.kids.length) olOpen.add(n.id); }); }
+function olKeys(n) { const s = new Set(); olWalk([n], x => { if (x.kind === 'epic') s.add(x.key); }); return [...s]; }
+function olChips(n) {
+  const k = n.key, nd = sim.nodes[k], out = [];
+  const jump = (x, cls, txt, title) => sim.nodes[x] ? `<span class="chip ${cls}" data-jump="${esc(x)}" title="${esc(title)}">${txt}</span>` : `<span class="chip plain" title="${esc(title)} (outside this filter)">${txt}</span>`;
+  const f = nd && fOf(k);
+  if (f && f.hold) out.push('<span class="badge hold">on hold</span>');
+  if (f && f.late) { const w = winOf(sim, k), o = lateObjective(sim, k);
+    out.push(`<span class="badge late" title="ends ${fmt(w.end)}, objective ${esc(o.key)} is due ${fmt(D(o.due))}">late +${Math.round((w.end - D(o.due)) / DAY)} d</span>`); }
+  if (n.kind === 'si' && !n.n) out.push('<span class="badge">no epics</span>');
+  sim.links.filter(l => l.t === 'blocks' && (l.a === k || l.b === k)).forEach(l => {
+    const x = l.a === k ? l.b : l.a, st = isType(sim, l.a, 'epic') && isType(sim, l.b, 'epic') ? depState(sim, l).s : '';
+    out.push(jump(x, 'dep ' + st, l.b === k ? `⛔ blocked by ${esc(x)}` : `→ blocks ${esc(x)}`, `${l.a} blocks ${l.b}${sim.nodes[x] ? ' – ' + sim.nodes[x].summary : ''}`));
+  });
+  if (nd && nd.type === 'epic') sisOfEpic(sim, k).filter(s => s !== n.si).slice(0, 2).forEach(s => out.push(jump(s, 'rel', `↺ also ${esc(s)}`, `also sits under ${s}`)));
+  if (nd && (nd.type === 'si' || nd.type === 'epic')) {   // "relates" between peers (SI–SI, epic–epic, epic–external); SI↔epic is already the tree
+    const rel = [...new Set(sim.links.filter(l => l.t === 'relates' && (l.a === k || l.b === k)).map(l => other(l, k))
+      .filter(x => !(sim.nodes[x] && ((nd.type === 'si' && sim.nodes[x].type === 'epic') || (nd.type === 'epic' && sim.nodes[x].type === 'si')))))];
+    rel.slice(0, 3).forEach(x => out.push(jump(x, 'rel', `↔ ${esc(x)}`, `relates to ${x}${sim.nodes[x] ? ' – ' + sim.nodes[x].summary : ''}`)));
+    if (rel.length > 3) out.push(`<span class="chip plain" title="${esc(rel.slice(3).join(', '))}">+${rel.length - 3} more</span>`);
+  }
+  return out.join('');
+}
+function olRow(n, ind, open, hl, critSet, ctx) {
+  const k = n.key, nd = k && sim.nodes[k], sc = nd ? statusClass(nd.status) : '';
+  const toggle = n.kids.length ? `<span class="tg" data-open="${esc(n.id)}">${open ? '▾' : '▸'}</span>` : '<span class="tg none">▸</span>';
+  const bar = pct => `<div class="pb"><i style="width:${Math.round(pct * 100)}%"></i></div>`;
+  let name = '', st = '', pg = '', wh = '', lk = olChips(n);
+  if (n.kind === 'obj') {
+    const keys = olKeys(n), span = spanOf(sim, keys), late = nd.due && span && span.end > D(nd.due), pct = aggregate(sim, keys);
+    name = `<span class="tp">OBJ</span><span class="tx"><b>${esc(k)}</b> ${esc(nd.summary)}<small> · ${[nd.assignee && 'owner ' + nd.assignee, nd.mgr && 'manager ' + nd.mgr].filter(Boolean).map(esc).join(' · ')}</small></span>`;
+    st = `<span class="st ${sc}">${esc(nd.status || '–')}</span>${nd.rag ? `<span class="dot ${RAG(nd.rag)}" style="margin-left:6px" title="RAG: ${esc(nd.rag)}"></span>` : ''}`;
+    pg = bar(pct) + `<span>${Math.round(pct * 100)}%</span>`;
+    wh = `${nd.due ? 'due <b>' + fmt(D(nd.due)) + '</b>' : 'no due date'}${span ? `<br>forecast <b class="${late ? 'bad' : 'ok'}">${fmt(span.end)}</b>${late ? ` <span class="badge late">+${Math.round((span.end - D(nd.due)) / DAY)} d</span>` : ''}` : ''}`;
+    lk = `<span class="chip plain">${sisOfObjective(sim, k).length} SI</span><span class="chip plain">${keys.length} epics</span><span class="chip plain">${keys.reduce((a, e) => a + storiesOf(sim, e).length, 0)} items</span>` + lk;
+  } else if (n.kind === 'si') {
+    const keys = olKeys(n), span = spanOf(sim, keys), pct = aggregate(sim, keys), objs = objectivesOfSi(sim, k);
+    name = `<span class="tp">SI</span><span class="tx"><b>${esc(k)}</b> ${esc(nd.summary)}</span>`;
+    st = `<span class="st ${sc}">${esc(nd.status || '–')}</span>`;
+    pg = keys.length ? bar(pct) + `<span>${Math.round(pct * 100)}%</span>` : '<span>–</span>';
+    wh = span ? `${fmtS(span.start)} – ${fmt(span.end)}` : '';
+    lk += objs.length > 1 ? `<span class="chip plain" title="solves ${esc(objs.join(', '))}">solves ${objs.length} objectives</span>` : '';
+  } else if (n.kind === 'bucket' || n.kind === 'group') {
+    const keys = olKeys(n), span = spanOf(sim, keys), pct = aggregate(sim, keys);
+    name = `<span class="tx">${esc(n.label)}${n.hint ? `<small> · ${esc(n.hint)}</small>` : ''}</span>`;
+    pg = keys.length ? bar(pct) + `<span>${Math.round(pct * 100)}%</span>` : '';
+    wh = span ? `${fmtS(span.start)} – ${fmt(span.end)}` : '';
+  } else if (n.kind === 'epic') {
+    const p = progress(sim, k), w = winOf(sim, k);
+    name = `<span class="tp" style="background:${duColor(nd.du)}">${esc(nd.du)}</span><span class="tx"><b>${esc(k.replace(/^.*-/, '#'))}</b>${n.copy ? ' ↺' : ''} ${esc(nd.summary)}</span>`;
+    st = `<span class="st ${sc}">${esc(nd.status || '–')}</span>`;
+    pg = p.total ? bar(p.pct) + `<span title="${p.spDone}/${p.sp} SP">${p.done}/${p.total}</span>` : '<span>no items</span>';
+    wh = `${esc(nd.pi)}${w ? `<br>${fmtS(w.start)} – ${fmtS(w.end)}${w.src === 'pi' ? ' (PI)' : ''}` : ''}`;
+    if (critSet.has(k)) lk = '<span class="badge crit">critical path</span>' + lk;
+  } else {   // work item
+    name = `<span class="tx"><b>${esc(k)}</b> ${esc(nd.summary)}</span>`;
+    st = `<span class="st ${sc}">${esc(nd.status || '–')}</span>`;
+    pg = `<span>${nd.sp ? nd.sp + ' SP' : ''}</span>`;
+    wh = nd.sprints.length ? `sprint ${Math.max(...nd.sprints)}` : 'backlog';
+    lk = (nd.assignee ? `<span class="chip plain">${esc(nd.assignee)}</span>` : '') + lk;
+  }
+  const dim = hl && n.kind === 'epic' && !hl.has(k);
+  return `<div class="orow k-${n.kind} ${n.copy ? 'copy' : ''} ${k && k === selected ? 'sel' : ''} ${dim ? 'dim' : ''}" data-row="${esc(n.id)}" ${k ? `data-key="${esc(k)}"` : ''} ${nd ? `title="${esc(k + ' – ' + nd.summary)}"` : ''}>
+    <div class="oname" style="padding-left:${ind * 20}px">${toggle}${name}</div><div>${st}</div><div class="opg">${pg}</div><div class="owh">${wh}</div><div class="olk">${lk}</div></div>`;
+}
+function renderOutline() {
+  const wrap = $('boardWrap'), sl = wrap.scrollLeft, st = wrap.scrollTop;
+  const crit = $('cCrit').checked ? criticalPath(sim, epicsOf(sim).filter(epicVisible).map(e => e.key)) : null;
+  const critSet = new Set(crit ? crit.chain : []);
+  const hl = selected && isType(sim, selected, 'epic') && depsOf(sim).some(l => l.a === selected || l.b === selected) ? neighbourhood(selected) : null;
+  const rows = [], tree = olTree();
+  const go = (nodes, ind) => nodes.forEach(n => { const o = olOpen.has(n.id); rows.push(olRow(n, ind, o, hl, critSet)); if (o && n.kids.length) go(n.kids, ind + 1); });
+  go(tree, 0);
+  wrap.innerHTML = `<div class="ol"><div class="ohead"><div>Objective › Solution Increment › Epic › Work item</div><div>Status</div><div>Progress</div><div>When</div><div>Flags &amp; relations</div></div>${rows.join('') || '<div id="empty">Nothing to show with these filters.</div>'}</div>`;
+  wrap.scrollLeft = sl; wrap.scrollTop = st;
+  renderStats(crit); renderCrit(crit); renderViols(); renderDetail();
+}
+function olJump(key) {
+  if (!sim.nodes[key]) return;
+  selected = key;
+  let path = null; olWalk(olTree(), (n, p) => { if (!path && n.key === key) path = p; });
+  (path || []).forEach(p => olOpen.add(p.id));
+  render();
+  const el = $('boardWrap').querySelector(`.orow[data-key="${CSS.escape(key)}"]`); if (el) el.scrollIntoView({ block: 'center' });
+}
+
+function renderStats(crit) {
+  const eps = epicsOf(sim), deps = depsOf(sim), st = { ok: 0, warn: 0, bad: 0 };
+  deps.forEach(l => st[depState(sim, l).s]++);
+  const bad0 = depsOf(base).filter(l => depState(base, l).s === 'bad').length;
+  const d = st.bad - bad0;
+  const changed = eps.filter(e => base.nodes[e.key].pi !== e.pi).length + (sim.order.join() !== base.order.join() ? 1 : 0) +
+    (sim.links.length !== base.links.length || sim.links.some(l => !base.links.some(b => b.a === l.a && b.b === l.b && b.t === l.t)) ? 1 : 0);
+  $('stats').innerHTML =
+    `<span class="pill"><b>${sim.order.length}</b> objectives</span>` +
+    `<span class="pill"><b>${Object.values(sim.nodes).filter(n => n.type === 'si').length}</b> solution increments</span>` +
+    `<span class="pill"><b>${eps.length}</b> epics</span><span class="pill"><b>${Object.values(sim.nodes).filter(n => n.type === 'story').length}</b> stories</span>` +
+    `<span class="pill"><b>${deps.length}</b> epic dependencies${savedApplied ? ` (${savedApplied} from saved)` : ''}</span>` +
+    `<span class="pill"><b class="bad">${st.bad}</b> overlap${d ? ` (${d > 0 ? '+' : ''}${d})` : ''}</span><span class="pill"><b class="warn">${st.warn}</b> tight</span>` +
+    `<span class="pill">scenario changes: <b>${changed}</b></span>` +
+    (sim.ignored ? `<span class="pill muted">${sim.ignored} link(s) of other types ignored</span>` : '');
+}
+function renderCrit(crit) {
+  if (!$('cCrit').checked) { $('critp').innerHTML = '<span class="muted">switched off</span>'; return; }
+  if (!crit) { $('critp').innerHTML = depsOf(sim).length ? '<span class="muted">No chain of dependencies with ≤ 1 sprint slack.</span>' : '<span class="muted">Add epic dependencies to see the critical path.</span>'; return; }
+  const objs = [...new Set(crit.chain.flatMap(k => objectivesOfEpic(sim, k)))].map(o => sim.nodes[o]).filter(o => o.due);
+  const dueTxt = objs.map(o => { const diff = Math.round((crit.end - D(o.due)) / DAY);
+    return `<div class="${diff > 0 ? 'bad' : 'ok'}">vs ${esc(o.key)} due ${fmt(D(o.due))}: ${diff > 0 ? '+' + diff + ' days late' : Math.abs(diff) + ' days spare'}</div>`; }).join('');
+  $('critp').innerHTML = crit.chain.map((k, i) => {
+    const w = winOf(sim, k), l = i ? depsOf(sim).find(x => x.a === crit.chain[i - 1] && x.b === k) : null, sl = l ? depState(sim, l).slack : null;
+    return `<div>${i ? `<span class="muted">↓ slack ${sl == null ? '?' : sl + ' d'}</span><br>` : ''}<b>${esc(k)}</b> ${esc(sim.nodes[k].summary.slice(0, 34))}<br><span class="muted">${w ? fmtS(w.start) + ' – ' + fmt(w.end) : ''}</span></div>`;
+  }).join('') + `<div style="margin-top:6px"><b>Chain ends ${fmt(crit.end)}</b></div>` + dueTxt;
+}
+function renderViols() {
+  const last = sim.periods.length - 1, items = [];
+  depsOf(sim).forEach(l => { const s = depState(sim, l); if (s.s === 'bad' || s.s === 'warn') items.push([l, s]); });
+  items.sort((x, y) => (x[1].s === 'bad' ? 0 : 1) - (y[1].s === 'bad' ? 0 : 1));
+  let html = (items.some(x => x[1].s === 'bad') ? '<button onclick="autoResolve()">Auto-resolve: push blocked epics later</button>' : '') +
+    items.map(([l, s]) => {
+      const ea = sim.nodes[l.a], eb = sim.nodes[l.b], ia = sim.periods.indexOf(ea.pi);
+      const pushB = sim.periods[Math.min(ia + 1, last)];
+      return `<div class="viol ${s.s === 'warn' ? 'warn' : ''}"><b>${esc(l.a)}</b> blocks <b>${esc(l.b)}</b><br><span class="muted">${s.slack == null ? 'same PI – needs a sprint plan' : s.slack < 0 ? 'overlap of ' + (-s.slack) + ' days' : 'only ' + s.slack + ' days slack'}</span><br>
+        <button onclick="setPI('${esc(l.b)}','${esc(pushB)}')">Move ${esc(l.b)} → ${esc(pushB)}</button></div>`;
+    }).join('');
+  const J = k => `<a href="#" data-jump="${esc(k)}">${esc(k)}</a>`, lateBy = {};   // one entry per objective / per problem, not one per epic
+  epicsOf(sim).forEach(e => { const o = lateObjective(sim, e.key); if (o) (lateBy[o.key] = lateBy[o.key] || []).push(e.key); });
+  Object.keys(lateBy).forEach(o => { const ks = lateBy[o];
+    html += `<div class="viol warn"><b>${ks.length} epic${ks.length > 1 ? 's' : ''}</b> end after objective <b>${esc(o)}</b> due ${fmt(D(sim.nodes[o].due))}<br><span class="muted">${ks.map(J).join(', ')}</span></div>`; });
+  const noEpic = Object.values(sim.nodes).filter(n => n.type === 'si' && !epicsOfSi(sim, n.key).length).map(n => n.key);
+  if (noEpic.length) html += `<div class="viol warn"><b>${noEpic.length} solution increment${noEpic.length > 1 ? 's' : ''}</b> without any related epic – nobody delivers ${noEpic.length > 1 ? 'them' : 'it'}<br><span class="muted">${noEpic.map(J).join(', ')}</span></div>`;
+  sim.order.filter(o => !sisOfObjective(sim, o).length && !directEpicsOfObjective(sim, o).length).forEach(o => {
+    html += `<div class="viol warn"><b>${esc(o)}</b> has no solution increment</div>`; });
+  $('viols').innerHTML = html || '<span class="ok">No conflicts.</span>';
+}
+function renderSiDetail(e) {
+  const mine = sim.links.filter(l => (l.t === 'solves' || l.t === 'relates') && (l.a === e.key || l.b === e.key));
+  const row = l => { const o = other(l, e.key);
+    return `<div class="link"><span><span class="muted">${l.t === 'solves' ? 'solves' : 'related epic'}</span> ${esc(o)} <span class="muted">${esc(sim.nodes[o]?.summary?.slice(0, 28) || '')}</span></span>
+    <button title="Remove link" onclick="removeLink('${esc(l.a)}','${esc(l.b)}','${l.t}')">✕</button></div>`; };
+  const objs = sim.order.map(k => `<option>${esc(k)}</option>`).join('');
+  const eps = epicsOf(sim).map(x => x.key).sort(natural).map(k => `<option>${esc(k)}</option>`).join('');
+  const span = spanOf(sim, epicsOfSi(sim, e.key));
+  $('detail').innerHTML = `<h3>${esc(e.key)} <span class="muted">solution increment</span></h3><div>${esc(e.summary)}</div>
+    <div class="muted">${esc(e.assignee || 'no owner')} · ${esc(e.status || 'no status')}${span ? ` · derived ${fmt(span.start)} – ${fmt(span.end)}` : ''}</div>
+    <h3 style="margin-top:10px">Links (${mine.length})</h3>${mine.map(row).join('') || '<div class="muted">none</div>'}
+    <div class="row"><select id="siObj"><option value="">solves objective…</option>${objs}</select><button onclick="addSiLink('solves')">+</button></div>
+    <div class="row"><select id="siEpic"><option value="">related epic…</option>${eps}</select><button onclick="addSiLink('relates')">+</button></div>`;
+}
+function renderGenericDetail(e) {   // objective or work item: read-only facts + its links
+  const mine = sim.links.filter(l => l.a === e.key || l.b === e.key), par = e.parent && sim.nodes[e.parent];
+  const label = l => l.t === 'solves' ? (l.a === e.key ? 'solves' : 'is solved by') : l.t === 'blocks' ? (l.a === e.key ? 'blocks' : 'is blocked by') : 'relates to';
+  $('detail').innerHTML = `<h3>${esc(e.key)} <span class="muted">${e.type === 'story' ? 'work item' : esc(e.type)}</span></h3><div>${esc(e.summary)}</div>
+    <div class="muted">${esc(e.assignee || 'no owner')} · ${esc(e.status || 'no status')}${e.sp ? ' · ' + e.sp + ' SP' : ''}${e.due ? ' · due ' + fmt(D(e.due)) : ''}</div>
+    ${par ? `<div class="muted">in epic <a href="#" data-jump="${esc(par.key)}">${esc(par.key)}</a> ${esc(par.summary)}</div>` : ''}
+    ${e.sprints.length ? `<div class="muted">sprints ${e.sprints.map(s => piOfSprint(s) ? s + ' (' + piOfSprint(s) + ')' : s).join(', ')}</div>` : ''}
+    <h3 style="margin-top:10px">Links (${mine.length})</h3>${mine.map(l => `<div class="link"><span><span class="muted">${label(l)}</span> ${esc(other(l, e.key))} <span class="muted">${esc((sim.nodes[other(l, e.key)]?.summary || '').slice(0, 30))}</span></span></div>`).join('') || '<div class="muted">none</div>'}`;
+}
+function addSiLink(kind) {
+  const o = $(kind === 'solves' ? 'siObj' : 'siEpic').value; if (!o) return;
+  const l = kind === 'solves' ? { a: selected, b: o, t: 'solves' } : { a: [selected, o].sort()[0], b: [selected, o].sort()[1], t: 'relates' };
+  if (sim.links.some(x => x.t === l.t && ((x.a === l.a && x.b === l.b) || (l.t === 'relates' && x.a === l.b && x.b === l.a) || (l.t === 'solves' && x.a === l.b && x.b === l.a)))) return;
+  sim.links.push(l); render();
+}
+function renderDetail() {
+  const e = selected && sim.nodes[selected];
+  if (e && e.type === 'si') { renderSiDetail(e); return; }
+  if (e && e.type !== 'epic') { renderGenericDetail(e); return; }
+  if (!e) { $('detail').innerHTML = '<h3>Selection</h3><div class="muted">Click a line (outline) or an epic card (board).</div>'; return; }
+  const b0 = base.nodes[e.key], p = progress(sim, e.key), w = winOf(sim, e.key);
+  const mine = sim.links.filter(l => l.a === e.key || l.b === e.key);
+  const li = l => {
+    const o = other(l, e.key);
+    const label = l.t === 'relates' ? 'relates to' : l.a === e.key ? 'blocks' : 'is blocked by';
+    return `<div class="link"><span><span class="muted">${label}</span> ${esc(o)} <span class="muted">${esc(sim.nodes[o]?.pi || sim.nodes[o]?.type || 'external')}</span></span>
+      <button title="Remove link" onclick="removeLink('${esc(l.a)}','${esc(l.b)}','${l.t}')">✕</button></div>`;
+  };
+  const stories = storiesOf(sim, e.key), bySprint = {};
+  stories.forEach(s => { const k = s.sprints.length ? Math.max(...s.sprints) : 'Backlog'; (bySprint[k] = bySprint[k] || []).push(s); });
+  const sprintRows = Object.keys(bySprint).sort((a, b) => a === 'Backlog' ? 1 : b === 'Backlog' ? -1 : a - b).map(sp =>
+    `<tr><td colspan="4" class="sph">${sp === 'Backlog' ? 'Backlog' : `Sprint ${sp} · ${fmtS(sprintStart(+sp))}–${fmtS(sprintEnd(+sp))} · ${piOfSprint(+sp) || ''}`}</td></tr>` +
+    bySprint[sp].sort((a, b) => natural(a.key, b.key)).map(s =>
+      `<tr><td title="${esc(s.summary)}">${esc(s.key)}</td><td>${esc(s.summary.length > 36 ? s.summary.slice(0, 34) + '…' : s.summary)}</td>
+      <td><span class="st ${statusClass(s.status)}">${esc(s.status)}</span></td><td>${s.sp || ''}</td></tr>`).join('')).join('');
+  const sis = sisOfEpic(sim, e.key), late = lateObjective(sim, e.key);
+  $('detail').innerHTML = `<h3>${esc(e.key)}</h3><div>${esc(e.summary)}</div>
+    <div class="muted">${esc(e.du)} · ${esc(e.assignee || 'no owner')} · ${esc(e.status || 'no status')}</div>
+    <div class="muted">SI: ${sis.map(esc).join(', ') || 'none'} · Objectives: ${objectivesOfEpic(sim, e.key).map(esc).join(', ') || 'none'}</div>
+    ${w ? `<div class="muted">Window ${fmt(w.start)} – ${fmt(w.end)} (${w.src === 'sprints' ? 'from story sprints' : 'whole PI'})</div>` : ''}
+    ${late ? `<div class="warn">Ends after objective ${esc(late.key)} due ${fmt(D(late.due))}</div>` : ''}
+    <div class="row">PI <select onchange="setPI('${esc(e.key)}', this.value)">${sim.periods.map(x => `<option ${x === e.pi ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>
+      <span class="muted">baseline: ${esc(b0.pi)}</span></div>
+    <div>Progress: <b>${Math.round(p.pct * 100)}%</b> · ${p.done}/${p.total} stories${p.sp ? ` · ${p.spDone}/${p.sp} SP` : ''}${p.hold ? ` · <span class="warn">${p.hold} on hold</span>` : ''}</div>
+    <h3 style="margin-top:10px">Links (${mine.length})</h3>${mine.map(li).join('') || '<div class="muted">none</div>'}
+    <div class="row"><select id="addType" onchange="fillTargets()"><option value="blocks">this blocks →</option><option value="blockedby">← blocked by</option><option value="relates">relates to SI</option></select>
+      <select id="addOther"></select><button onclick="addLink()">+</button></div>
+    <h3 style="margin-top:10px">Stories by sprint</h3>
+    <div class="stories">${stories.length ? `<table>${sprintRows}</table>` : '<div class="muted">no stories linked to this epic</div>'}</div>`;
+  fillTargets();
+}
+function fillTargets() {
+  const t = $('addType'); if (!t) return;
+  const keys = Object.values(sim.nodes).filter(n => (t.value === 'relates' ? n.type === 'si' : n.type === 'epic') && n.key !== selected).map(n => n.key).sort(natural);
+  $('addOther').innerHTML = '<option value="">choose…</option>' + keys.map(k => `<option>${esc(k)}</option>`).join('');
+}
+
+/* ---------- scenario actions ---------- */
+function setPI(key, p) { if (sim.nodes[key]) { sim.nodes[key].pi = p; refreshPeriods(sim); render(); } }
+function removeLink(a, b, t) { sim.links = sim.links.filter(l => !(l.a === a && l.b === b && l.t === t)); render(); }
+function moveObj(k, d) {
+  const i = sim.order.indexOf(k), j = i + d; if (j < 0 || j >= sim.order.length) return;
+  [sim.order[i], sim.order[j]] = [sim.order[j], sim.order[i]]; render();
+}
+function addLink() {
+  const t = $('addType').value, o = $('addOther').value; if (!o) return;
+  let l;
+  if (t === 'relates') l = { a: [selected, o].sort()[0], b: [selected, o].sort()[1], t: 'relates' };
+  else l = t === 'blocks' ? { a: selected, b: o, t: 'blocks' } : { a: o, b: selected, t: 'blocks' };
+  if (sim.links.some(x => x.a === l.a && x.b === l.b && x.t === l.t)) return;
+  if (l.t === 'blocks' && reaches(l.b, l.a)) { alert('This dependency would create a cycle (' + l.b + ' already leads to ' + l.a + ').'); return; }
+  sim.links.push(l); render();
+}
+function autoResolve() {
+  const last = sim.periods.length - 1;
+  for (let i = 0; i < 60; i++) {
+    let changed = false;
+    depsOf(sim).forEach(l => {
+      if (depState(sim, l).s !== 'bad') return;
+      const eb = sim.nodes[l.b]; if (statusClass(eb.status) === 'done') return;
+      const pa = sim.periods.indexOf(sim.nodes[l.a].pi), pb = sim.periods.indexOf(eb.pi);
+      eb.pi = sim.periods[Math.min(Math.max(pa, pb) + 1, last)]; changed = true;
+    });
+    if (!changed) break;
+  }
+  refreshPeriods(sim); render();
+}
+
+/* ---------- dependencies persistence ---------- */
+const depKey = 'epic-hierarchy-deps';
+const blocksOf = m => m.links.filter(l => l.t === 'blocks').map(l => l.a + '>' + l.b);
+function mergeDeps(pairs, target) {
+  let n = 0;
+  pairs.forEach(p => {
+    const [a, b] = p.split('>');
+    if (!isType(target, a, 'epic') || !isType(target, b, 'epic') || target.links.some(l => l.t === 'blocks' && l.a === a && l.b === b)) return;
+    target.links.push({ a, b, t: 'blocks' }); n++;
+  });
+  return n;
+}
+function saveDeps() {
+  if (!sim) return;
+  try { localStorage.setItem(depKey, JSON.stringify(blocksOf(sim))); alert(blocksOf(sim).length + ' dependencies saved in this browser; they are re-applied on every import.'); }
+  catch (e) { alert('Browser storage is not available – use Export CSV instead.'); }
+}
+function exportDeps() {
+  if (!sim) return;
+  const lines = ['blocker,blocked', ...blocksOf(sim).map(p => p.replace('>', ','))];
+  download('epic-dependencies-export.csv', lines.join('\n'));
+}
+function importDeps(text) {
+  if (!base) { alert('Load epics first.'); return; }
+  const rows = parseCSV(text).filter(r => r.length >= 2 && r[0] && r[1]);
+  const pairs = rows.map(r => (r[0].match(KEY_RE) || [''])[0] + '>' + (r[1].match(KEY_RE) || [''])[0]).filter(p => !p.startsWith('>') && !p.endsWith('>'));
+  const n = mergeDeps(pairs, base); sim = clone(base); savedApplied += n; render();
+}
+function download(name, text) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + text], { type: 'text/csv' })); a.download = name; a.click(); URL.revokeObjectURL(a.href);
+}
+function exportCSV() {
+  if (!sim) return;
+  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const lines = [['Epic', 'Summary', 'Delivery Unit', 'Solution Increments', 'Objectives', 'PI (scenario)', 'PI (baseline)', 'Changed', 'Start', 'End', 'Stories done', 'Stories total', 'Blocks'].map(q).join(',')];
+  epicsOf(sim).forEach(e => {
+    const p = progress(sim, e.key), w = winOf(sim, e.key);
+    lines.push([e.key, e.summary, e.du, sisOfEpic(sim, e.key).join(' '), objectivesOfEpic(sim, e.key).join(' '), e.pi, base.nodes[e.key].pi,
+      e.pi !== base.nodes[e.key].pi ? 'yes' : '', w ? new Date(w.start).toISOString().slice(0, 10) : '', w ? new Date(w.end).toISOString().slice(0, 10) : '',
+      p.done, p.total, depsOf(sim).filter(l => l.a === e.key).map(l => l.b).join(' ')].map(q).join(','));
+  });
+  download('epic-hierarchy-scenario.csv', lines.join('\n'));
+}
+
+/* ---------- calendar form ---------- */
+function calToForm() {
+  $('calN').value = CAL.aN; $('calS').value = CAL.aS; $('calD').value = CAL.days; $('calL').value = CAL.len;
+  $('calP').value = CAL.rows.map(r => `PI${r.n},${r.first},${r.last}`).join('\n');
+}
+function applyCal() {
+  const rows = $('calP').value.split('\n').map(s => s.trim()).filter(Boolean).map(s => {
+    const [p, f, l] = s.split(','); return { n: piNum(p), first: +f, last: +l }; }).filter(r => r.n != null && r.first && r.last);
+  if (!rows.length || isNaN(D($('calS').value))) { alert('Check the calendar: need at least one PI row and a valid start date.'); return; }
+  CAL = { aN: +$('calN').value, aS: $('calS').value, days: +$('calD').value || 14, len: +$('calL').value || 6, rows };
+  if (base) { Object.values(base.nodes).forEach(n => { if (n.type === 'epic' && !n.piGiven) n.pi = ''; }); derivePIs(base); refreshPeriods(base); sim = clone(base); render(); }
+}
+
+/* ---------- data mapping (override what auto-detection got wrong) ---------- */
+function renderMapping() {
+  if (!base) { $('mapping').textContent = 'Load data first.'; return; }
+  const S = base.settings, H = base.headers;
+  const hopts = sel => '<option value="-1">— not in CSV —</option>' + H.map((h, i) => `<option value="${i}" ${i === sel ? 'selected' : ''}>${esc(h)}</option>`).join('');
+  const kopts = (list, sel) => list.map(([v, t]) => `<option value="${v}" ${v === sel ? 'selected' : ''}>${t}</option>`).join('');
+  $('mapping').innerHTML = `
+    <div class="muted">Columns</div>
+    ${FIELD_DEFS.map(([f, label]) => `<div class="row"><span style="width:130px">${label}</span><select data-map="col" data-f="${f}">${hopts(S.cols[f])}</select></div>`).join('')}
+    <div class="row"><span style="width:130px">Sprint columns start with</span><input data-map="sprint" value="${esc(S.sprintPrefix)}" style="width:100px"></div>
+    <div class="muted" style="margin-top:6px">Link columns → meaning</div>
+    ${Object.keys(S.linkCols).map(i => `<div class="row"><span style="width:150px;font-size:11px">${esc(H[i])}</span><select data-map="link" data-i="${i}">${kopts(LINK_KINDS, S.linkCols[i])}</select></div>`).join('') || '<div class="muted">no "issue link" columns found</div>'}
+    <div class="muted" style="margin-top:6px">Wording inside a "Linked issues" text column → meaning</div>
+    ${Object.keys(S.phrases || {}).map(t => `<div class="row"><span style="width:150px">"${esc(t)}"</span><select data-map="phrase" data-t="${esc(t)}">${kopts(LINK_KINDS, S.phrases[t])}</select></div>`).join('')}
+    <div class="muted" style="margin-top:6px">Issue types → level</div>
+    ${Object.keys(S.types).map(t => `<div class="row"><span style="width:150px">${esc(t)}</span><select data-map="type" data-t="${esc(t)}">${kopts(TYPE_KINDS, S.types[t])}</select></div>`).join('') || '<div class="muted">no issue type column – levels are guessed from keys</div>'}
+    <div class="muted" style="margin-top:6px">Other</div>
+    <div class="row"><label class="chk"><input type="checkbox" data-map="prio" ${S.prioDesc ? 'checked' : ''}> higher Global Priority number = more important</label></div>
+    <div class="row"><span style="width:130px">Delivery Unit from</span><select data-map="du"><option value="auto" ${S.duMode === 'auto' ? 'selected' : ''}>Project column, else key prefix</option><option value="prefix" ${S.duMode === 'prefix' ? 'selected' : ''}>Key prefix only</option></select></div>
+    <div class="row"><button onclick="applyMapping()">Apply mapping (resets scenario)</button></div>`;
+}
+function applyMapping() {
+  if (!rawRows) return;
+  const S = clone(base.settings), q = sel => [...$('mapping').querySelectorAll(sel)];
+  q('[data-map=col]').forEach(el => S.cols[el.dataset.f] = +el.value);
+  S.sprintPrefix = $('mapping').querySelector('[data-map=sprint]').value || 'sprint';
+  q('[data-map=link]').forEach(el => S.linkCols[el.dataset.i] = el.value);
+  q('[data-map=type]').forEach(el => S.types[el.dataset.t] = el.value);
+  q('[data-map=phrase]').forEach(el => S.phrases[el.dataset.t] = el.value);
+  S.prioDesc = $('mapping').querySelector('[data-map=prio]').checked;
+  S.duMode = $('mapping').querySelector('[data-map=du]').value;
+  try {
+    base = buildModel(rawRows, S); savedApplied = 0;
+    try { savedApplied = mergeDeps(JSON.parse(localStorage.getItem(depKey) || '[]'), base); } catch (e) {}
+    sim = clone(base); selected = null; olApplyDepth(depth); render(); renderMapping();
+  } catch (err) { alert('Mapping problem: ' + err.message); }
+}
+
+/* ---------- Word / HTML export readers (JIRA "Export > Word" is HTML saved as .doc; re-saved files are .docx) ---------- */
+function textOfNode(n) {
+  let out = '';
+  (function w(x) {
+    if (x.nodeType === 3) { out += x.nodeValue; return; }
+    if (x.nodeType !== 1) return;
+    const t = x.tagName.toLowerCase();
+    if (t === 'script' || t === 'style') return;
+    if (t === 'br') { out += '\n'; return; }
+    if (t === 'img') { out += x.getAttribute('alt') || x.getAttribute('title') || ''; return; }   // issue-type icons carry their name in alt
+    x.childNodes.forEach(w);
+    if (t === 'td' || t === 'th') out += '\t'; else if (/^(p|div|li|tr|h\d|ul|ol|table)$/.test(t)) out += '\n';
+  })(n);
+  return out.replace(/[ \r ]+/g, ' ').split('\n').map(s => s.replace(/\t+\s*$/, '').trim()).filter((s, i, a) => s || (i && a[i - 1])).join('\n').trim();
+}
+function structureFromHTML(html) {
+  const d = new DOMParser().parseFromString(html, 'text/html');
+  const tables = [...d.querySelectorAll('table')].filter(t => !t.parentElement.closest('table'))
+    .map(t => [...t.rows].map(r => [...r.cells].map(c => textOfNode(c).replace(/\t/g, ' '))));
+  const lines = textOfNode(d.body).split('\n').map(s => s.trim()).filter(Boolean);
+  return { tables, lines };
+}
+function structureFromDocx(xml) {
+  const d = new DOMParser().parseFromString(xml, 'application/xml'), W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const kids = (n, name) => [...n.childNodes].filter(c => c.localName === name && c.namespaceURI === W);
+  const para = p => { let o = ''; p.querySelectorAll('*').forEach(x => { if (x.localName === 't') o += x.textContent; else if (x.localName === 'tab') o += ' '; else if (x.localName === 'br') o += '\n'; }); return o; };
+  const cellText = c => kids(c, 'p').map(para).join('\n').trim();
+  const body = d.getElementsByTagNameNS(W, 'body')[0], tables = [], lines = [];
+  [...body.childNodes].forEach(n => {
+    if (n.localName === 'p') { const t = para(n).trim(); if (t) lines.push(t); }
+    else if (n.localName === 'tbl') {
+      const rows = kids(n, 'tr').map(tr => kids(tr, 'tc').map(cellText));
+      tables.push(rows.map(r => r.map(c => c.replace(/\n/g, ' '))));
+      rows.forEach(r => { const l = r.map(c => c.replace(/\n/g, ' ')).join('\t').trim(); if (l) lines.push(l); });
+    }
+  });
+  return { tables, lines };
+}
+async function unzipEntry(buf, name) {   // minimal zip reader: finds one entry and inflates it with the browser's DecompressionStream
+  const dv = new DataView(buf), u8 = new Uint8Array(buf), dec = new TextDecoder();
+  let i = u8.length - 22; while (i >= 0 && dv.getUint32(i, true) !== 0x06054b50) i--;
+  if (i < 0) throw new Error('not a valid .docx file');
+  let p = dv.getUint32(i + 16, true);
+  for (let k = dv.getUint16(i + 10, true); k > 0 && dv.getUint32(p, true) === 0x02014b50; k--) {
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true),
+          el = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), lho = dv.getUint32(p + 42, true);
+    const fname = dec.decode(u8.slice(p + 46, p + 46 + nl)); p += 46 + nl + el + cl;
+    if (fname !== name) continue;
+    const start = lho + 30 + dv.getUint16(lho + 26, true) + dv.getUint16(lho + 28, true), data = u8.slice(start, start + csize);
+    if (method === 0) return dec.decode(data);
+    const out = await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
+    return dec.decode(out);
+  }
+  throw new Error(name + ' not found inside the .docx');
+}
+function rowsFromStructure(st) {
+  // A) tabular list: one table with a header row that contains an issue-key column
+  const keyCands = FIELD_DEFS[0][2];
+  let best = null;
+  st.tables.forEach(t => {
+    if (t.length < 2 || t[0].length < 3) return;
+    if (!findCols(t[0], keyCands).length) return;
+    if (!best || t.length > best.length) best = t;
+  });
+  if (best) { const w = best[0].length; return best.map(r => { const x = r.slice(0, w); while (x.length < w) x.push(''); return x; }); }
+  // B) one block per issue: "[KEY] Summary" heading, then "Label: value" lines (best effort)
+  const bracket = st.lines.some(l => /^\[[A-Z][A-Z0-9_]+-\d+\]/.test(l));
+  const startRe = bracket ? /^\[([A-Z][A-Z0-9_]+-\d+)\]\s*[-–:]?\s*(.*)$/ : /^([A-Z][A-Z0-9_]+-\d+)\s*[-–:]?\s+(.+)$/;
+  const blocks = []; const seen = new Set(); let cur = null;
+  st.lines.forEach(l => {
+    const m = startRe.exec(l);
+    if (m && !l.includes('\t') && !seen.has(m[1])) { seen.add(m[1]); cur = { key: m[1], summary: m[2], f: {}, text: [] }; blocks.push(cur); return; }
+    if (!cur) return;
+    const t = l.split('\t');
+    if (t.length > 1 && t[0].trim()) { cur.f[t[0].replace(/:\s*$/, '').trim()] = t.slice(1).join(' ').trim(); cur.text.push(t.join(' ')); }
+    else { const k = /^([A-Za-z][A-Za-z ]{1,30}):\s+(.+)$/.exec(l); if (k) cur.f[k[1].trim()] = k[2].trim(); cur.text.push(l); }
+  });
+  if (!blocks.length) throw new Error('no issue table or issue headings found in this document – is it the JIRA "Word" export of an issue list?');
+  const labels = [...new Set(blocks.flatMap(b => Object.keys(b.f)))].filter(x => !/^(summary|key|issue key)$/i.test(x));
+  const phr = Object.keys(PHRASES).join('|'), linkRe = new RegExp('(' + phr + ')\\s+[A-Z][A-Z0-9_]+-\\d+', 'i');
+  const out = [['Issue key', 'Summary', ...labels, 'Linked issues']];
+  blocks.forEach(b => out.push([b.key, b.summary, ...labels.map(x => b.f[x] || ''), b.text.filter(t => linkRe.test(t) || /^[A-Z][A-Z0-9_]+-\d+\s/.test(t) && false).join(' ')]));
+  return out;
+}
+async function importFile(f) {
+  try {
+    const name = f.name.toLowerCase();
+    if (/\.csv$/.test(name)) { load(await f.text()); return; }
+    const buf = await f.arrayBuffer(), u8 = new Uint8Array(buf);
+    if (u8[0] === 0x50 && u8[1] === 0x4b) { loadRows(rowsFromStructure(structureFromDocx(await unzipEntry(buf, 'word/document.xml')))); return; }
+    if (u8[0] === 0xd0 && u8[1] === 0xcf) throw new Error('this is a binary Word 97-2003 file – open it in Word and Save As .docx, or re-export from JIRA');
+    const text = new TextDecoder('utf-8').decode(buf);
+    if (/^\s*<\?xml/.test(text) && /<rss|<issue/i.test(text.slice(0, 2000))) throw new Error('JIRA XML export is not supported yet – use the Word (or CSV) export');
+    loadRows(rowsFromStructure(structureFromHTML(text)));
+  } catch (err) { alert('Could not read the file: ' + err.message); }
+}
+
+/* ---------- wiring ---------- */
+function clearAll() {
+  base = sim = null; rawRows = null; selected = null; collapsed.clear(); olOpen.clear(); savedApplied = 0; $('mapping').textContent = 'Load data first.';
+  $('boardWrap').innerHTML = '<div id="empty">Import a JIRA export (Word .doc / .docx, or CSV) or click <b>Load sample</b>.</div>';
+  $('stats').innerHTML = ''; $('viols').textContent = '–'; $('critp').textContent = '–';
+  $('detail').innerHTML = '<h3>Selection</h3><div class="muted">Click a line (outline) or an epic card (board).</div>';
+  $('fObj').innerHTML = '<option value="">All objectives</option>';
+}
+function load(csv) { loadRows(parseCSV(csv)); }
+function loadRows(rows) {
+  try {
+    rawRows = rows; base = buildModel(rows); savedApplied = 0;
+    try { savedApplied = mergeDeps(JSON.parse(localStorage.getItem(depKey) || '[]'), base); } catch (e) {}
+    sim = clone(base); selected = null; collapsed.clear(); olApplyDepth(3); $('depthSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.d === '3')); render(); renderMapping();
+  } catch (err) { alert('Could not read the file: ' + err.message); }
+}
+$('btnImport').onclick = () => $('file').click();
+$('file').onchange = ev => { const f = ev.target.files[0]; if (f) importFile(f); ev.target.value = ''; };
+$('btnSample').onclick = () => load(SAMPLE_CSV);
+$('btnReset').onclick = () => { if (base) { sim = clone(base); render(); } };
+$('btnClear').onclick = clearAll;
+$('btnExport').onclick = exportCSV;
+$('btnSaveDeps').onclick = saveDeps; $('btnExpDeps').onclick = exportDeps;
+$('btnImpDeps').onclick = () => $('depFile').click();
+$('depFile').onchange = ev => { const f = ev.target.files[0]; if (f) f.text().then(importDeps); ev.target.value = ''; };
+$('btnCal').onclick = applyCal;
+['fStatus', 'fObj', 'cRel', 'cCrit'].forEach(id => $(id).onchange = render);
+$('fSearch').oninput = render;
+function syncMode() {
+  [['mOL', 'outline'], ['mSI', 'si'], ['mDU', 'du']].forEach(([id, m]) => $(id).classList.toggle('on', mode === m));
+  document.querySelectorAll('.boardonly').forEach(x => x.hidden = mode === 'outline');
+  $('olbar').hidden = mode !== 'outline';
+}
+[['mOL', 'outline'], ['mSI', 'si'], ['mDU', 'du']].forEach(([id, m]) => $(id).onclick = () => { mode = m; syncMode(); render(); });
+$('depthSeg').onclick = ev => { const b = ev.target.closest('button'); if (!b || !sim) return;
+  $('depthSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); olApplyDepth(+b.dataset.d); render(); };
+$('cAttn').onchange = () => { if (sim) { olApplyDepth(3); $('depthSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.d === '3')); } render(); };
+syncMode();
+calToForm();
+
+const wrap = $('boardWrap');
+document.addEventListener('click', ev => {   // chips / links that jump to another line
+  const j = ev.target.closest('[data-jump]'); if (!j || !sim) return;
+  ev.preventDefault();
+  if (mode === 'outline') olJump(j.dataset.jump); else if (sim.nodes[j.dataset.jump]) { selected = j.dataset.jump; render(); }
+});
+wrap.addEventListener('click', ev => {
+  if (mode === 'outline') {
+    if (ev.target.closest('[data-jump]')) return;
+    const tg = ev.target.closest('[data-open]');
+    if (tg) { const id = tg.dataset.open; olOpen.has(id) ? olOpen.delete(id) : olOpen.add(id); render(); return; }
+    const row = ev.target.closest('.orow');
+    selected = row && row.dataset.key && row.dataset.key !== selected ? row.dataset.key : null;
+    render(); return;
+  }
+  const t = ev.target.closest('[data-toggle]');
+  if (t) { const k = t.dataset.toggle; collapsed.has(k) ? collapsed.delete(k) : collapsed.add(k); render(); return; }
+  if (ev.target.closest('.mv')) return;
+  const h = ev.target.closest('[data-si]');
+  if (h) { selected = h.dataset.si === selected ? null : h.dataset.si; render(); return; }
+  const c = ev.target.closest('.card');
+  selected = c ? (c.dataset.key === selected ? null : c.dataset.key) : null;
+  render();
+});
+let dragKey = null;
+wrap.addEventListener('dragstart', ev => { const c = ev.target.closest('.card'); if (c) { dragKey = c.dataset.key; ev.dataTransfer.setData('text/plain', dragKey); } });
+wrap.addEventListener('dragover', ev => { const c = ev.target.closest('.cell'); if (c && dragKey) { ev.preventDefault(); wrap.querySelectorAll('.cell.over').forEach(x => x.classList.remove('over')); c.classList.add('over'); } });
+wrap.addEventListener('drop', ev => {
+  const c = ev.target.closest('.cell'); if (!c || !dragKey) return;
+  ev.preventDefault(); const k = dragKey; dragKey = null; selected = k; setPI(k, c.dataset.per);
+});
+wrap.addEventListener('dragend', () => { dragKey = null; wrap.querySelectorAll('.cell.over').forEach(x => x.classList.remove('over')); });
+window.addEventListener('resize', () => { if (sim) render(); });
+</script>
+</body>
+</html>
