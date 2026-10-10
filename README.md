@@ -105,7 +105,7 @@ Nothing is written back to JIRA.
 
 ### Data quality – what is missing, and how bad
 
-Every issue gets a **Red / Yellow / Green** health pill (always with a text label: `2 gaps` / `OK`). It shows in the outline's *Data* column, on board cards and in the side panel (which also explains *how to fix* each gap). Parent lines show a roll-up of the issues below them (red · yellow · green counts).
+Every issue gets a **Red / Yellow / Green** health pill (always with a text label: `2 gaps` / `OK`). It shows on board cards, in the dashboard and in the side panel (the Outline stays free of it – the backlog at the bottom has the details) (which also explains *how to fix* each gap). Parent lines show a roll-up of the issues below them (red · yellow · green counts).
 
 - **Rules per level:** Objective (due date, owner, RAG, global priority, anything linked), SI (solves an objective, has epics, owner), Epic (linked to SI/objective, due date, PI, priority, owner, has work items, a dependency recorded), Work item (in an epic, assignee, priority, sprint, estimate, due date). Finished issues are exempt from the "open only" rules; rules whose column is missing from the export are skipped.
 - **Colour:** Red = any *High* gap or 3+ *Medium*; Yellow = 1–2 *Medium* (or 3+ *Low*); Green = otherwise (Low gaps stay visible as hints).

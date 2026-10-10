@@ -205,9 +205,8 @@
   #tip { position:fixed; z-index:50; pointer-events:none; background:var(--ink); color:var(--bg); padding:5px 9px; border-radius:6px; font-size:12px; max-width:320px; white-space:pre-line; box-shadow:0 4px 14px rgba(0,0,0,.25); }
   /* outline view */
   #olbar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; padding:0 16px 8px; color:var(--muted); font-size:12px; }
-  .ol { min-width:1130px; }
-  .odq { display:flex; flex-wrap:wrap; gap:3px; align-items:center; font-weight:400; }
-  .ohead, .orow { display:grid; grid-template-columns:minmax(320px,1fr) 100px 128px 140px 172px minmax(210px,1.1fr); gap:10px; align-items:center; padding:5px 12px; border-bottom:1px solid var(--line); }
+  .ol { min-width:1000px; }
+  .ohead, .orow { display:grid; grid-template-columns:minmax(340px,1fr) 100px 150px 172px minmax(220px,1.1fr); gap:10px; align-items:center; padding:5px 12px; border-bottom:1px solid var(--line); }
   .ohead { position:sticky; top:0; z-index:3; background:var(--panel); font-weight:700; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.04em; border-bottom:2px solid var(--line); }
   .orow { cursor:pointer; min-height:32px; }
   .orow:hover { background:color-mix(in srgb, var(--accent) 6%, transparent); }
@@ -924,7 +923,6 @@ function olTree() {
 }
 function olWalk(nodes, fn, path = []) { nodes.forEach(n => { fn(n, path); olWalk(n.kids || [], fn, [...path, n]); }); }
 function olApplyDepth(d) { depth = d; olOpen.clear(); olWalk(olTree(), n => { if (n.lvl < d && n.kids.length) olOpen.add(n.id); }); }
-function olDesc(n) { const ks = []; olWalk(n.kids || [], x => { if (x.key && /^(epic|item|si)$/.test(x.kind)) ks.push(x.key); }); return ks; }
 function olKeys(n) { const s = new Set(); olWalk([n], x => { if (x.kind === 'epic') s.add(x.key); }); return [...s]; }
 function olChips(n) {
   const k = n.key, nd = sim.nodes[k], out = [];
@@ -986,9 +984,8 @@ function olRow(n, ind, open, hl, critSet, ctx) {
     lk = (nd.assignee ? `<span class="chip plain">${esc(nd.assignee)}</span>` : '') + lk;
   }
   const dim = hl && n.kind === 'epic' && !hl.has(k);
-  const dqc = (k && DQ[k] ? dqPill(k) : '') + (n.kids.length ? dqRoll(olDesc(n)) : '');
   return `<div class="orow k-${n.kind} ${n.copy ? 'copy' : ''} ${k && k === selected ? 'sel' : ''} ${dim ? 'dim' : ''}" data-row="${esc(n.id)}" ${k ? `data-key="${esc(k)}"` : ''} ${nd ? `title="${esc(k + ' – ' + nd.summary)}"` : ''}>
-    <div class="oname" style="padding-left:${ind * 20}px">${toggle}${name}</div><div>${st}</div><div class="odq">${dqc}</div><div class="opg">${pg}</div><div class="owh">${wh}</div><div class="olk">${lk}</div></div>`;
+    <div class="oname" style="padding-left:${ind * 20}px">${toggle}${name}</div><div>${st}</div><div class="opg">${pg}</div><div class="owh">${wh}</div><div class="olk">${lk}</div></div>`;
 }
 function renderOutline() {
   const wrap = $('boardWrap'), sl = wrap.scrollLeft, st = wrap.scrollTop;
@@ -998,7 +995,7 @@ function renderOutline() {
   const rows = [], tree = olTree();
   const go = (nodes, ind) => nodes.forEach(n => { const o = olOpen.has(n.id); rows.push(olRow(n, ind, o, hl, critSet)); if (o && n.kids.length) go(n.kids, ind + 1); });
   go(tree, 0);
-  wrap.innerHTML = `<div class="ol"><div class="ohead"><div>Hierarchy</div><div>Status</div><div>Data</div><div>Progress</div><div>When</div><div>Flags &amp; relations</div></div>${rows.join('') || '<div id="empty">Nothing to show with these filters.</div>'}</div>`;
+  wrap.innerHTML = `<div class="ol"><div class="ohead"><div>Hierarchy</div><div>Status</div><div>Progress</div><div>When</div><div>Flags &amp; relations</div></div>${rows.join('') || '<div id="empty">Nothing to show with these filters.</div>'}</div>`;
   wrap.scrollLeft = sl; wrap.scrollTop = st;
   renderStats(crit); renderCrit(crit); renderViols(); renderDetail();
 }
