@@ -171,6 +171,8 @@
   .dgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:14px; }
   .dcard { border:1px solid var(--line); border-radius:8px; padding:11px 14px 12px; background:var(--panel); min-width:0; }
   .dcard.wide { grid-column:1 / -1; }
+  .lh { display:flex; gap:8px; align-items:baseline; width:100%; border:0; background:none; padding:0; text-align:left; font-size:13px; color:var(--ink); cursor:pointer; }
+  .lh .car { width:12px; color:var(--muted); font-size:11px; } .lh .muted { font-size:11.5px; }
   .dcard h4 { margin:0; font-size:13px; } .dcard .sub { color:var(--muted); font-size:11.5px; margin:1px 0 9px; }
   .hrow { display:grid; grid-template-columns:118px 1fr; gap:8px; align-items:center; margin:4px 0; }
   .hl, .vl { border:0; background:none; padding:2px 4px; text-align:left; font-size:12px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; border-radius:4px; }
@@ -1170,7 +1172,7 @@ document.addEventListener('pointermove', ev => {
 });
 
 /* ---------- dashboard: every element filters everything else ---------- */
-let dash = { pop: 'epic', f: {} };
+let dash = { pop: 'epic', f: {}, listOpen: false };   // the table of matching issues starts folded
 const SCK = [['done', 'Done'], ['prog', 'In progress'], ['todo', 'To do'], ['hold', 'On hold']], DQK = [['red', 'Red'], ['yellow', 'Yellow'], ['green', 'Green']];
 const JA = o => esc(JSON.stringify(o));
 function dashRecs() {
@@ -1266,14 +1268,15 @@ function renderDash() {
         <div style="margin-top:8px">${gaps.map(r => `<button class="dqrule ${ruleSev(r)} ${f.gap === r.id ? 'on' : ''}" data-set="${JA({ gap: r.id })}" data-tip="${esc(r.hint)}"><span class="nm">${esc(r.label)} <small>${SEV[ruleSev(r)][0]}</small></span><span class="tr"><i style="width:${Math.round(100 * gc[r.id] / gmax)}%"></i></span><b>${gc[r.id]}</b></button>`).join('') || '<div class="muted">Nothing missing in this selection.</div>'}</div></div>
       ${wide}
     </div>
-    <div class="dcard"><h4>${all.length} matching ${noun}</h4><div class="sub">Worst data health first. Click a row to inspect it in the side panel.</div>
-      <div class="dqscroll" style="max-height:340px">${list.length ? `<table class="dqtab"><thead><tr><th>Health</th><th>Issue</th><th>Summary</th><th>Status</th><th>PI</th><th>Unit</th><th>Owner</th></tr></thead><tbody>${list.slice(0, 150).map(r => `<tr class="dqrow ${r.key === selected ? 'sel' : ''}" data-key="${esc(r.key)}"><td>${dqPill(r.key)}</td><td><b>${esc(r.key)}</b></td><td class="sm" title="${esc(r.n.summary)}">${esc(r.n.summary)}</td><td><span class="st ${r.sc}">${esc(r.n.status || '–')}</span></td><td>${esc(r.pi)}</td><td>${esc(r.du)}</td><td>${esc(r.owner)}</td></tr>`).join('')}</tbody></table>` : '<div class="muted" style="padding:10px">Nothing matches these filters.</div>'}</div></div>
+    <div class="dcard"><button class="lh" data-listtoggle><span class="car">${dash.listOpen ? '▾' : '▸'}</span><b>${all.length} matching ${noun}</b><span class="muted"> – ${dash.listOpen ? 'worst data health first · click a row to inspect it in the side panel' : 'click to show the list'}</span></button>
+      ${dash.listOpen ? `<div class="dqscroll" style="max-height:340px;margin-top:8px">${list.length ? `<table class="dqtab"><thead><tr><th>Health</th><th>Issue</th><th>Summary</th><th>Status</th><th>PI</th><th>Unit</th><th>Owner</th></tr></thead><tbody>${list.slice(0, 150).map(r => `<tr class="dqrow ${r.key === selected ? 'sel' : ''}" data-key="${esc(r.key)}"><td>${dqPill(r.key)}</td><td><b>${esc(r.key)}</b></td><td class="sm" title="${esc(r.n.summary)}">${esc(r.n.summary)}</td><td><span class="st ${r.sc}">${esc(r.n.status || '–')}</span></td><td>${esc(r.pi)}</td><td>${esc(r.du)}</td><td>${esc(r.owner)}</td></tr>`).join('')}</tbody></table>` : '<div class="muted" style="padding:10px">Nothing matches these filters.</div>'}</div>` : ''}</div>
   </div>`;
   wrap.scrollLeft = sl; wrap.scrollTop = st;
   const crit = $('cCrit').checked ? criticalPath(sim, epicsOf(sim).filter(epicVisible).map(e => e.key)) : null;
   renderStats(crit); renderCrit(crit); renderViols(); renderDetail();
 }
 function dashClick(ev) {
+  if (ev.target.closest('[data-listtoggle]')) { dash.listOpen = !dash.listOpen; render(); return; }
   const un = ev.target.closest('[data-unset]');
   if (un) { ev.preventDefault(); un.dataset.unset === '*' ? dash.f = {} : delete dash.f[un.dataset.unset]; render(); return; }
   const pop = ev.target.closest('[data-pop]');
@@ -1526,7 +1529,7 @@ function loadRows(rows) {
   try {
     rawRows = rows; base = buildModel(rows); savedApplied = 0;
     try { savedApplied = mergeDeps(JSON.parse(localStorage.getItem(depKey) || '[]'), base); } catch (e) {}
-    sim = clone(base); selected = null; collapsed.clear(); dash.f = {};
+    sim = clone(base); selected = null; collapsed.clear(); dash.f = {}; dash.listOpen = false;
     // a fresh upload always opens the same way: Outline, folded to the Objective level, backlog folded
     mode = 'outline'; syncMode(); olApplyDepth(1); $('depthSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.d === '1'));
     panelSt.dqShut = true; applyPanel(); render(); renderMapping();
