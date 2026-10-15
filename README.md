@@ -97,6 +97,7 @@ Nothing is written back to JIRA.
 - **One line = status, rolled-up progress, when, flags.** Objective and SI lines roll up their epics (forecast end vs. Objective due date, % done).
 - **Dependencies and relations are chips on the line instead of arrows:** `⛔ blocked by X`, `→ blocks Y`, `↔ relates`, `↺ also SOLINC-n` (epic shared by several SIs). Click a chip to jump to that line; the side panel shows details and lets you edit links / PI.
 - **Closed epics fold into one line** ("7 closed epics") so history does not bury current work; empty SIs fold into one line too.
+- **Solution increments are always listed at the top level too**, below the Objectives: *All solution increments with epics* (flat, each with a `◎ OBJECTIVE` chip) and *Solution increments without any epic* (every epic-less SI, whichever objective it solves). The per-Objective tree is unchanged. The epic-less list hides while a status filter or search is active.
 - **"only what needs attention"** keeps just the branches with something late, on hold, blocked/blocking, or an SI without epics.
 - Epics linked straight to an Objective (no SI) sit in *"Epics not assigned to a Solution Increment"*.
 - The grouped *Issues to resolve* panel lists each problem once (e.g. "8 epics end after objective …") instead of once per epic.

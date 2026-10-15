@@ -875,6 +875,13 @@ function olTree() {
     if (empty.length && !filtering) kids.push({ id: o + '/emptysi', kind: 'group', lvl: 3, label: `${empty.length} solution increment${empty.length > 1 ? 's' : ''} without any epic yet`, kids: empty.map(s => siNode(s, o + '/emptysi')) });
     roots.push({ id: o, key: o, kind: 'obj', lvl: 1, kids });
   });
+  // flat SI sections, always at the top level: every SI with its objective chip; the epic-less ones listed on their own
+  const flat = Object.values(sim.nodes).filter(n => n.type === 'si' && (!ob || objectivesOfSi(sim, n.key).includes(ob))).map(n => n.key).sort(natural);
+  const flatNode = (s, id) => ({ ...siNode(s, id), showObj: true });
+  const withEp = flat.filter(s => epicsOfSi(sim, s).length).map(s => flatNode(s, 'allsi')).filter(s => !filtering || s.kids.length);
+  const noEp = flat.filter(s => !epicsOfSi(sim, s).length);
+  if (withEp.length) roots.push({ id: 'allsi', kind: 'bucket', lvl: 1, label: `All solution increments with epics (${withEp.length})`, hint: 'flat list, whichever objective they solve', kids: withEp });
+  if (noEp.length && !filtering) roots.push({ id: 'nosiep', kind: 'bucket', lvl: 1, label: `Solution increments without any epic (${noEp.length})`, hint: 'nobody delivers these yet', kids: noEp.map(s => flatNode(s, 'nosiep')) });
   if (!ob) {
     const orphan = Object.values(sim.nodes).filter(n => n.type === 'si' && !objectivesOfSi(sim, n.key).length).map(n => n.key).sort(natural);
     if (orphan.length) roots.push({ id: 'noobj', kind: 'bucket', lvl: 1, label: 'Solution increments without an objective', kids: orphan.map(s => siNode(s, 'noobj')) });
@@ -933,7 +940,8 @@ function olRow(n, ind, open, hl, critSet, ctx) {
     st = `<span class="st ${sc}">${esc(nd.status || '–')}</span>`;
     pg = keys.length ? bar(pct) + `<span>${Math.round(pct * 100)}%</span>` : '<span>–</span>';
     wh = span ? `${fmtS(span.start)} – ${fmt(span.end)}` : '';
-    lk += objs.length > 1 ? `<span class="chip plain" title="solves ${esc(objs.join(', '))}">solves ${objs.length} objectives</span>` : '';
+    lk += n.showObj ? (objs.length ? objs.slice(0, 3).map(o => `<span class="chip rel" data-jump="${esc(o)}" title="solves ${esc(o)}">◎ ${esc(o)}</span>`).join('') + (objs.length > 3 ? `<span class="chip plain" title="${esc(objs.slice(3).join(', '))}">+${objs.length - 3} more</span>` : '') : '<span class="chip plain">no objective</span>')
+      : objs.length > 1 ? `<span class="chip plain" title="solves ${esc(objs.join(', '))}">solves ${objs.length} objectives</span>` : '';
   } else if (n.kind === 'bucket' || n.kind === 'group') {
     const keys = olKeys(n), span = spanOf(sim, keys), pct = aggregate(sim, keys);
     name = `<span class="tx">${esc(n.label)}${n.hint ? `<small> · ${esc(n.hint)}</small>` : ''}</span>`;
