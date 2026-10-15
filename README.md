@@ -114,7 +114,7 @@ Every issue gets a **Red / Yellow / Green** health pill (always with a text labe
 
 ### Dashboard
 
-**Dashboard** view: one hero number (% done), clickable status tiles, Objectives (due vs forecast), charts by PI / delivery unit / owner / data health, a roadmap timeline (epics) or sprint load (work items), and a table of what matches. **Everything is clickable and filters everything else**; filters combine and show as removable chips. Switch between *Epics* and *Work items*; the header filters (status / objective / search) scope it too.
+**Dashboard** view: one hero number (% done), clickable status tiles (**Done / In progress / To do / On hold / Data red can be multi-selected** – click several; an issue matches any selected status, and *Data red* narrows it further; the filter chip shows e.g. `Status: Done + On hold`), Objectives (due vs forecast), charts by PI / delivery unit / owner / data health, a roadmap timeline (epics) or sprint load (work items), and a table of what matches. **Everything is clickable and filters everything else**; filters combine and show as removable chips. Switch between *Epics* and *Work items*; the header filters (status / objective / search) scope it too.
 
 The two **Board** views (PI columns, arrows, what-if drag & drop) are still there for planning conversations.
 

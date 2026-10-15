@@ -1184,7 +1184,9 @@ function dashRecs() {
       dq: DQ[n.key].level, gaps: DQ[n.key].gaps.map(g => g.id), sprint: spr != null ? String(spr) : 'Backlog', w: n.sp || 0 };
   });
 }
-const dMatch = (r, except) => Object.entries(dash.f).every(([k, v]) => k === except || (k === 'gap' ? r.gaps.includes(v) : r[k] === v));
+const MULTI = new Set(['sc', 'dq']);   // status + health accept several values at once (tiles toggle; an issue matches any of them)
+const fHas = (k, v) => { const c = dash.f[k]; return Array.isArray(c) ? c.includes(v) : c === v; };
+const dMatch = (r, except) => Object.entries(dash.f).every(([k, v]) => k === except || (k === 'gap' ? r.gaps.includes(v) : Array.isArray(v) ? v.includes(r[k]) : r[k] === v));
 const tally = (rs, keyFn, dim) => { const o = {}; rs.forEach(r => { const k = keyFn(r), c = o[k] = o[k] || {}; c[r[dim]] = (c[r[dim]] || 0) + 1; }); return o; };
 const tot = (c, keys) => keys.reduce((a, [k]) => a + (c[k] || 0), 0);
 function hRows(rows, keys, cls, dim) {   // horizontal stacked bars: label, segments, total at the tip
@@ -1204,15 +1206,15 @@ function vCols(cols, keys, cls, dim, H = 140) {   // stacked columns, total on t
 function renderDash() {
   const wrap = $('boardWrap'), sl = wrap.scrollLeft, st = wrap.scrollTop;
   const isEp = dash.pop === 'epic', noun = isEp ? 'epics' : 'work items', f = dash.f, R = dashRecs(), all = R.filter(r => dMatch(r));
-  const dimOf = (dim, v) => f[dim] != null && f[dim] !== v;
+  const dimOf = (dim, v) => f[dim] != null && !fHas(dim, v);
   // hero + status tiles (the tiles are also the legend of every status colour below)
   let pct, heroTxt;
   if (isEp) { pct = aggregate(sim, all.map(r => r.key)); heroTxt = `of the work items in these ${all.length} epics are done`; }
   else { const W = r => r.w || 1, T = all.reduce((a, r) => a + W(r), 0); pct = T ? all.filter(r => r.sc === 'done').reduce((a, r) => a + W(r), 0) / T : 0; heroTxt = `of these ${all.length} work items are done${all.some(r => r.w) ? ' (by story points)' : ''}`; }
   const sBase = R.filter(r => dMatch(r, 'sc')), sc = {}; sBase.forEach(r => sc[r.sc] = (sc[r.sc] || 0) + 1);
-  const tiles = SCK.map(([k, t]) => `<button class="tile ${f.sc === k ? 'on' : dimOf('sc', k) ? 'dim' : ''}" data-set="${JA({ sc: k })}" data-tip="Show only ${t.toLowerCase()} ${noun}"><span class="l"><i class="sw sw-${k}"></i>${t}</span><span class="v">${sc[k] || 0}</span></button>`).join('');
+  const tiles = SCK.map(([k, t]) => `<button class="tile ${fHas('sc', k) ? 'on' : dimOf('sc', k) ? 'dim' : ''}" data-multi="${JA({ sc: k })}" aria-pressed="${fHas('sc', k)}" data-tip="Click to add / remove ${t.toLowerCase()} ${noun} – select several"><span class="l"><i class="sw sw-${k}"></i>${t}</span><span class="v">${sc[k] || 0}</span></button>`).join('');
   const dqBase = R.filter(r => dMatch(r, 'dq')), dqc = {}; dqBase.forEach(r => dqc[r.dq] = (dqc[r.dq] || 0) + 1);
-  const tileDq = `<button class="tile ${f.dq === 'red' ? 'on' : ''}" data-set="${JA({ dq: 'red' })}" data-tip="Show only ${noun} with a red data-quality level"><span class="l"><i class="sw dq-red"></i>Data red</span><span class="v">${dqc.red || 0}</span></button>`;
+  const tileDq = `<button class="tile ${fHas('dq', 'red') ? 'on' : dimOf('dq', 'red') ? 'dim' : ''}" data-multi="${JA({ dq: 'red' })}" aria-pressed="${fHas('dq', 'red')}" data-tip="Click to add / remove ${noun} with a red data-quality level – combines with the status tiles"><span class="l"><i class="sw dq-red"></i>Data red</span><span class="v">${dqc.red || 0}</span></button>`;
   // objective strip: due date against forecast
   const objs = sim.order.filter(o => !$('fObj').value || o === $('fObj').value).map(o => {
     const n = sim.nodes[o], eps = [...new Set([...sisOfObjective(sim, o).flatMap(s => epicsOfSi(sim, s)), ...directEpicsOfObjective(sim, o)])];
@@ -1252,11 +1254,12 @@ function renderDash() {
     wide = `<div class="dcard wide"><h4>Sprint load – ${anySp ? 'story points' : 'work items'} per sprint</h4><div class="sub">Click a column to list that sprint. “Backlog” = not planned in a sprint.</div>
       ${vCols(ss.map(x => ({ label: x === 'Backlog' ? x : 'S' + x, counts: byS[x], set: { sprint: x }, on: f.sprint === x, dim: dimOf('sprint', x) })), SCK, 'seg', 'sc')}</div>`;
   }
-  const chips = Object.entries(f).map(([k, v]) => `<span class="mchip high" style="border-left-color:var(--accent)">${{ sc: 'Status', pi: 'PI', du: 'Unit', owner: 'Owner', dq: 'Health', gap: 'Missing', sprint: 'Sprint' }[k]}: <b>${esc(k === 'sc' ? SCK.find(x => x[0] === v)[1] : k === 'gap' ? (DQ_RULES.find(r => r.id === v) || {}).label : v)}</b> <a href="#" data-unset="${k}" title="Remove this filter">✕</a></span>`).join('');
+  const chipVal = (k, v) => k === 'sc' ? SCK.find(x => x[0] === v)[1] : k === 'dq' ? DQK.find(x => x[0] === v)[1] : k === 'gap' ? (DQ_RULES.find(r => r.id === v) || {}).label : v;
+  const chips = Object.entries(f).map(([k, v]) => `<span class="mchip high" style="border-left-color:var(--accent)">${{ sc: 'Status', pi: 'PI', du: 'Unit', owner: 'Owner', dq: 'Health', gap: 'Missing', sprint: 'Sprint' }[k]}: <b>${[].concat(v).map(x => esc(chipVal(k, x))).join(' + ')}</b> <a href="#" data-unset="${k}" title="Remove this filter">✕</a></span>`).join('');
   const list = all.slice().sort((a, b) => LVL_RANK[a.dq] - LVL_RANK[b.dq] || natural(a.pi, b.pi) || natural(a.key, b.key));
   wrap.innerHTML = `<div class="dash">
     <div class="dbar"><span class="seg"><button data-pop="epic" class="${isEp ? 'on' : ''}">Epics</button><button data-pop="story" class="${isEp ? '' : 'on'}">Work items</button></span>
-      ${chips || '<span class="muted">Click any tile, bar, column or row below to filter – filters combine.</span>'}${chips ? '<a href="#" data-unset="*">Clear all</a>' : ''}<span class="sp"></span><span class="muted">${all.length} of ${R.length} ${noun} · header filters (status / objective / search) also apply</span></div>
+      ${chips || '<span class="muted">Click any tile, bar, column or row below to filter – filters combine; the status tiles (and Data red) can be multi-selected.</span>'}${chips ? '<a href="#" data-unset="*">Clear all</a>' : ''}<span class="sp"></span><span class="muted">${all.length} of ${R.length} ${noun} · header filters (status / objective / search) also apply</span></div>
     <div class="dtop"><div class="hero"><div class="n">${Math.round(pct * 100)}<small>%</small></div><div class="t">${esc(heroTxt)}</div></div><div class="tiles">${tiles}${tileDq}</div></div>
     <div class="dcard objs"><h4>Objectives – due date against forecast</h4><div class="sub">Forecast = the latest planned end among the epics that deliver the objective.</div>${objs || '<div class="muted">No objectives.</div>'}</div>
     <div class="dgrid">
@@ -1281,10 +1284,17 @@ function dashClick(ev) {
   if (un) { ev.preventDefault(); un.dataset.unset === '*' ? dash.f = {} : delete dash.f[un.dataset.unset]; render(); return; }
   const pop = ev.target.closest('[data-pop]');
   if (pop) { dash.pop = pop.dataset.pop; delete dash.f.gap; delete dash.f.sprint; render(); return; }
+  const multi = ev.target.closest('[data-multi]');   // tiles: toggle one value in / out of a multi-select filter
+  if (multi) {
+    Object.entries(JSON.parse(multi.dataset.multi)).forEach(([k, v]) => {
+      const c = [].concat(dash.f[k] ?? []), n = c.includes(v) ? c.filter(x => x !== v) : [...c, v];
+      n.length ? dash.f[k] = n : delete dash.f[k]; });
+    render(); return;
+  }
   const set = ev.target.closest('[data-set]');
   if (set) {
-    const o = JSON.parse(set.dataset.set), same = Object.keys(o).length && Object.entries(o).every(([k, v]) => dash.f[k] === v);
-    Object.keys(o).forEach(k => same ? delete dash.f[k] : dash.f[k] = o[k]);
+    const o = JSON.parse(set.dataset.set), same = Object.keys(o).length && Object.entries(o).every(([k, v]) => MULTI.has(k) ? fHas(k, v) && [].concat(dash.f[k]).length === 1 : dash.f[k] === v);
+    Object.keys(o).forEach(k => same ? delete dash.f[k] : dash.f[k] = MULTI.has(k) ? [o[k]] : o[k]);
     if (!same && o.gap) dash.pop = (DQ_RULES.find(r => r.id === o.gap) || {}).t === 'story' ? 'story' : 'epic';
     render(); return;
   }
